@@ -4,6 +4,7 @@ export type RouteMapCamera = { center?: MapPoint; zoom: number };
 type Place = { names: RegExp; position: MapPoint };
 
 const places: Place[] = [
+  { names: /همسه\s*كوي|همسي\s*كوي|hamsik[oö]y/i, position: { lat: 40.658, lng: 39.397 } },
   { names: /طرابزون|ترابزون|trabzon/i, position: { lat: 41.0053, lng: 39.7225 } },
   { names: /يومرا|يمره|يومره|yomra/i, position: { lat: 40.956, lng: 39.855 } },
   { names: /أوردو|اوردو|ordu/i, position: { lat: 40.9839, lng: 37.8764 } },
