@@ -17,17 +17,48 @@ export function getMicrophoneErrorMessage(error?: string) {
   return "حدثت مشكلة في التعرف الصوتي. جرّب مرة أخرى أو اكتب سؤالك.";
 }
 
+function collapseRepeatedSpeech(text: string) {
+  const words = text.trim().split(/\\s+/).filter(Boolean);
+  const result: string[] = [];
+  const normalize = (word: string) => word
+    .toLocaleLowerCase("ar")
+    .replace(/[\\u064B-\\u065F\\u0670\\u0640]/g, "")
+    .replace(/[.,،؛:!?؟]+$/g, "");
+
+  for (const word of words) {
+    result.push(word);
+    // Speech engines sometimes emit the same short phrase several times.
+    // Collapse only immediately repeated sequences, preserving the sentence order.
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const maxSize = Math.min(8, Math.floor(result.length / 2));
+      for (let size = maxSize; size >= 1; size -= 1) {
+        const left = result.slice(result.length - size * 2, result.length - size).map(normalize);
+        const right = result.slice(result.length - size).map(normalize);
+        if (left.every((token, index) => token === right[index])) {
+          result.splice(result.length - size, size);
+          changed = true;
+          break;
+        }
+      }
+    }
+  }
+  return result.join(" ");
+}
+
 export function getSpeechTranscript(
   results: ArrayLike<{ [key: number]: { transcript?: string }; isFinal?: boolean }> | undefined,
   finalOnly = false,
 ) {
   if (!results || typeof results.length !== "number") return "";
-  return Array.from({ length: results.length }, (_, index) => results[index])
+  const transcript = Array.from({ length: results.length }, (_, index) => results[index])
     .filter((result) => result && (!finalOnly || result.isFinal === true))
     .map((result) => result?.[0]?.transcript ?? "")
     .filter(Boolean)
     .join(" ")
     .trim();
+  return collapseRepeatedSpeech(transcript);
 }
 
 export function getChatErrorMessage(error: unknown) {
