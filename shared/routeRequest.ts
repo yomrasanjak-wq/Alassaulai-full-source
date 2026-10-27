@@ -63,13 +63,21 @@ export function parseRouteRequest(text: string): RouteRequest | null {
   if (!normalized || !ROUTE_INTENT.test(normalized)) return null;
 
   const originMatch = normalized.match(ORIGIN_PATTERN);
+  const destinationMatches = [...normalized.matchAll(DESTINATION_PATTERN)];
+  const lastDestinationMatch = destinationMatches.at(-1);
   const originRaw = originMatch?.[1]?.trim();
+  const inferredOriginPrefix = lastDestinationMatch?.index === undefined
+    ? ""
+    : normalized.slice(0, lastDestinationMatch.index);
+  const inferredOrigin = destinationAliases
+    .map((alias) => ({ alias, match: [...inferredOriginPrefix.matchAll(new RegExp(alias.pattern.source, alias.pattern.flags))].at(-1) }))
+    .filter((entry) => entry.match?.index !== undefined)
+    .sort((a, b) => (b.match?.index ?? -1) - (a.match?.index ?? -1))[0]?.alias.canonical;
   const origin = originRaw
     ? destinationAliases.find((alias) => alias.pattern.test(originRaw))?.canonical ?? originRaw
-    : undefined;
+    : inferredOrigin;
 
-  const destinationMatches = [...normalized.matchAll(DESTINATION_PATTERN)];
-  const rawDestination = destinationMatches.at(-1)?.[1]?.trim();
+  const rawDestination = lastDestinationMatch?.[1]?.trim();
   if (!rawDestination) return null;
 
   // Prefer a recognized place name over the trailing words of a long voice
