@@ -9,6 +9,7 @@ describe("route map camera", () => {
     ["Trabzon", "Rize", 41.0127, 40.12295],
     ["Rize", "Ayder", 40.9864, 40.80825],
     ["Trabzon", "Uzungöl", 40.8125, 40.00915],
+    ["Trabzon", "Hamsiköy", 40.83165, 39.55975],
     ["Trabzon", "Giresun", 40.95905, 39.056],
     ["Trabzon", "Arsin", 40.97865, 39.82625],
     ["Trabzon", "Sürmene", 40.95565, 39.91925],
