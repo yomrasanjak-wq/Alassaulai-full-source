@@ -1,7 +1,8 @@
-import { createApp } from "../server/_core/app";
+import type { Request, Response } from "express";
+import { createApp } from "../server/_core/app.js";
 
 const app = createApp();
 
-export default async function handler(req: Parameters<import("express").Express>[0], res: Parameters<import("express").Express>[1]) {
-  return (await app)(req, res);
+export default function handler(req: Request, res: Response) {
+  return app(req, res);
 }
