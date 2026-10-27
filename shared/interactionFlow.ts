@@ -18,11 +18,11 @@ export function getMicrophoneErrorMessage(error?: string) {
 }
 
 function collapseRepeatedSpeech(text: string) {
-  const words = text.trim().split(/\\s+/).filter(Boolean);
+  const words = text.trim().split(/\s+/).filter(Boolean);
   const result: string[] = [];
   const normalize = (word: string) => word
     .toLocaleLowerCase("ar")
-    .replace(/[\\u064B-\\u065F\\u0670\\u0640]/g, "")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
     .replace(/[.,،؛:!?؟]+$/g, "");
 
   for (const word of words) {
