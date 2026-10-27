@@ -1,0 +1,1 @@
+ALTER TABLE `mediaItems` ADD `category` varchar(32) DEFAULT 'entertainment' NOT NULL;
