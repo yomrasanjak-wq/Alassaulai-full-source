@@ -1,0 +1,23 @@
+[build]
+  command = "pnpm run build"
+  publish = "dist/public"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+  PNPM_FLAGS = "--frozen-lockfile"
+
+[functions]
+  node_bundler = "esbuild"
+  # The function imports server/_core/app.ts, which deliberately excludes Vite/build tooling.
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
