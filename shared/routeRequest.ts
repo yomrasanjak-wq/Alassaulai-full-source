@@ -81,12 +81,12 @@ export function parseRouteRequest(text: string): RouteRequest | null {
   const rawDestination = lastDestinationMatch?.[1]?.trim();
   if (!rawDestination) return null;
 
-  // Prefer a recognized place name over the trailing words of a long voice
-  // transcript, so the entire spoken sentence is never used as a map endpoint.
-  const destination = canonicalizeDestination(rawDestination);
-  const destinations = destination
-    .split(/\s+(?:أو|او|or|ya da|veya)\s+(?:(?:إلى|الى|to)\s+)?/i)
-    .map((value) => value.trim())
+  // Keep alternative destinations when the user asks for one of several places.
+  // Strip repeated destination prepositions before canonicalizing each option.
+  const destinations = rawDestination
+    .split(/\s+(?:أو|او|or|ya da|veya)\s+/i)
+    .map((value) => value.trim().replace(/^(?:(?:إلى|الى|to|towards)\s+)+/i, ""))
+    .map(canonicalizeDestination)
     .filter(Boolean)
     .slice(0, 3);
 
