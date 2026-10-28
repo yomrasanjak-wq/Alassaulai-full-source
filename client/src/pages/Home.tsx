@@ -447,7 +447,7 @@ const liveChannels = [
   },
 ];
 
-const partnerServices = ["Northline Hotels", "Karadeniz Table", "Fog & Bean", "Yolcu Rent", "SkyRoute"];
+const partnerServices = ["جهات الضيافة المحلية", "المطاعم والمقاهي المحلية", "خدمات تأجير السيارات", "الأنشطة والرحلات", "الخدمات السياحية"];
 
 type CameraFeed = {
   title: string;
@@ -886,7 +886,7 @@ export default function Home() {
       : activeSection === "map"
         ? [`خطط ليوم كامل في ${selectedCity.name}`, `ما الطريق الأقرب إلى ${selectedCity.places[0]}؟`, "افتح الخريطة على أقرب وجهة"]
         : activeSection === "partners"
-          ? [`نسّق فندقاً أو مطعماً قرب ${selectedCity.name}`, `هل يوجد تأجير سيارات قريب من ${selectedCity.name}؟`, `أخبرني عن شريك ${featuredPartner}`]
+          ? [`نسّق فندقاً أو مطعماً قرب ${selectedCity.name}`, `هل يوجد تأجير سيارات قريب من ${selectedCity.name}؟`, `كيف أتواصل مع ${featuredPartner}؟`]
           : activeSection === "entertainment"
             ? ["اقترح موسيقى هادئة للطريق", "اختر لي لعبة خفيفة", "ما أفضل فيلم سفر قصير؟"]
             : [`رتب لي برنامجاً في ${selectedCity.name}`, "ما أبرز أخبار العالم اليوم؟", "التقط صورة وساعدني في معرفة ما فيها"]
@@ -896,7 +896,7 @@ export default function Home() {
         : activeSection === "map"
           ? [`${selectedCity.latin} için tam günlük rota planla`, `${selectedCity.places[0]} için en yakın yol hangisi?`, "Haritada en yakın destinasyonu aç"]
           : activeSection === "partners"
-            ? [`${selectedCity.latin} yakınında otel veya restoran öner`, `${selectedCity.latin} yakınında araç kiralama var mı?`, `${featuredPartner} hakkında bilgi ver`]
+            ? [`${selectedCity.latin} yakınında otel veya restoran öner`, `${selectedCity.latin} yakınında araç kiralama var mı?`, `${featuredPartner} ile nasıl iletişim kurabilirim?`]
             : activeSection === "entertainment"
               ? ["Yol için sakin müzik öner", "Bana kısa bir oyun seç", "Kısa bir seyahat filmi öner"]
               : [`${selectedCity.latin} için bir gezi planı hazırla`, `${selectedCity.latin} yakınında önemli yerler neler?`, "Harita veya canlı yayın aç"]
@@ -905,7 +905,7 @@ export default function Home() {
         : activeSection === "map"
           ? [`Plan a full day in ${selectedCity.latin}`, `What is the closest route to ${selectedCity.places[0]}?`, "Open the nearest destination on the map"]
           : activeSection === "partners"
-            ? [`Find a hotel or restaurant near ${selectedCity.latin}`, `Is there car rental near ${selectedCity.latin}?`, `Tell me about ${featuredPartner}`]
+            ? [`Find a hotel or restaurant near ${selectedCity.latin}`, `Is there car rental near ${selectedCity.latin}?`, `How can I contact ${featuredPartner}?`]
             : activeSection === "entertainment"
               ? ["Suggest calm music for the road", "Pick a light game for me", "Recommend a short travel film"]
               : [`Plan an itinerary for ${selectedCity.latin}`, `What are the key places near ${selectedCity.latin}?`, "Open the best map or live channel"];
@@ -1602,7 +1602,7 @@ export default function Home() {
       </section>
 
       <section id="partners" className="partners-section section-pad dark-section">
-        <div className="container"><div className="partners-heading"><SectionHeading light eyebrow={t.partnersLabel} title={t.partnersTitle} desc={t.partnersDesc} /><button className="button button-outline-light" onClick={() => setModal("login")}>تواصل مع السكرتير <ArrowLeft size={15} /></button></div><div className="partner-strip"><div><Landmark size={17} /><span>Northline Hotels</span></div><div><Heart size={17} /><span>Karadeniz Table</span></div><div><CoffeeIcon /><span>Fog & Bean</span></div><div><Navigation size={17} /><span>Yolcu Rent</span></div><div><Ticket size={17} /><span>SkyRoute</span></div></div></div>
+        <div className="container"><div className="partners-heading"><SectionHeading light eyebrow={t.partnersLabel} title={t.partnersTitle} desc={t.partnersDesc} /><button className="button button-outline-light" onClick={() => setModal("login")}>تواصل مع السكرتير <ArrowLeft size={15} /></button></div><div className="partner-strip partner-invitation"><div><Landmark size={17} /><span>الفنادق وأماكن الإقامة</span></div><div><Heart size={17} /><span>المطاعم والمقاهي</span></div><div><Navigation size={17} /><span>تأجير السيارات والتنقل</span></div><div><Ticket size={17} /><span>الرحلات والأنشطة</span></div><p>نعرض بيانات الشركاء بعد التحقق من معلوماتهم وموافقتهم على الظهور.</p></div></div>
       </section>
 
       <section id="about" className="control-section section-pad">
