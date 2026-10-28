@@ -172,6 +172,28 @@ export function MapView({
     map.current.setZoom(initialZoom);
   }, [initialCenter.lat, initialCenter.lng, initialZoom, mapError]);
 
+  // Recalculate Google Maps tiles whenever the map container changes size,
+  // especially when the mobile full-screen dialog opens or closes.
+  useEffect(() => {
+    const container = mapContainer.current;
+    if (!container || mapError || typeof ResizeObserver === "undefined") return;
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const currentMap = map.current;
+        if (!currentMap || !window.google?.maps) return;
+        window.google.maps.event.trigger(currentMap, "resize");
+        currentMap.setCenter(initialCenterRef.current);
+      });
+    });
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [mapError]);
+
   return (
     <div className={cn("relative h-[500px] w-full", className)}>
       <div ref={mapContainer} className={cn("h-full w-full", mapError && "hidden")} />
