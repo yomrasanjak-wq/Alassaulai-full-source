@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, Filter, MapPin, Navigation, Search, Sparkles, X } from "lucide-react";
 import { MapView } from "@/components/Map";
 
@@ -215,7 +216,7 @@ export function InteractiveNorthMap() {
   const broadRegion = ["إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أولاشلي", "أنقرة", "جورجيا"].includes(selectedCity ?? "");
   const fallbackZoom = selected ? 13 : broadRegion ? 9 : 10;
 
-  return (
+  const mapContent = (
     <div className={`north-map-experience ${expanded ? "north-map-expanded" : ""}`} dir="rtl">
       <div className="north-map-view-actions">
         {!expanded ? <button type="button" className="north-map-expand" onClick={() => setExpanded(true)}><ExternalLink size={16} /> فتح الخريطة بحجم كامل</button> : <button type="button" className="north-map-close" onClick={() => setExpanded(false)}><X size={17} /> إغلاق الخريطة</button>}
@@ -279,6 +280,10 @@ export function InteractiveNorthMap() {
       </div>}
     </div>
   );
+
+  // A fixed map nested inside .site-shell is clipped by the shell overflow.
+  // Render the expanded experience at document.body so mobile full-screen is truly full-screen.
+  return expanded ? createPortal(mapContent, document.body) : mapContent;
 }
 
 export default InteractiveNorthMap;
