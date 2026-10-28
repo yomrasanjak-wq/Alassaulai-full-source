@@ -2582,3 +2582,65 @@ img { display: block; max-width: 100%; }
   .north-map-expanded .north-map-canvas-wrap iframe,
   .north-map-expanded .map-fallback-live { height: 100% !important; min-height: 300px !important; }
 }
+
+/* ALASSAUL MAP RECOVERY: show the keyless OpenStreetMap fallback as a real map,
+   and prevent legacy translucent veils from covering the map canvas. */
+.north-map-canvas-wrap {
+  position: relative !important;
+  min-height: 360px !important;
+  background: #dce8df !important;
+}
+.north-map-canvas-wrap > .relative {
+  position: relative !important;
+  z-index: 2 !important;
+  min-height: 360px !important;
+}
+.north-map-canvas-wrap .map-fallback-live {
+  position: relative !important;
+  z-index: 3 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(300px, 1fr) auto auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 360px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  background: #edf3ee !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.north-map-canvas-wrap .map-fallback-live iframe {
+  display: block !important;
+  position: relative !important;
+  z-index: 4 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 300px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  border: 1px solid #c9d8cf !important;
+  background: #dce8df !important;
+}
+.north-map-canvas-wrap .north-map-loading-overlay:not(.north-map-error),
+.north-map-canvas-wrap .route-map-overlay:not(.route-map-error),
+.north-map-canvas-wrap .map-transparent-overlay,
+.north-map-canvas-wrap .hero-map-overlay {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+.north-map-expanded .north-map-canvas-wrap,
+.north-map-expanded .north-map-canvas-wrap .relative,
+.north-map-expanded .north-map-canvas-wrap .map-fallback-live {
+  min-height: 360px !important;
+}
+@media (max-width: 820px) {
+  .north-map-canvas-wrap { min-height: 360px !important; }
+  .north-map-canvas-wrap .map-fallback-live {
+    grid-template-rows: auto minmax(300px, 1fr) auto auto !important;
+    min-height: 360px !important;
+  }
+  .north-map-expanded .north-map-canvas-wrap { height: 48dvh !important; min-height: 360px !important; }
+}
