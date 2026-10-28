@@ -134,7 +134,7 @@ export function InteractiveNorthMap() {
   const [filter, setFilter] = useState<MapCategory>("all");
   const [selectedCity, setSelectedCity] = useState<string | null>("طرابزون");
   const [selected, setSelected] = useState<MapDestination | null>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [map, setMap] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
   const markersRef = useRef<Array<{ destination: MapDestination; marker: any }>>([]);
 
@@ -172,8 +172,7 @@ export function InteractiveNorthMap() {
       const matchesCategory = filter === "all" || destination.category === filter;
       const matchesQuery = !normalized || `${destination.name} ${destination.latin} ${destination.label}`.toLocaleLowerCase().includes(normalized);
       const visible = matchesCity && matchesCategory && matchesQuery;
-      if ("setMap" in marker && typeof marker.setMap === "function") marker.setMap(visible ? map : null);
-      else marker.map = visible ? map : null;
+      if (typeof marker.setMap === "function") marker.setMap(visible ? map : null);
     });
   }, [map, selectedCity, filter, query]);
 
@@ -194,9 +193,7 @@ export function InteractiveNorthMap() {
       map.setZoom(11);
       return;
     }
-    const bounds = new google.maps.LatLngBounds();
-    cityPlaces.forEach((place) => bounds.extend(place.position));
-    map.fitBounds(bounds, 64);
+    map.fitBounds(cityPlaces.map((place) => place.position), 64);
     window.setTimeout(() => {
       const currentZoom = map.getZoom() ?? 10;
       if (currentZoom > 12) map.setZoom(12);
@@ -257,13 +254,25 @@ export function InteractiveNorthMap() {
           <MapView className="north-map-canvas" initialCenter={{ lat: 41.0053, lng: 39.7225 }} initialZoom={10} fallbackCenter={fallbackCenter} fallbackZoom={fallbackZoom} fallbackLabel={selected?.name ?? selectedCity ?? "الشمال التركي"} onMapReady={(readyMap) => {
             setMap(readyMap);
             markersRef.current = [];
+            const L = window.L;
+            if (!L || !readyMap?.leafletMap) return;
             destinations.forEach((destination) => {
-              const markerContent = Object.assign(document.createElement("button"), { className: "north-map-marker", type: "button", ariaLabel: `فتح ${destination.name}`, innerHTML: `<span style="background:${categoryColor[destination.category]}"></span><b>${destination.name}</b>` });
               try {
-                const marker = google.maps.marker?.AdvancedMarkerElement
-                  ? new google.maps.marker.AdvancedMarkerElement({ map: null, position: destination.position, title: destination.name, content: markerContent })
-                  : new google.maps.Marker({ map: null, position: destination.position, title: destination.name });
-                marker.addListener("click", () => openDestination(destination));
+                const icon = L.divIcon({
+                  className: "north-map-leaflet-icon",
+                  html: `<button class="north-map-marker" type="button" aria-label="فتح ${destination.name}"><span style="background:${categoryColor[destination.category]}"></span><b>${destination.name}</b></button>`,
+                  iconSize: [100, 34],
+                  iconAnchor: [50, 17],
+                });
+                const leafletMarker = L.marker([destination.position.lat, destination.position.lng], { icon });
+                leafletMarker.on("click", () => openDestination(destination));
+                const marker = {
+                  setMap: (target: any) => {
+                    if (target?.leafletMap) leafletMarker.addTo(target.leafletMap);
+                    else if (leafletMarker._map) leafletMarker.remove();
+                  },
+                  addListener: (event: string, callback: () => void) => leafletMarker.on(event, callback),
+                };
                 markersRef.current.push({ destination, marker });
               } catch (error) {
                 console.warn("Map marker unavailable; the destination list remains interactive.", error);
