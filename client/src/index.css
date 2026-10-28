@@ -2529,3 +2529,56 @@ img { display: block; max-width: 100%; }
     pointer-events: none !important;
   }
 }
+
+
+/* V19: keep the actual map surface visible and interactive in mobile full-screen mode. */
+.north-map-expanded {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.north-map-expanded .north-map-canvas-wrap {
+  position: relative !important;
+  z-index: 2 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  isolation: isolate !important;
+  pointer-events: auto !important;
+}
+.north-map-expanded .north-map-canvas,
+.north-map-expanded .north-map-canvas > div,
+.north-map-expanded .north-map-canvas-wrap iframe,
+.north-map-expanded .map-fallback-live,
+.north-map-expanded .map-fallback-live iframe {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+.north-map-expanded .north-map-loading-overlay,
+.north-map-expanded .route-map-overlay,
+.north-map-expanded .map-transparent-overlay,
+.north-map-expanded .hero-map-overlay {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+@media (max-width: 820px) {
+  .north-map-expanded .north-map-body { display: flex !important; flex-direction: column !important; }
+  .north-map-expanded .north-map-canvas-wrap { order: 0 !important; width: 100% !important; height: 48dvh !important; min-height: 300px !important; max-height: none !important; }
+  .north-map-expanded .north-map-canvas,
+  .north-map-expanded .north-map-canvas > div:first-child,
+  .north-map-expanded .north-map-canvas-wrap iframe,
+  .north-map-expanded .map-fallback-live { height: 100% !important; min-height: 300px !important; }
+}
