@@ -447,7 +447,7 @@ const liveChannels = [
   },
 ];
 
-const partnerServices = ["Northline Hotels", "Karadeniz Table", "Fog & Bean", "Yolcu Rent", "SkyRoute"];
+const partnerServices = ["جهات الضيافة المحلية", "المطاعم والمقاهي المحلية", "خدمات تأجير السيارات", "الأنشطة والرحلات", "الخدمات السياحية"];
 
 type CameraFeed = {
   title: string;
@@ -901,7 +901,7 @@ export default function Home() {
       : activeSection === "map"
         ? [`خطط ليوم كامل في ${selectedCity.name}`, `ما الطريق الأقرب إلى ${selectedCity.places[0]}؟`, "افتح الخريطة على أقرب وجهة"]
         : activeSection === "partners"
-          ? [`نسّق فندقاً أو مطعماً قرب ${selectedCity.name}`, `هل يوجد تأجير سيارات قريب من ${selectedCity.name}؟`, `أخبرني عن شريك ${featuredPartner}`]
+          ? [`نسّق فندقاً أو مطعماً قرب ${selectedCity.name}`, `هل يوجد تأجير سيارات قريب من ${selectedCity.name}؟`, `كيف أتواصل مع ${featuredPartner}؟`]
           : activeSection === "entertainment"
             ? ["اقترح موسيقى هادئة للطريق", "اختر لي لعبة خفيفة", "ما أفضل فيلم سفر قصير؟"]
             : [`رتب لي برنامجاً في ${selectedCity.name}`, "ما أبرز أخبار العالم اليوم؟", "التقط صورة وساعدني في معرفة ما فيها"]
@@ -911,7 +911,7 @@ export default function Home() {
         : activeSection === "map"
           ? [`${selectedCity.latin} için tam günlük rota planla`, `${selectedCity.places[0]} için en yakın yol hangisi?`, "Haritada en yakın destinasyonu aç"]
           : activeSection === "partners"
-            ? [`${selectedCity.latin} yakınında otel veya restoran öner`, `${selectedCity.latin} yakınında araç kiralama var mı?`, `${featuredPartner} hakkında bilgi ver`]
+            ? [`${selectedCity.latin} yakınında otel veya restoran öner`, `${selectedCity.latin} yakınında araç kiralama var mı?`, `${featuredPartner} ile nasıl iletişim kurabilirim?`]
             : activeSection === "entertainment"
               ? ["Yol için sakin müzik öner", "Bana kısa bir oyun seç", "Kısa bir seyahat filmi öner"]
               : [`${selectedCity.latin} için bir gezi planı hazırla`, `${selectedCity.latin} yakınında önemli yerler neler?`, "Harita veya canlı yayın aç"]
@@ -920,7 +920,7 @@ export default function Home() {
         : activeSection === "map"
           ? [`Plan a full day in ${selectedCity.latin}`, `What is the closest route to ${selectedCity.places[0]}?`, "Open the nearest destination on the map"]
           : activeSection === "partners"
-            ? [`Find a hotel or restaurant near ${selectedCity.latin}`, `Is there car rental near ${selectedCity.latin}?`, `Tell me about ${featuredPartner}`]
+            ? [`Find a hotel or restaurant near ${selectedCity.latin}`, `Is there car rental near ${selectedCity.latin}?`, `How can I contact ${featuredPartner}?`]
             : activeSection === "entertainment"
               ? ["Suggest calm music for the road", "Pick a light game for me", "Recommend a short travel film"]
               : [`Plan an itinerary for ${selectedCity.latin}`, `What are the key places near ${selectedCity.latin}?`, "Open the best map or live channel"];
@@ -1660,11 +1660,11 @@ export default function Home() {
       </section>
 
       <section id="partners" className="partners-section section-pad dark-section">
-        <div className="container"><div className="partners-heading"><SectionHeading light eyebrow={t.partnersLabel} title={t.partnersTitle} desc={t.partnersDesc} /><button className="button button-outline-light" onClick={() => setModal("login")}>تواصل مع السكرتير <ArrowLeft size={15} /></button></div><div className="partner-strip"><div><Landmark size={17} /><span>Northline Hotels</span></div><div><Heart size={17} /><span>Karadeniz Table</span></div><div><CoffeeIcon /><span>Fog & Bean</span></div><div><Navigation size={17} /><span>Yolcu Rent</span></div><div><Ticket size={17} /><span>SkyRoute</span></div></div></div>
+        <div className="container"><div className="partners-heading"><SectionHeading light eyebrow={t.partnersLabel} title={t.partnersTitle} desc={t.partnersDesc} /><button className="button button-outline-light" onClick={() => setModal("login")}>تواصل مع السكرتير <ArrowLeft size={15} /></button></div><div className="partner-strip partner-invitation"><div><Landmark size={17} /><span>الفنادق وأماكن الإقامة</span></div><div><Heart size={17} /><span>المطاعم والمقاهي</span></div><div><Navigation size={17} /><span>تأجير السيارات والتنقل</span></div><div><Ticket size={17} /><span>الرحلات والأنشطة</span></div><p>نعرض بيانات الشركاء بعد التحقق من معلوماتهم وموافقتهم على الظهور.</p></div></div>
       </section>
 
       <section id="about" className="control-section section-pad">
-        <div className="container control-layout"><div className="control-copy"><SectionHeading eyebrow={t.controlLabel} title={t.controlTitle} desc={t.controlDesc} /><div className="control-roles"><span><ShieldCheck size={16} /> CEO</span><span><UsersRound size={16} /> سكرتير</span><span><Settings2 size={16} /> IT</span></div><button className="button button-dark" onClick={() => setModal("control")}>{t.enterControl} <LockKeyhole size={15} /></button></div><div className="control-dashboard"><div className="dashboard-top"><span><span className="green-ping" /> النظام مستقر</span><span>06:42 PM · TR</span></div><div className="dashboard-grid"><div className="dash-number"><small>طلبات اليوم</small><strong>24</strong><span>+18% عن أمس</span></div><div className="dash-number"><small>مدن محدثة</small><strong>08</strong><span>آخر مزامنة الآن</span></div><div className="dash-task"><small>آخر الاحتياجات</small><div><span className="task-dot task-gold" /> تحديث كاميرا أيدر <b>قيد المتابعة</b></div><div><span className="task-dot task-green" /> شريك فندق جديد <b>تمت المراجعة</b></div><div><span className="task-dot task-blue" /> طلب رحلة عائلية <b>جديد</b></div></div></div></div></div>
+        <div className="container control-layout"><div className="control-copy"><SectionHeading eyebrow={t.controlLabel} title={t.controlTitle} desc={t.controlDesc} /><div className="control-roles"><span><ShieldCheck size={16} /> CEO</span><span><UsersRound size={16} /> سكرتير</span><span><Settings2 size={16} /> IT</span></div><button className="button button-dark" onClick={() => setModal("control")}>{t.enterControl} <LockKeyhole size={15} /></button></div><div className="control-dashboard"><div className="dashboard-top"><span><span className="green-ping" /> لوحة تعريفية</span><span>ALASSAUL · OPERATIONS</span></div><div className="dashboard-grid"><div className="dash-number"><small>إدارة الطلبات</small><strong>—</strong><span>تظهر الأرقام بعد الدخول بصلاحية مسؤول</span></div><div className="dash-number"><small>تحديث المدن</small><strong>—</strong><span>لا نعرض أرقاماً غير متصلة ببيانات فعلية</span></div><div className="dash-task"><small>مسارات العمل</small><div><span className="task-dot task-gold" /> مراجعة طلبات الزوار</div><div><span className="task-dot task-green" /> متابعة المحتوى والخدمات</div><div><span className="task-dot task-blue" /> استقبال البلاغات التقنية</div></div></div></div></div>
       </section>
 
       <footer className="site-footer"><div className="container footer-grid"><div className="footer-brand"><img src={ASSETS.mark} alt="" /><strong>ALASSAUL-AI</strong><p>{t.footer}</p></div><div className="footer-links"><span>المنصة</span><button onClick={() => scrollTo("cities")}>المدن</button><button onClick={() => scrollTo("live")}>البث المباشر</button><button onClick={() => scrollTo("map")}>الخريطة</button><button onClick={() => scrollTo("tiktok")}>تيك توك</button></div><div className="footer-links"><span>تواصل</span><button onClick={() => setModal("login")}>السكرتير</button><button onClick={() => setModal("control")}>غرفة التحكم</button><button onClick={() => setChatOpen(true)}>المساعد الذكي</button></div><div className="footer-social"><span>تابع الطريق</span><div><a className="social-link" href="https://www.tiktok.com/@trabzon_yomra" target="_blank" rel="noreferrer" aria-label="تيك توك @trabzon_yomra"><Music2 size={17} /></a><button><Instagram size={17} /></button><button><Facebook size={17} /></button><button><Youtube size={17} /></button></div></div></div><div className="container footer-bottom"><span>© 2026 ALASSAUL-AI</span><span>صنع لرحلة أكثر هدوءاً ووضوحاً</span></div></footer>

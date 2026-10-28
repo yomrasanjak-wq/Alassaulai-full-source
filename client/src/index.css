@@ -2281,3 +2281,100 @@ img { display: block; max-width: 100%; }
   .north-map-expanded .north-map-toolbar { display: block !important; padding: 10px !important; }
   .north-map-expanded .north-map-canvas-wrap { height: 42dvh !important; min-height: 260px !important; }
 }
+
+
+/* ALASSAUL mobile map visibility and contrast correction — 2026-10 */
+.north-map-experience {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.north-map-experience .north-map-toolbar,
+.north-map-experience .north-map-city-picker,
+.north-map-experience .north-map-body,
+.north-map-experience .north-map-canvas-wrap,
+.north-map-experience .north-map-destinations {
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.north-map-experience .north-map-canvas-wrap {
+  position: relative;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0;
+  min-height: 320px !important;
+  height: clamp(320px, 58vh, 620px) !important;
+  overflow: hidden;
+  background: #e7eee9 !important;
+}
+.north-map-experience .north-map-canvas,
+.north-map-experience .north-map-canvas > div:first-child,
+.north-map-experience .north-map-canvas-wrap iframe {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 320px !important;
+  opacity: 1 !important;
+}
+.north-map-experience .north-map-body {
+  min-width: 0;
+}
+@media (max-width: 767px) {
+  .north-map-experience {
+    margin-inline: 0 !important;
+    border-radius: 14px !important;
+    overflow: hidden;
+  }
+  .north-map-experience .north-map-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+  .north-map-experience .north-map-canvas-wrap {
+    order: 0 !important;
+    min-height: 340px !important;
+    height: 54vh !important;
+    max-height: 520px;
+  }
+  .north-map-experience .north-map-destinations {
+    order: 1 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    min-width: 0;
+  }
+  .north-map-experience .north-map-destination-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .north-map-experience .north-map-filters,
+  .north-map-experience .north-map-city-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .north-map-experience .north-map-filters button,
+  .north-map-experience .north-map-city-buttons button,
+  .north-map-experience .north-map-view-actions button {
+    min-height: 42px;
+    touch-action: manipulation;
+  }
+  .north-map-experience .north-map-detail {
+    position: relative !important;
+    z-index: 1;
+    margin: 10px !important;
+    background: #fffdf8 !important;
+    color: #203a30 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    border: 1px solid #d8cfbf;
+    border-radius: 12px;
+  }
+}
