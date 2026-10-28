@@ -71,7 +71,7 @@ export function parseRouteRequest(text: string): RouteRequest | null {
     ? ""
     : normalized.slice(0, firstDestinationMatch.index);
   const inferredOrigin = destinationAliases
-    .map((alias) => ({ alias, match: Array.from(inferredOriginPrefix.matchAll(new RegExp(alias.pattern.source, alias.pattern.flags))).at(-1) }))
+    .map((alias) => ({ alias, match: Array.from(inferredOriginPrefix.matchAll(new RegExp(alias.pattern.source, `${alias.pattern.flags}g`))).at(-1) }))
     .filter((entry) => entry.match?.index !== undefined)
     .sort((a, b) => (b.match?.index ?? -1) - (a.match?.index ?? -1))[0]?.alias.canonical;
   const origin = originRaw
