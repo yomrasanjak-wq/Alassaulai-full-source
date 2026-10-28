@@ -38,7 +38,7 @@ function collapseRepeatedSequences(text: string): string {
 const destinationAliases: Array<{ pattern: RegExp; canonical: string }> = [
   { pattern: /(?:همسه\s*كوي|همسي\s*كوي|هامسي\s*كوي|hamsik[oö]y)/i, canonical: "Hamsiköy" },
   { pattern: /(?:طرابزون|ترابزون|trabzon)/i, canonical: "Trabzon" },
-  { pattern: /(?:يومرا|يمره|يومره|yomra)/i, canonical: "Yomra" },
+  { pattern: /(?:يومرا|يمره|يمرة|يومره|يومرة|yomra)/i, canonical: "Yomra" },
   { pattern: /(?:أوزنجول|اوزنجول|أوزونغول|uzung[oö]l)/i, canonical: "Uzungöl" },
   { pattern: /(?:سوميلا|سوميله|sumela|sümela)/i, canonical: "Sümela Monastery" },
   { pattern: /(?:حيدر\s*نبي|hidirnebi|hıdırnebi)/i, canonical: "Hıdırnebi" },
