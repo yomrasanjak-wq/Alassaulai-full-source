@@ -14,6 +14,13 @@ describe("parseRouteRequest", () => {
     });
   });
 
+  it("infers the starting city before the destination in conversational Arabic", () => {
+    expect(parseRouteRequest("أنا في طرابزون، ممكن توصلني إلى همسي كوي وافتح الطريق")).toEqual({
+      origin: "Trabzon",
+      destinations: ["Hamsiköy"],
+    });
+  });
+
   it("does not treat ordinary chat as a route request", () => {
     expect(parseRouteRequest("السلام عليكم كيف حالك")).toBeNull();
   });

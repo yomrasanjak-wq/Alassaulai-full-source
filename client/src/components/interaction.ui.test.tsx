@@ -430,9 +430,9 @@ describe("LiveStatusView UI", () => {
 
 describe("Directions in chat", () => {
   it("extracts an Arabic destination and optional origin", () => {
-    expect(parseRouteRequest("أريد الطريق من طرابزون إلى يمرة")).toEqual({ origin: "طرابزون", destinations: ["يمرة"] });
+    expect(parseRouteRequest("أريد الطريق من طرابزون إلى يمرة")).toEqual({ origin: "Trabzon", destinations: ["Yomra"] });
     expect(parseRouteRequest("أريد الطريق إلى جدة أو مكة")).toEqual({ destinations: ["جدة", "مكة"] });
-    expect(parseRouteRequest("أريد الطريق إلى بلدتي أو إلى يمرة")).toEqual({ destinations: ["بلدتي", "يمرة"] });
+    expect(parseRouteRequest("أريد الطريق إلى بلدتي أو إلى يمرة")).toEqual({ destinations: ["بلدتي", "Yomra"] });
     expect(parseRouteRequest("ما أفضل مطعم في طرابزون؟")).toBeNull();
   });
 
@@ -445,7 +445,7 @@ describe("Directions in chat", () => {
     fireEvent.click(screen.getByRole("button", { name: "إرسال" }));
 
     await waitFor(() => expect(screen.getByText("سأعرض لك الطريق على الخريطة الآن.")).toBeTruthy());
-    expect(screen.getByText("يمرة")).toBeTruthy();
+    expect(screen.getByText("Yomra")).toBeTruthy();
     expect(screen.getByRole("link", { name: "فتح الاتجاهات في Google Maps" })).toBeTruthy();
     expect(screen.getByTestId("route-map-view")).toBeTruthy();
   });

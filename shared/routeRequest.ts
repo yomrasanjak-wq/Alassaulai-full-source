@@ -38,7 +38,7 @@ function collapseRepeatedSequences(text: string): string {
 const destinationAliases: Array<{ pattern: RegExp; canonical: string }> = [
   { pattern: /(?:همسه\s*كوي|همسي\s*كوي|هامسي\s*كوي|hamsik[oö]y)/i, canonical: "Hamsiköy" },
   { pattern: /(?:طرابزون|ترابزون|trabzon)/i, canonical: "Trabzon" },
-  { pattern: /(?:يومرا|يمره|يومره|yomra)/i, canonical: "Yomra" },
+  { pattern: /(?:يومرا|يمره|يمرة|يومره|يومرة|yomra)/i, canonical: "Yomra" },
   { pattern: /(?:أوزنجول|اوزنجول|أوزونغول|uzung[oö]l)/i, canonical: "Uzungöl" },
   { pattern: /(?:سوميلا|سوميله|sumela|sümela)/i, canonical: "Sümela Monastery" },
   { pattern: /(?:حيدر\s*نبي|hidirnebi|hıdırnebi)/i, canonical: "Hıdırnebi" },
@@ -63,14 +63,15 @@ export function parseRouteRequest(text: string): RouteRequest | null {
   if (!normalized || !ROUTE_INTENT.test(normalized)) return null;
 
   const originMatch = normalized.match(ORIGIN_PATTERN);
-  const destinationMatches = [...normalized.matchAll(DESTINATION_PATTERN)];
+  const destinationMatches = Array.from(normalized.matchAll(DESTINATION_PATTERN));
   const lastDestinationMatch = destinationMatches.at(-1);
   const originRaw = originMatch?.[1]?.trim();
-  const inferredOriginPrefix = lastDestinationMatch?.index === undefined
+  const firstDestinationMatch = destinationMatches[0];
+  const inferredOriginPrefix = firstDestinationMatch?.index === undefined
     ? ""
-    : normalized.slice(0, lastDestinationMatch.index);
+    : normalized.slice(0, firstDestinationMatch.index);
   const inferredOrigin = destinationAliases
-    .map((alias) => ({ alias, match: [...inferredOriginPrefix.matchAll(new RegExp(alias.pattern.source, alias.pattern.flags))].at(-1) }))
+    .map((alias) => ({ alias, match: Array.from(inferredOriginPrefix.matchAll(new RegExp(alias.pattern.source, `${alias.pattern.flags}g`))).at(-1) }))
     .filter((entry) => entry.match?.index !== undefined)
     .sort((a, b) => (b.match?.index ?? -1) - (a.match?.index ?? -1))[0]?.alias.canonical;
   const origin = originRaw
@@ -80,12 +81,12 @@ export function parseRouteRequest(text: string): RouteRequest | null {
   const rawDestination = lastDestinationMatch?.[1]?.trim();
   if (!rawDestination) return null;
 
-  // Prefer a recognized place name over the trailing words of a long voice
-  // transcript, so the entire spoken sentence is never used as a map endpoint.
-  const destination = canonicalizeDestination(rawDestination);
-  const destinations = destination
-    .split(/\s+(?:أو|او|or|ya da|veya)\s+(?:(?:إلى|الى|to)\s+)?/i)
-    .map((value) => value.trim())
+  // Keep alternative destinations when the user asks for one of several places.
+  // Strip repeated destination prepositions before canonicalizing each option.
+  const destinations = rawDestination
+    .split(/\s+(?:أو|او|or|ya da|veya)\s+/i)
+    .map((value) => value.trim().replace(/^(?:(?:إلى|الى|to|towards)\s+)+/i, ""))
+    .map(canonicalizeDestination)
     .filter(Boolean)
     .slice(0, 3);
 
