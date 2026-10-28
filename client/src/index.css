@@ -2476,3 +2476,56 @@ img { display: block; max-width: 100%; }
     pointer-events: none !important;
   }
 }
+
+
+/* V18: definitive mobile map visibility fix — prevent stale overlays and collapsed wrappers from hiding the map. */
+@media (max-width: 820px) {
+  .hero-map-replacement,
+  .hero-map-replacement > .north-map-experience,
+  .hero-map-replacement .north-map-body,
+  .hero-map-replacement .north-map-canvas-wrap {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  .hero-map-replacement .north-map-body {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .hero-map-replacement .north-map-canvas-wrap {
+    position: relative !important;
+    width: 100% !important;
+    height: 420px !important;
+    min-height: 420px !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    background: #e7eee9 !important;
+    isolation: isolate !important;
+  }
+  .hero-map-replacement .north-map-canvas,
+  .hero-map-replacement .north-map-canvas > div:first-child,
+  .hero-map-replacement .north-map-canvas iframe,
+  .hero-map-replacement .north-map-canvas-wrap iframe,
+  .hero-map-replacement .map-fallback-live {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    min-height: 420px !important;
+    pointer-events: auto !important;
+  }
+  .hero-map-replacement .route-map-overlay,
+  .hero-map-replacement .north-map-loading-overlay,
+  .hero-map-replacement .map-transparent-overlay,
+  .hero-map-replacement .hero-map-overlay {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
