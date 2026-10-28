@@ -86,10 +86,16 @@ export function MapView({
       if (cancelled || !mapContainer.current) return;
       setMapError(false);
       leafletMap = L.map(mapContainer.current, { zoomControl: true, scrollWheelZoom: true }).setView([initialCenter.lat, initialCenter.lng], initialZoom);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      const streetLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
-      }).addTo(leafletMap);
+      });
+      const satelliteLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+      });
+      satelliteLayer.addTo(leafletMap);
+      L.control.layers({ "القمر الصناعي": satelliteLayer, "خريطة الشوارع": streetLayer }, undefined, { position: "topright", collapsed: false }).addTo(leafletMap);
       const adapter = {
         leafletMap,
         panTo: (point: {lat:number; lng:number}) => leafletMap.panTo([point.lat, point.lng]),
