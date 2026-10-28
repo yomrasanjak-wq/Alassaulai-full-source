@@ -2378,3 +2378,101 @@ img { display: block; max-width: 100%; }
     border-radius: 12px;
   }
 }
+
+
+/* Mobile map visibility v2: the hero's scenic gradient overlay must never sit on top of the interactive map. */
+.hero-map-replacement::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+.hero-map-replacement {
+  position: relative !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  isolation: isolate;
+}
+.hero-map-replacement > .north-map-experience {
+  display: block !important;
+  visibility: visible !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  opacity: 1 !important;
+  overflow: hidden !important;
+}
+@media (max-width: 820px) {
+  .hero-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .hero-map-replacement {
+    order: 2 !important;
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin-top: 8px !important;
+  }
+  .hero-map-replacement::before,
+  .hero-map-replacement::after {
+    content: none !important;
+    display: none !important;
+  }
+  .hero-map-replacement > .north-map-experience {
+    min-height: 0 !important;
+    height: auto !important;
+    border: 1px solid #d8cfbf !important;
+    background: #fbf7ed !important;
+    box-shadow: 0 8px 22px rgb(23 61 54 / 10%) !important;
+  }
+  .hero-map-replacement .north-map-body {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    height: auto !important;
+    gap: 10px !important;
+  }
+  .hero-map-replacement .north-map-canvas-wrap {
+    display: block !important;
+    position: relative !important;
+    order: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 360px !important;
+    height: 52vh !important;
+    max-height: 520px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    overflow: hidden !important;
+    background: #e7eee9 !important;
+  }
+  .hero-map-replacement .north-map-canvas,
+  .hero-map-replacement .north-map-canvas > div:first-child,
+  .hero-map-replacement .north-map-canvas-wrap iframe {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 360px !important;
+    height: 100% !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  .hero-map-replacement .north-map-destinations {
+    order: 1 !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #fffdf8 !important;
+  }
+  .hero-map-replacement .north-map-destination-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .hero-map-replacement .route-map-overlay:not(.route-map-error),
+  .hero-map-replacement .north-map-loading-overlay:not(.north-map-error) {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
