@@ -57,6 +57,20 @@ button { border: 0; }
 button:not(:disabled), a { cursor: pointer; }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #c8a96b; outline-offset: 3px; }
 img { display: block; max-width: 100%; }
+/* Leaflet tiles must keep their native 256px size; global responsive img rules create white gaps. */
+.leaflet-container img,
+.leaflet-container .leaflet-tile,
+.leaflet-container .leaflet-tile-container img {
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.leaflet-container .leaflet-tile {
+  width: 256px !important;
+  height: 256px !important;
+}
 
 .site-shell { min-height: 100vh; overflow: hidden; background: #f6f2e9; }
 .container { width: min(1180px, calc(100% - 40px)); margin-inline: auto; }
