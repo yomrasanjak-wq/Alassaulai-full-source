@@ -430,7 +430,7 @@ describe("LiveStatusView UI", () => {
 
 describe("Directions in chat", () => {
   it("extracts an Arabic destination and optional origin", () => {
-    expect(parseRouteRequest("أريد الطريق من طرابزون إلى يمرة")).toEqual({ origin: "طرابزون", destinations: ["يمرة"] });
+    expect(parseRouteRequest("أريد الطريق من طرابزون إلى يمرة")).toEqual({ origin: "Trabzon", destinations: ["Yomra"] });
     expect(parseRouteRequest("أريد الطريق إلى جدة أو مكة")).toEqual({ destinations: ["جدة", "مكة"] });
     expect(parseRouteRequest("أريد الطريق إلى بلدتي أو إلى يمرة")).toEqual({ destinations: ["بلدتي", "يمرة"] });
     expect(parseRouteRequest("ما أفضل مطعم في طرابزون؟")).toBeNull();
