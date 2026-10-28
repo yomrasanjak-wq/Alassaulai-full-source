@@ -1,87 +1,57 @@
-/// <reference types="@types/google.maps" />
-
 import { useEffect, useRef, useState } from "react";
-import { usePersistFn } from "@/hooks/usePersistFn";
 import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
-    google?: typeof google;
+    L?: any;
   }
 }
 
-const API_KEY = String(import.meta.env.VITE_FRONTEND_FORGE_API_KEY ?? "").trim();
-const configuredForgeBaseUrl = String(import.meta.env.VITE_FRONTEND_FORGE_API_URL ?? "").trim();
-const FORGE_BASE_URL = (configuredForgeBaseUrl || "https://forge.butterfly-effect.dev").replace(/\/+$/, "");
-const MAPS_PROXY_PATH = "/v1/maps/proxy/maps/api/js";
-let mapsScriptPromise: Promise<void> | null = null;
+let leafletPromise: Promise<any> | null = null;
 
-export function buildMapScriptUrl(apiKey: string | undefined, forgeBaseUrl: string): string {
-  const key = apiKey?.trim();
-  if (!key) throw new Error("Missing VITE_FRONTEND_FORGE_API_KEY");
-  const base = new URL(forgeBaseUrl.trim());
-  if (base.protocol !== "https:" && !(base.protocol === "http:" && base.hostname === "localhost")) {
-    throw new Error("Google Maps proxy URL must use HTTPS");
-  }
-  const scriptUrl = new URL(`${base.toString().replace(/\/+$/, "")}${MAPS_PROXY_PATH}`);
-  scriptUrl.searchParams.set("key", key);
-  scriptUrl.searchParams.set("v", "weekly");
-  scriptUrl.searchParams.set("libraries", "marker,places,geocoding,geometry,routes");
-  return scriptUrl.toString();
-}
-
-function getMapScriptUrl(): string {
-  return buildMapScriptUrl(API_KEY, FORGE_BASE_URL);
-}
-
-function loadMapScript(): Promise<void> {
-  if (typeof window !== "undefined" && window.google?.maps) return Promise.resolve();
-  if (mapsScriptPromise) return mapsScriptPromise;
-
-  mapsScriptPromise = new Promise<void>((resolve, reject) => {
-    let src: string;
-    try {
-      src = getMapScriptUrl();
-    } catch (error) {
-      mapsScriptPromise = null;
-      reject(error);
+function loadLeaflet(): Promise<any> {
+  if (typeof window !== "undefined" && window.L) return Promise.resolve(window.L);
+  if (leafletPromise) return leafletPromise;
+  leafletPromise = new Promise((resolve, reject) => {
+    const finish = () => {
+      if (window.L) resolve(window.L);
+      else { leafletPromise = null; reject(new Error("Leaflet loaded without its API")); }
+    };
+    if (!document.querySelector('link[data-alassaul-leaflet]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      link.dataset.alassaulLeaflet = "true";
+      document.head.appendChild(link);
+    }
+    const existing = document.querySelector('script[data-alassaul-leaflet]');
+    if (existing) {
+      existing.addEventListener("load", finish, { once: true });
+      existing.addEventListener("error", () => { leafletPromise = null; reject(new Error("Leaflet script could not load")); }, { once: true });
       return;
     }
-
     const script = document.createElement("script");
-    script.src = src;
+    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
     script.async = true;
-    script.crossOrigin = "anonymous";
-    script.onload = () => {
-      if (window.google?.maps) resolve();
-      else {
-        mapsScriptPromise = null;
-        reject(new Error("Google Maps loaded without its API namespace"));
-      }
-      script.remove();
-    };
-    script.onerror = () => {
-      mapsScriptPromise = null;
-      script.remove();
-      reject(new Error("Failed to load Google Maps through the configured proxy"));
-    };
+    script.dataset.alassaulLeaflet = "true";
+    script.onload = finish;
+    script.onerror = () => { leafletPromise = null; reject(new Error("Leaflet script could not load")); };
     document.head.appendChild(script);
   });
-
-  return mapsScriptPromise;
+  return leafletPromise;
 }
 
 interface MapViewProps {
   className?: string;
-  initialCenter?: google.maps.LatLngLiteral;
+  initialCenter?: { lat: number; lng: number };
   initialZoom?: number;
-  fallbackCenter?: google.maps.LatLngLiteral;
+  fallbackCenter?: { lat: number; lng: number };
   fallbackZoom?: number;
   fallbackLabel?: string;
   fallbackCompact?: boolean;
   fallbackEnabled?: boolean;
   fallbackUnavailableMessage?: string;
-  onMapReady?: (map: google.maps.Map) => void;
+  onMapReady?: (map: any) => void;
   onMapError?: (error: Error) => void;
 }
 
@@ -94,124 +64,79 @@ export function MapView({
   fallbackLabel = "الخريطة المختارة",
   fallbackCompact = false,
   fallbackEnabled = true,
-  fallbackUnavailableMessage = "لم أتمكن من تحديد إحداثيات هذه الوجهة دون خدمة خرائط Google. استخدم رابط الاتجاهات الرسمي أدناه.",
+  fallbackUnavailableMessage = "تعذر تحميل الخريطة الآن. يمكنك فتح الموقع في خريطة خارجية.",
   onMapReady,
   onMapError,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<google.maps.Map | null>(null);
-  const initialCenterRef = useRef(initialCenter);
-  const initialZoomRef = useRef(initialZoom);
-  initialCenterRef.current = initialCenter;
-  initialZoomRef.current = initialZoom;
+  const mapRef = useRef<any>(null);
+  const callbackRef = useRef(onMapReady);
+  const errorCallbackRef = useRef(onMapError);
+  callbackRef.current = onMapReady;
+  errorCallbackRef.current = onMapError;
   const [mapError, setMapError] = useState(false);
-  const [retryToken, setRetryToken] = useState(0);
-  const notifyMapReady = usePersistFn((readyMap: google.maps.Map) => onMapReady?.(readyMap));
-  const notifyMapError = usePersistFn((error: Error) => onMapError?.(error));
-  const fallbackPoint = fallbackCenter ?? initialCenter;
-  const fallbackSpan = fallbackZoom >= 12 ? 0.06 : fallbackZoom >= 10 ? 0.22 : 0.65;
-  const fallbackBox = [
-    fallbackPoint.lng - fallbackSpan,
-    fallbackPoint.lat - fallbackSpan,
-    fallbackPoint.lng + fallbackSpan,
-    fallbackPoint.lat + fallbackSpan,
-  ].join(",");
-  const fallbackMapUrl = `https://maps.google.com/maps?q=${fallbackPoint.lat}%2C${fallbackPoint.lng}&z=${fallbackZoom}&output=embed`;
-  const configurationMissing = !API_KEY;
+  const [retry, setRetry] = useState(0);
+  const center = fallbackCenter ?? initialCenter;
 
   useEffect(() => {
     let cancelled = false;
-
-    const initialize = async () => {
-      if (configurationMissing) {
-        const error = new Error("Google Maps frontend API key is not configured");
-        setMapError(true);
-        notifyMapError(error);
-        return;
+    let resizeObserver: ResizeObserver | undefined;
+    let leafletMap: any;
+    loadLeaflet().then((L) => {
+      if (cancelled || !mapContainer.current) return;
+      setMapError(false);
+      leafletMap = L.map(mapContainer.current, { zoomControl: true, scrollWheelZoom: true }).setView([initialCenter.lat, initialCenter.lng], initialZoom);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
+      }).addTo(leafletMap);
+      const adapter = {
+        leafletMap,
+        panTo: (point: {lat:number; lng:number}) => leafletMap.panTo([point.lat, point.lng]),
+        setCenter: (point: {lat:number; lng:number}) => leafletMap.setView([point.lat, point.lng], leafletMap.getZoom()),
+        setZoom: (zoom: number) => leafletMap.setZoom(zoom),
+        getZoom: () => leafletMap.getZoom(),
+        fitBounds: (points: Array<{lat:number; lng:number}> | any, padding: number | number[] = 48) => {
+          const bounds = Array.isArray(points) ? points.map((p:any) => [p.lat, p.lng]) : points;
+          leafletMap.fitBounds(bounds, { padding: [Number(padding) || 48, Number(padding) || 48], maxZoom: 12 });
+        },
+        invalidateSize: () => leafletMap.invalidateSize(),
+      };
+      mapRef.current = adapter;
+      callbackRef.current?.(adapter);
+      if (typeof ResizeObserver !== "undefined") {
+        resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => leafletMap?.invalidateSize()));
+        resizeObserver.observe(mapContainer.current);
       }
-
-      try {
-        setMapError(false);
-        await loadMapScript();
-        if (cancelled) return;
-        if (!mapContainer.current || !window.google?.maps) {
-          throw new Error("Map container or Google Maps API is unavailable");
-        }
-        const instance = new window.google.maps.Map(mapContainer.current, {
-          zoom: initialZoomRef.current,
-          center: initialCenterRef.current,
-          mapTypeControl: true,
-          fullscreenControl: true,
-          zoomControl: true,
-          streetViewControl: true,
-          mapId: "DEMO_MAP_ID",
-        });
-        map.current = instance;
-        notifyMapReady(instance);
-      } catch (cause) {
-        if (cancelled) return;
-        const error = cause instanceof Error ? cause : new Error("Google Maps could not be initialized");
-        console.warn("Interactive map could not be initialized; showing OpenStreetMap fallback", error.message);
-        setMapError(true);
-        notifyMapError(error);
-      }
-    };
-
-    void initialize();
+      requestAnimationFrame(() => leafletMap.invalidateSize());
+    }).catch((cause) => {
+      if (cancelled) return;
+      const error = cause instanceof Error ? cause : new Error("تعذر تهيئة الخريطة");
+      setMapError(true);
+      errorCallbackRef.current?.(error);
+    });
     return () => {
       cancelled = true;
-      const current = map.current;
-      if (current && window.google?.maps?.event) window.google.maps.event.clearInstanceListeners(current);
-      map.current = null;
+      resizeObserver?.disconnect();
+      if (leafletMap) leafletMap.remove();
+      mapRef.current = null;
     };
-  }, [configurationMissing, notifyMapError, notifyMapReady, retryToken]);
+  }, [retry]);
 
   useEffect(() => {
-    if (!map.current || mapError) return;
-    map.current.setCenter(initialCenter);
-    map.current.setZoom(initialZoom);
-  }, [initialCenter.lat, initialCenter.lng, initialZoom, mapError]);
-
-  // Recalculate Google Maps tiles whenever the map container changes size,
-  // especially when the mobile full-screen dialog opens or closes.
-  useEffect(() => {
-    const container = mapContainer.current;
-    if (!container || mapError || typeof ResizeObserver === "undefined") return;
-    let frame = 0;
-    const observer = new ResizeObserver(() => {
-      if (frame) cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const currentMap = map.current;
-        if (!currentMap || !window.google?.maps) return;
-        window.google.maps.event.trigger(currentMap, "resize");
-        currentMap.setCenter(initialCenterRef.current);
-      });
-    });
-    observer.observe(container);
-    return () => {
-      observer.disconnect();
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [mapError]);
+    const map = mapRef.current;
+    if (map) map.leafletMap.setView([initialCenter.lat, initialCenter.lng], initialZoom);
+  }, [initialCenter.lat, initialCenter.lng, initialZoom]);
 
   return (
-    <div className={cn("relative h-[500px] w-full", className)}>
-      <div ref={mapContainer} className={cn("h-full w-full", mapError && "hidden")} />
+    <div className={cn("relative h-[500px] w-full overflow-hidden rounded-xl", className)}>
+      <div ref={mapContainer} className={cn("h-full min-h-[320px] w-full bg-slate-100", mapError && "hidden")} />
       {mapError && (
-        <div className={cn("map-fallback map-fallback-live", fallbackCompact && "map-fallback-compact")} role="region" aria-label={`خريطة بديلة: ${fallbackLabel}`}>
-          {fallbackEnabled && !fallbackCompact && (
-            <div className="map-fallback-header">
-              <div><span className="map-fallback-kicker">ALASSAUL · MAP</span><strong>{fallbackLabel}</strong></div>
-              <a href={`https://www.google.com/maps/search/?api=1&query=${fallbackPoint.lat}%2C${fallbackPoint.lng}`} target="_blank" rel="noreferrer">فتح في خرائط Google ↗</a>
-            </div>
-          )}
-          {fallbackEnabled
-            ? <iframe title={`خريطة بديلة لـ ${fallbackLabel}`} src={fallbackMapUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
-            : <div className="map-fallback-unavailable" role="status">{fallbackUnavailableMessage}</div>}
-          {fallbackEnabled && !fallbackCompact && <div className="map-fallback-footer">{configurationMissing ? "خريطة Google غير مهيأة: يلزم ضبط VITE_FRONTEND_FORGE_API_KEY في إعدادات الواجهة وإعادة البناء. هذه خريطة بديلة تعمل دون مفتاح API." : "تعذّر تحميل Google Maps؛ هذه خريطة بديلة ويمكن فتح الاتجاهات الرسمية خارج المنصة."}</div>}
-          {fallbackEnabled && !fallbackCompact && !configurationMissing && (
-            <button type="button" onClick={() => { mapsScriptPromise = null; setRetryToken((value) => value + 1); }}>إعادة محاولة خرائط Google</button>
-          )}
+        <div className="flex min-h-[320px] h-full w-full flex-col items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-5 text-center text-slate-700" role="region" aria-label={`خريطة بديلة: ${fallbackLabel}`}>
+          <strong>تعذر تحميل الخريطة التفاعلية</strong>
+          <p className="text-sm">{fallbackUnavailableMessage}</p>
+          {fallbackEnabled && <a className="rounded-lg bg-emerald-800 px-4 py-2 text-white" href={`https://www.openstreetmap.org/?mlat=${center.lat}&mlon=${center.lng}#map=${fallbackZoom}/${center.lat}/${center.lng}`} target="_blank" rel="noreferrer">فتح الخريطة</a>}
+          <button type="button" className="rounded-lg border px-4 py-2" onClick={() => { leafletPromise = null; setRetry((v) => v + 1); }}>إعادة المحاولة</button>
         </div>
       )}
     </div>
