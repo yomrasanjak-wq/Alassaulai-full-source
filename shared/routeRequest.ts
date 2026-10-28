@@ -66,9 +66,10 @@ export function parseRouteRequest(text: string): RouteRequest | null {
   const destinationMatches = [...normalized.matchAll(DESTINATION_PATTERN)];
   const lastDestinationMatch = destinationMatches.at(-1);
   const originRaw = originMatch?.[1]?.trim();
-  const inferredOriginPrefix = lastDestinationMatch?.index === undefined
+  const firstDestinationMatch = destinationMatches[0];
+  const inferredOriginPrefix = firstDestinationMatch?.index === undefined
     ? ""
-    : normalized.slice(0, lastDestinationMatch.index);
+    : normalized.slice(0, firstDestinationMatch.index);
   const inferredOrigin = destinationAliases
     .map((alias) => ({ alias, match: [...inferredOriginPrefix.matchAll(new RegExp(alias.pattern.source, alias.pattern.flags))].at(-1) }))
     .filter((entry) => entry.match?.index !== undefined)
