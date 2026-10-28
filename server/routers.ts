@@ -8,6 +8,7 @@ import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGrounding
 import { synthesizeSpeech } from "./_core/textToSpeech";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 const chatMessageSchema = z.object({
@@ -446,7 +447,13 @@ export const appRouter = router({
           imageUrl = stored.url;
         }
         const memory = await createGuestMemory({ imageUrl, caption: input.caption });
-        return { success: true as const, id: memory?.id ?? null, imageUrl: imageUrl ?? null };
+        if (!memory?.id) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "تعذر حفظ الذكرى في قاعدة البيانات. لم يتم حفظها، حاول مرة أخرى لاحقاً.",
+          });
+        }
+        return { success: true as const, id: memory.id, imageUrl: imageUrl ?? null };
       }),
     // Visitor memories are public to read, but deletion is an administrative action.
     delete: adminProcedure

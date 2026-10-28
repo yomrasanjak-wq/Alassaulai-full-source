@@ -1332,7 +1332,8 @@ export default function Home() {
     try {
       const imageDataBase64 = visitorFile ? await readFileAsBase64(visitorFile) : undefined;
       const result = await guestbookMutation.mutateAsync({ imageDataBase64, imageMimeType: visitorFile?.type, caption: visitorCaption });
-      notify("تم حفظ الذكرى", result.id ? `تم حفظ الذكرى رقم ${result.id}.` : "تم حفظ الذكرى.", "success");
+      if (!result.success || !result.id) throw new Error("Guest memory was not persisted");
+      notify("تم حفظ الذكرى", `تم حفظ الذكرى رقم ${result.id}.`, "success");
       await guestbookQuery.refetch();
       setVisitorCaption("");
       setVisitorFile(null);
