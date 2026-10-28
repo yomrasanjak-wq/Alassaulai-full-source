@@ -116,7 +116,7 @@ export function MapView({
     fallbackPoint.lng + fallbackSpan,
     fallbackPoint.lat + fallbackSpan,
   ].join(",");
-  const fallbackMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(fallbackBox)}&layer=mapnik&marker=${fallbackPoint.lat}%2C${fallbackPoint.lng}`;
+  const fallbackMapUrl = `https://maps.google.com/maps?q=${fallbackPoint.lat}%2C${fallbackPoint.lng}&z=${fallbackZoom}&output=embed`;
   const configurationMissing = !API_KEY;
 
   useEffect(() => {
@@ -206,9 +206,9 @@ export function MapView({
             </div>
           )}
           {fallbackEnabled
-            ? <iframe title={`خريطة بديلة لـ ${fallbackLabel}`} src={fallbackMapUrl} loading="lazy" referrerPolicy="no-referrer" />
+            ? <iframe title={`خريطة بديلة لـ ${fallbackLabel}`} src={fallbackMapUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />
             : <div className="map-fallback-unavailable" role="status">{fallbackUnavailableMessage}</div>}
-          {fallbackEnabled && !fallbackCompact && <div className="map-fallback-footer">{configurationMissing ? "خريطة Google غير مهيأة: يلزم ضبط VITE_FRONTEND_FORGE_API_KEY في إعدادات الواجهة وإعادة البناء. هذه خريطة OpenStreetMap بديلة." : "تعذّر تحميل Google Maps؛ هذه خريطة OpenStreetMap بديلة ويمكن فتح الاتجاهات الرسمية خارج المنصة."}</div>}
+          {fallbackEnabled && !fallbackCompact && <div className="map-fallback-footer">{configurationMissing ? "خريطة Google غير مهيأة: يلزم ضبط VITE_FRONTEND_FORGE_API_KEY في إعدادات الواجهة وإعادة البناء. هذه خريطة بديلة تعمل دون مفتاح API." : "تعذّر تحميل Google Maps؛ هذه خريطة بديلة ويمكن فتح الاتجاهات الرسمية خارج المنصة."}</div>}
           {fallbackEnabled && !fallbackCompact && !configurationMissing && (
             <button type="button" onClick={() => { mapsScriptPromise = null; setRetryToken((value) => value + 1); }}>إعادة محاولة خرائط Google</button>
           )}
