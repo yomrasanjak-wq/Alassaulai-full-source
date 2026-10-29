@@ -635,7 +635,7 @@ export const appRouter = router({
         // Keep simple identity and supported live-data questions available even
         // when the external language-model provider is temporarily unavailable.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
-          if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|who are you|what is alassaul)/i.test(latestText)) {
+          if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|صاحب.{0,18}(?:المنصة|الموقع|العسول)|مؤسس.{0,18}(?:المنصة|الموقع|العسول)|مالك.{0,18}(?:المنصة|الموقع|العسول)|who are you|what is alassaul)/i.test(latestText)) {
             // Answer common platform identity questions without depending on the model provider.
             if (/(?:صاحب|مؤسس|مالك).{0,18}(?:المنصة|الموقع|العسول|alassaul)|(?:من هو|مين هو).{0,18}(?:صاحب|مؤسس|مالك)/i.test(latestText)) {
               return { text: "صاحب ومؤسس مشروع ALASSAUL-AI هو يوسف عسول، وهو المشروع الذي يطوّره ليكون دليلاً ومساعداً للمعرفة والخدمات والرحلات، مع تركيز خاص على شمال تركيا." };
