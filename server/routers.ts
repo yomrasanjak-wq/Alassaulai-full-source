@@ -251,6 +251,41 @@ async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", messag
 }
 
 
+function getContextualFallback(
+  messages: Array<{ role: "user" | "assistant"; content: string }>,
+  language: "AR" | "TR" | "EN",
+): string | undefined {
+  const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
+  const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
+    && /(?:طرابزون|ترابزون|trabzon)/i.test(recentUserText);
+  if (asksItinerary && language === "AR") {
+    return "تعذّر تشغيل المساعد الذكي مؤقتاً، لكن إليك برنامجاً مبدئياً ليوم في طرابزون:\n\n1. **الصباح:** قصر أتاتورك وحدائقه، ثم جولة قصيرة في ميدان طرابزون.\n2. **وقت الغداء:** اختر مطعماً محلياً في وسط المدينة، وتحقق من التقييمات وساعات العمل قبل التوجه إليه.\n3. **بعد الظهر:** ممشى غانيتا على البحر، أو أكواريوم طرابزون إذا كانت الرحلة عائلية.\n4. **قبل الغروب:** بو زتبه للإطلالة على المدينة والبحر.\n\nهذا اقتراح عام وليس تحققاً من الطقس أو أوقات الفتح اليوم. إذا أخبرتني بوجود أطفال أو سيارة وعدد أيام الرحلة، أرتّب لك نسخة أنسب عند عودة المساعد.";
+  }
+
+  const asksRestaurant = /(?:مطعم|مطاعم|فطور|إفطار|فطور|وجبة|breakfast|restaurant|restaurants|food near me)/i.test(latest);
+  if (asksRestaurant) {
+    const area = /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i.test(recentUserText) ? "ينبع الصناعية"
+      : /ينبع|yanbu/i.test(recentUserText) ? "ينبع"
+      : /طرابزون|ترابزون|trabzon/i.test(recentUserText) ? "طرابزون"
+      : /يومرا|يومره|yomra/i.test(recentUserText) ? "يومرا"
+      : /جدة|جده|jeddah/i.test(recentUserText) ? "جدة"
+      : /حائل|حايل|hail/i.test(recentUserText) ? "حائل"
+      : undefined;
+    const query = area ? `مطاعم فطور في ${area}` : "مطاعم فطور قريبة مني";
+    const url = new URL("https://www.google.com/maps/search/");
+    url.searchParams.set("api", "1");
+    url.searchParams.set("query", query);
+    return language === "AR"
+      ? `تعذّر إكمال البحث داخل المساعد مؤقتاً، ولا أريد اختراع أسماء مطاعم أو تقييماتها. يمكنك فتح نتائج الخرائط مباشرة: [${query}](${url.toString()})${area ? "" : "\n\nإذا أردت نتائج أدق، أرسل اسم المدينة أو الحي."}`
+      : language === "TR"
+        ? `Arama şu anda tamamlanamadı; restoran adı veya puanı uydurmayacağım. [Haritada ara](${url.toString()})`
+        : `The assistant search is temporarily unavailable, so I won't invent restaurant names or ratings. [Search Google Maps](${url.toString()})`;
+  }
+  return undefined;
+}
+
+
 function decodeNewsXml(value: string) {
   return value
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -692,7 +727,10 @@ ${newsContext}`);
             errorCode: classifyModelProviderFailure(primaryError),
             ...safeProviderDiagnostic(primaryError),
           });
-          if (!backupModel) return fail(primaryError);
+          if (!backupModel) {
+            const contextualFallback = getContextualFallback(input.messages, input.language);
+            return contextualFallback ? { text: contextualFallback } : fail(primaryError);
+          }
           try {
             response = await invokeLLM({ ...llmRequest, model: backupModel, reasoning: undefined });
             usedBackup = true;
@@ -703,7 +741,8 @@ ${newsContext}`);
               errorCode: classifyModelProviderFailure(backupError),
               ...safeProviderDiagnostic(backupError),
             });
-            return fail(backupError);
+            const contextualFallback = getContextualFallback(input.messages, input.language);
+            return contextualFallback ? { text: contextualFallback } : fail(backupError);
           }
         }
 
