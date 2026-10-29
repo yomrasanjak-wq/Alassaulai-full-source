@@ -1604,9 +1604,7 @@ export default function Home() {
               {residentGroupOpen.help && <div className="resident-services-grid">
             <a className="resident-service-card resident-service-yimer" href="https://en.goc.gov.tr/communication-center-for-foreigners" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Phone size={22} /></span><span className="resident-service-copy"><strong>مركز تواصل الأجانب YİMER 157</strong><small>استفسارات الإقامة وشؤون الأجانب · اتصل 157 داخل تركيا</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card resident-service-emergency" href="tel:112" aria-label="اتصال بالطوارئ التركية 112"><span className="resident-service-icon"><LifeBuoy size={22} /></span><span className="resident-service-copy"><strong>الطوارئ في تركيا — 112</strong><small>للحالات الطارئة فقط · اضغط للاتصال من الهاتف</small></span><Phone size={16} /></a>
-          </div>
-
-              </div>}
+          </div>}
             </div>
           <div className="resident-accordion-group resident-local-help-accordion">
             <button type="button" className="resident-accordion-trigger" aria-expanded={residentLocalHelpOpen} onClick={() => setResidentLocalHelpOpen((open) => !open)}>
