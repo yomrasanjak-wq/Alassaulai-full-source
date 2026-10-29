@@ -708,6 +708,7 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState(cities[0]);
   const [galleryFilter, setGalleryFilter] = useState<(typeof GALLERY_FILTERS)[number]>("الكل");
   const [photoBookOpen, setPhotoBookOpen] = useState(false);
+  const [residentServicesOpen, setResidentServicesOpen] = useState(false);
   const [photoBookPage, setPhotoBookPage] = useState(0);
   const [activeSection, setActiveSection] = useState<"cities" | "live" | "map" | "partners" | "entertainment">("cities");
   const [modal, setModal] = useState<"login" | "live" | "camera" | "city" | "place" | "visitors" | "entertainment" | "control" | "map" | null>(null);
@@ -1546,6 +1547,12 @@ export default function Home() {
 
       <section id="resident-services" className="resident-services-section section-pad">
         <div className="container">
+          <button type="button" className="resident-services-launcher" onClick={() => setResidentServicesOpen((open) => !open)} aria-expanded={residentServicesOpen} aria-controls="resident-services-content">
+            <span className="resident-services-launcher-icon"><UsersRound size={26} /></span>
+            <span className="resident-services-launcher-copy"><strong>خدمات المقيمين</strong><small>الإقامة والمعاملات والخدمات اليومية في يومرا وطرابزون</small><em>{residentServicesOpen ? "إخفاء قائمة الخدمات" : "اضغط لفتح قائمة الخدمات"}</em></span>
+            <span className={`resident-services-launcher-chevron ${residentServicesOpen ? "is-open" : ""}`}><ChevronDown size={22} /></span>
+          </button>
+          {residentServicesOpen && <div id="resident-services-content" className="resident-services-content">
           <SectionHeading eyebrow="ALASSAUL RESIDENT DESK" title="خدمات المقيمين في تركيا" desc="مداخل مباشرة إلى بوابات رسمية تساعدك في الإقامة والمعاملات والبلدية والخدمات اليومية. افتح المصدر الرسمي وتحقق من المتطلبات قبل تقديم أي طلب." />
           <div className="resident-services-grid">
             <h3 className="resident-service-group-title" style={{ gridColumn: "1 / -1" }}>المعاملات الرسمية والإقامة</h3>
@@ -1631,6 +1638,7 @@ export default function Home() {
             <p className="resident-phrase-status" aria-live="polite">{copiedTurkishPhrase && copiedTurkishPhrase !== "تعذر النسخ — اضغط مطولًا على العبارة" ? "تم نسخ العبارة التركية، يمكنك لصقها في الرسائل." : copiedTurkishPhrase}</p>
           </div>
           <p className="resident-services-note"><ShieldCheck size={15} /> هذه روابط للبوابات الرسمية وليست استشارة قانونية أو ضمانًا لقبول الطلب. لا تشارك كلمة المرور أو رمز التحقق مع أي شخص، وتأكد من عنوان الموقع قبل إدخال بياناتك. رقم 112 للطوارئ فقط، وللاستفسارات العامة عن الإقامة وشؤون الأجانب استخدم YİMER 157.</p>
+          </div>}
         </div>
       </section>
 
