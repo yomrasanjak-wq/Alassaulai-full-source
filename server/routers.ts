@@ -227,12 +227,16 @@ async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", messag
       return { title, source, dateText, url: /^https?:\/\//i.test(url) ? url : "" };
     }).filter((item) => item.title.length > 5);
     if (!items.length) throw new Error("No Saudi league schedule articles returned");
-    const heading = language === "AR" ? "أحدث نتائج البحث عن جدول دوري روشن" : language === "TR" ? "Suudi Pro Lig fikstürü için güncel arama sonuçları" : "Recent Saudi Pro League schedule search results";
-    const note = language === "AR"
-      ? "هذه روابط تقارير حديثة وليست جدول مباريات موحداً مؤكداً. افتح المصدر للتحقق من موعد المباراة قبل الاعتماد عليه."
+    const heading = language === "AR"
+      ? scheduleQuestion ? "أحدث نتائج البحث عن جدول دوري روشن السعودي" : "أحدث أخبار دوري روشن السعودي"
       : language === "TR"
-        ? "Bunlar güncel haber bağlantılarıdır, doğrulanmış birleşik fikstür değildir. Maç saatini kaynaktan kontrol edin."
-        : "These are recent reports, not a verified consolidated fixture list. Open the source to confirm match times.";
+        ? scheduleQuestion ? "Suudi Pro Lig fikstürü için güncel arama sonuçları" : "Suudi Pro Lig hakkında güncel haberler"
+        : scheduleQuestion ? "Recent Saudi Pro League schedule search results" : "Latest Saudi Pro League news";
+    const note = language === "AR"
+      ? scheduleQuestion ? "هذه روابط تقارير حديثة وليست جدول مباريات موحداً مؤكداً. افتح المصدر للتحقق من موعد المباراة قبل الاعتماد عليه." : "هذه عناوين بحث إخبارية وليست نتائج مباريات مؤكدة. افتح المصدر للتحقق من التفاصيل والتوقيت."
+      : language === "TR"
+        ? "Bunlar güncel haber bağlantılarıdır; maç saatlerini veya sonuçları kaynaktan doğrulayın."
+        : "These are recent news links, not verified live scores. Open the publisher to confirm details and match times.";
     return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${note}`;
   } catch (error) {
     console.warn("[ALASSAUL sports] Saudi league schedule feed unavailable", safeProviderDiagnostic(error));
