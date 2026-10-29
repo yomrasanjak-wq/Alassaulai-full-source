@@ -1522,7 +1522,7 @@ export default function Home() {
           <SectionHeading eyebrow="ALASSAUL PHOTO JOURNEY" title="شاهد جمال الشمال التركي" desc="دفتر صور واحد أنيق؛ افتحه لتقليب صفحات البحر والجبال والبحيرات والقرى، ثم انتقل مباشرة إلى خريطة الوجهة." />
           <div className="photo-book-cover-wrap">
             <button type="button" className="photo-book-cover" onClick={() => { setPhotoBookPage(0); setPhotoBookOpen(true); }} aria-haspopup="dialog" aria-label="افتح دفتر صور الشمال التركي">
-              <img src="/images/modern-uzungol.webp" alt="غلاف دفتر صور الشمال التركي — أوزونغول" loading="lazy" />
+              <img src="/images/black-sea-3d-cover.svg" alt="غلاف فني ثلاثي الأبعاد الطابع للشمال التركي والبحر الأسود" loading="lazy" />
               <span className="photo-book-cover-shade" />
               <span className="photo-book-cover-mark">ALASSAUL · TRAVEL JOURNAL</span>
               <span className="photo-book-cover-title">شاهد جمال<br />الشمال التركي</span>
