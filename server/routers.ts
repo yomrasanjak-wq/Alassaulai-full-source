@@ -181,6 +181,60 @@ function isSaudiLeagueScheduleQuestion(message: string) {
   return /(?:روشن|الدوري السعودي|دوري روشن|السوبر السعودي)/i.test(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
 }
 
+/** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
+async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN") {
+  const query = language === "AR"
+    ? "دوري روشن السعودي جدول مباريات الجولة القادمة مواعيد"
+    : language === "TR"
+      ? "Saudi Pro League fixtures schedule upcoming matches"
+      : "Saudi Pro League fixtures schedule upcoming matches";
+  const params = new URLSearchParams({
+    q: query,
+    hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US",
+    gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US",
+    ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en",
+  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4500);
+  try {
+    const response = await fetch(`https://news.google.com/rss/search?${params.toString()}`, {
+      headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (sports schedule lookup)" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Saudi league RSS returned ${response.status}`);
+    const xml = await response.text();
+    const items = (xml.match(/<item\\b[^>]*>[\\s\\S]*?<\\/item>/gi) ?? []).slice(0, 5).map((itemMarkup) => {
+      const body = itemMarkup.replace(/^<item\\b[^>]*>/i, "").replace(/<\\/item>$/i, "");
+      const title = decodeNewsXml(body.match(/<title\\b[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1] ?? "");
+      const source = decodeNewsXml(body.match(/<source\\b[^>]*>([\\s\\S]*?)<\\/source>/i)?.[1] ?? "Google News");
+      const url = decodeNewsXml(body.match(/<link\\b[^>]*>([\\s\\S]*?)<\\/link>/i)?.[1] ?? "");
+      const published = decodeNewsXml(body.match(/<pubDate\\b[^>]*>([\\s\\S]*?)<\\/pubDate>/i)?.[1] ?? "");
+      const date = published ? new Date(published) : null;
+      const dateText = date && !Number.isNaN(date.getTime())
+        ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeZone: "Asia/Riyadh" }).format(date)
+        : "";
+      return { title, source, dateText, url: /^https?:\\/\\//i.test(url) ? url : "" };
+    }).filter((item) => item.title.length > 5);
+    if (!items.length) throw new Error("No Saudi league schedule articles returned");
+    const heading = language === "AR" ? "أحدث نتائج البحث عن جدول دوري روشن" : language === "TR" ? "Suudi Pro Lig fikstürü için güncel arama sonuçları" : "Recent Saudi Pro League schedule search results";
+    const note = language === "AR"
+      ? "هذه روابط تقارير حديثة وليست جدول مباريات موحداً مؤكداً. افتح المصدر للتحقق من موعد المباراة قبل الاعتماد عليه."
+      : language === "TR"
+        ? "Bunlar güncel haber bağlantılarıdır, doğrulanmış birleşik fikstür değildir. Maç saatini kaynaktan kontrol edin."
+        : "These are recent reports, not a verified consolidated fixture list. Open the source to confirm match times.";
+    return `${heading}\\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\\n   ${item.url}` : ""}`).join("\\n")}\\n\\n${note}`;
+  } catch (error) {
+    console.warn("[ALASSAUL sports] Saudi league schedule feed unavailable", safeProviderDiagnostic(error));
+    return language === "AR"
+      ? "تعذر جلب نتائج حديثة عن جدول دوري روشن الآن. لن أخمّن المواعيد؛ جرّب مجدداً بعد قليل أو افتح الموقع الرسمي للدوري."
+      : language === "TR"
+        ? "Suudi Pro Lig fikstürü için güncel sonuçlar alınamadı. Maç saatlerini tahmin etmeyeceğim; daha sonra tekrar deneyin."
+        : "Recent Saudi Pro League schedule results are unavailable. I won't guess match times; please try again later.";
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 
 function decodeNewsXml(value: string) {
   return value
@@ -535,7 +589,8 @@ ${searchContext}`);
 ${newsContext}`);
             }
             if (!grounded && isSaudiLeagueScheduleQuestion(latestText)) {
-              liveContext.push("لم تتوفر نتيجة موثقة من مصدر حي لمواعيد دوري روشن لهذا السؤال. لا تعرض جدولاً أو نتيجة حالية من الذاكرة؛ اذكر عدم التحقق ووجّه المستخدم للمصدر الرسمي عند الحاجة.");
+              const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language);
+              if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\\n${scheduleContext}`);
             }
           } else if (isWorldNewsQuestion(latestText)) {
             const newsContext = await getWorldNewsAnswer(latestText, input.language);
