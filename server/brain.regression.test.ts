@@ -143,4 +143,45 @@ describe("real-brain regression scenarios", () => {
     }
   });
 
+
+  it.each([
+    ["ما الطقس اليوم في حائل؟", "حائل"],
+    ["أبغى الطقس في الطائف", "الطائف"],
+    ["ما الجو في ينبع الصناعية؟", "ينبع الصناعية"],
+  ])("returns live weather directly for Saudi city question %s", async (question, city) => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ current: { time: "2026-10-29T13:00", temperature_2m: 28, apparent_temperature: 30, weather_code: 1, wind_speed_10m: 9 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    try {
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: question }] });
+      expect(result.text).toContain(city);
+      expect(result.text).toContain("28° مئوية");
+      expect(result.text).toContain("Open-Meteo");
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("answers Roshn League news using Saudi-league search results, never Turkish league guesses", async () => {
+    const rss = `<rss><channel><item><title>أخبار دوري روشن السعودي اليوم</title><source>وكالة اختبار</source><link>https://example.com/saudi-league</link><pubDate>${new Date(Date.now() - 60 * 60 * 1000).toUTCString()}</pubDate></item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      expect(url).toContain("دوري+روشن+السعودي");
+      return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
+    });
+    try {
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "أريد أخبار الدوري روشن" }] });
+      expect(result.text).toContain("أحدث أخبار دوري روشن السعودي");
+      expect(result.text).toContain("أخبار دوري روشن السعودي اليوم");
+      expect(result.text).not.toMatch(/الدوري التركي|غلطة سراي|فنربخشة/i);
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
 });
