@@ -339,6 +339,12 @@ img { display: block; max-width: 100%; }
 .chat-compose > button[aria-label="voice"]:disabled { opacity: .42; cursor: not-allowed; box-shadow: none; }
 @keyframes voice-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(181, 91, 79, .16), 0 3px 0 rgba(120, 48, 42, .2); } 50% { box-shadow: 0 0 0 8px rgba(181, 91, 79, .05), 0 3px 0 rgba(120, 48, 42, .2); } }
 @media (max-width: 640px) {
+  .resident-services-launcher { min-height: 88px; gap: 11px; padding: 15px 13px; }
+  .resident-services-launcher-icon { width: 44px; height: 44px; flex-basis: 44px; border-radius: 12px; }
+  .resident-services-launcher-copy strong { font-size: 16px; }
+  .resident-services-launcher-copy small { font-size: 11px; }
+  .resident-services-launcher-chevron { width: 32px; height: 32px; flex-basis: 32px; }
+
   .chat-compose > button[aria-label="voice"] { width: 58px; min-width: 58px; height: 50px; border-radius: 14px; }
   .chat-compose > button[aria-label="voice"] svg { width: 26px; height: 26px; }
 }
@@ -1805,6 +1811,17 @@ img { display: block; max-width: 100%; }
 
 /* ALASSAUL V24 — resident services portal */
 .resident-services-section { background: #edf2ec; border-block: 1px solid #dce5da; }
+.resident-services-launcher { width: 100%; min-height: 104px; display: flex; align-items: center; gap: 16px; padding: 20px 22px; color: #173d36; background: linear-gradient(120deg, #fffdf8, #e5eee6); border: 1px solid #cbdacd; border-inline-start: 5px solid #b69a64; box-shadow: 0 8px 22px rgb(23 61 54 / 7%); text-align: start; cursor: pointer; }
+.resident-services-launcher:hover { border-color: #a7c0b1; box-shadow: 0 10px 26px rgb(23 61 54 / 10%); }
+.resident-services-launcher-icon { width: 52px; height: 52px; flex: 0 0 52px; display: grid; place-items: center; color: #fffdf8; background: #24574b; border-radius: 15px; }
+.resident-services-launcher-copy { flex: 1; min-width: 0; display: grid; gap: 5px; }
+.resident-services-launcher-copy strong { font-size: 18px; line-height: 1.6; }
+.resident-services-launcher-copy small { color: #65796d; font-size: 12px; line-height: 1.7; }
+.resident-services-launcher-copy em { color: #9a773e; font-size: 11px; font-style: normal; font-weight: 700; }
+.resident-services-launcher-chevron { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; color: #24574b; background: #e9efe6; border-radius: 50%; transition: transform .2s ease; }
+.resident-services-launcher-chevron.is-open { transform: rotate(180deg); }
+.resident-services-content { padding-top: 28px; animation: resident-services-reveal .2s ease-out; }
+@keyframes resident-services-reveal { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 .resident-services-section > .container > .section-heading { margin-bottom: 25px; }
 .resident-services-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
 .resident-service-group-title { grid-column: 1 / -1; margin: 18px 0 2px; padding: 0 0 10px; color: #24574b; border-bottom: 1px solid #d5e0d4; font-size: 15px; font-weight: 700; line-height: 1.7; text-align: start; }
