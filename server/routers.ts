@@ -258,7 +258,7 @@ function getContextualFallback(
   const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
   const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
-    && /(?:طرابزون|ترابزون|trabzon)/i.test(recentUserText);
+    && /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
   if (asksItinerary && language === "AR") {
     return "تعذّر تشغيل المساعد الذكي مؤقتاً، لكن إليك برنامجاً مبدئياً ليوم في طرابزون:\n\n1. **الصباح:** قصر أتاتورك وحدائقه، ثم جولة قصيرة في ميدان طرابزون.\n2. **وقت الغداء:** اختر مطعماً محلياً في وسط المدينة، وتحقق من التقييمات وساعات العمل قبل التوجه إليه.\n3. **بعد الظهر:** ممشى غانيتا على البحر، أو أكواريوم طرابزون إذا كانت الرحلة عائلية.\n4. **قبل الغروب:** بو زتبه للإطلالة على المدينة والبحر.\n\nهذا اقتراح عام وليس تحققاً من الطقس أو أوقات الفتح اليوم. إذا أخبرتني بوجود أطفال أو سيارة وعدد أيام الرحلة، أرتّب لك نسخة أنسب عند عودة المساعد.";
   }
