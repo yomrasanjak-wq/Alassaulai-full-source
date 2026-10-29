@@ -118,6 +118,7 @@ const WEATHER_CITIES = [
   { names: /ريزا|ريزه|rize/i, name: "ريزا", latitude: 41.0201, longitude: 40.5234, timezone: "Europe/Istanbul" },
   { names: /إسطنبول|اسطنبول|istanbul/i, name: "إسطنبول", latitude: 41.0082, longitude: 28.9784, timezone: "Europe/Istanbul" },
   { names: /آيدر|ايدر|ayder/i, name: "آيدر", latitude: 40.9527, longitude: 41.0969, timezone: "Europe/Istanbul" },
+  { names: /المدينة المنورة|المدينه المنوره|المدينة|المدينه|madinah|medina/i, name: "المدينة المنورة", latitude: 24.5247, longitude: 39.5692, timezone: "Asia/Riyadh" },
   { names: /جدة|جده|jeddah/i, name: "جدة", latitude: 21.5433, longitude: 39.1728, timezone: "Asia/Riyadh" },
 ] as const;
 
@@ -543,6 +544,24 @@ export const appRouter = router({
               mapUrl.search = new URLSearchParams({ api: "1", origin, destination, travelmode: "driving" }).toString();
               return { text: `تفضل، هذا مسار القيادة من **${origin}** إلى **${destination}**:\n\n[افتح الطريق في خرائط Google](${mapUrl.toString()})\n\nقد تختلف المسافة ومدة الرحلة بحسب الطريق وحالة المرور.` };
             }
+          }
+        }
+
+        // Keep simple identity and supported live-data questions available even
+        // when the external language-model provider is temporarily unavailable.
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
+          if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|who are you|what is alassaul)/i.test(latestText)) {
+            return { text: "أنا روبوت ALASSAUL الرسمي، مساعد الذكاء الاصطناعي لمنصة ALASSAUL-AI. أساعدك في المعرفة العامة والأخبار والعلوم والرحلات، وأدلة وخدمات شمال تركيا، وأوضح لك عندما لا أستطيع التحقق من معلومة حديثة." };
+          }
+
+          const directWeather = await getLiveWeatherAnswer(latestText)
+            ?? await getAyderWeatherAnswer(latestText)
+            ?? await getJeddahWeatherAnswer(latestText);
+          if (directWeather) return { text: directWeather };
+
+          if (isWorldNewsQuestion(latestText)) {
+            const directNews = await getWorldNewsAnswer(latestText, input.language);
+            if (directNews) return { text: directNews };
           }
         }
 
