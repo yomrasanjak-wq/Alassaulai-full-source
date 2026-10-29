@@ -210,6 +210,29 @@ describe("real-brain regression scenarios", () => {
   });
 
 
+  it("opens a direct Google Maps driving route from Yanbu Industrial to Madinah without calling the model", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "ممكن تفتح الخريطة من ينبع الصناعية إلى المدينة المنورة" }],
+    });
+    expect(result.text).toContain("https://www.google.com/maps/dir/");
+    expect(result.text).toContain("افتح الطريق في خرائط Google");
+    expect(result.text).toContain("origin=%D9%8A%D9%86%D8%A8%D8%B9");
+    expect(result.text).toContain("destination=");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("offers a grounded Google Maps search instead of guessing a supermarket address", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "أقرب سوبر ماركت في حي الصبح بمدينة ينبع الصناعية" }],
+    });
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).toContain("حي الصبح");
+    expect(result.text).not.toMatch(/يقع في منطقة|بجوار|عنوان الفرع هو/);
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
   it("offers a direct map search for popular restaurants in Yanbu Industrial when the model returns a generic error", async () => {
     vi.mocked(invokeLLM).mockResolvedValue({
       model: ENV.primaryModel,
