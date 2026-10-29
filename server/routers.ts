@@ -612,8 +612,7 @@ export const appRouter = router({
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
-          && (/(افتح|فتح|ورني|ورّني|اعرض|الخريطة|الخريطه|المسار|الطريق|اتجاهات|directions|open map|route)/i.test(latestText)
-            || /من\s+.+?\s+(?:إلى|الى|لـ)\s+.+/i.test(latestText))) {
+          && /(افتح|فتح|ورني|ورّني|اعرض|الخريطة|الخريطه|المسار|الطريق|اتجاهات|directions|open map|route)/i.test(latestText)) {
           const routeMatch = latestText.normalize("NFKC").match(/من\s+(.+?)\s+(?:إلى|الى|لـ)\s+(.+?)(?:[؟?!.،,]|$)/i);
           if (routeMatch) {
             const origin = routeMatch[1].trim().slice(0, 100);
