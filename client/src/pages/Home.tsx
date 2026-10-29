@@ -709,6 +709,9 @@ export default function Home() {
   const [galleryFilter, setGalleryFilter] = useState<(typeof GALLERY_FILTERS)[number]>("الكل");
   const [photoBookOpen, setPhotoBookOpen] = useState(false);
   const [residentServicesOpen, setResidentServicesOpen] = useState(false);
+  const [residentGroupOpen, setResidentGroupOpen] = useState<Record<string, boolean>>({});
+  const [residentPhrasebookOpen, setResidentPhrasebookOpen] = useState(false);
+  const [residentLocalHelpOpen, setResidentLocalHelpOpen] = useState(false);
   const [photoBookPage, setPhotoBookPage] = useState(0);
   const [activeSection, setActiveSection] = useState<"cities" | "live" | "map" | "partners" | "entertainment">("cities");
   const [modal, setModal] = useState<"login" | "live" | "camera" | "city" | "place" | "visitors" | "entertainment" | "control" | "map" | null>(null);
@@ -1554,8 +1557,12 @@ export default function Home() {
           </button>
           {residentServicesOpen && <div id="resident-services-content" className="resident-services-content">
           <SectionHeading eyebrow="ALASSAUL RESIDENT DESK" title="خدمات المقيمين في تركيا" desc="مداخل مباشرة إلى بوابات رسمية تساعدك في الإقامة والمعاملات والبلدية والخدمات اليومية. افتح المصدر الرسمي وتحقق من المتطلبات قبل تقديم أي طلب." />
-          <div className="resident-services-grid">
-            <h3 className="resident-service-group-title" style={{ gridColumn: "1 / -1" }}>المعاملات الرسمية والإقامة</h3>
+
+            <div className="resident-accordion-group">
+              <button type="button" className="resident-accordion-trigger" aria-expanded={!!residentGroupOpen.official} onClick={() => setResidentGroupOpen((current) => ({ ...current, official: !current.official }))}>
+                <span>المعاملات الرسمية والإقامة</span><ChevronDown size={20} className={residentGroupOpen.official ? "is-open" : ""} />
+              </button>
+              {residentGroupOpen.official && <div className="resident-services-grid">
             <a className="resident-service-card" href="https://www.turkiye.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ShieldCheck size={22} /></span><span className="resident-service-copy"><strong>بوابة الحكومة الإلكترونية</strong><small>e-Devlet · الخدمات الحكومية الرقمية</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card" href="https://www.goc.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>إدارة الهجرة</strong><small>المعلومات الرسمية للأجانب والإقامة</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card" href="https://e-ikamet.goc.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><BriefcaseBusiness size={22} /></span><span className="resident-service-copy"><strong>نظام الإقامة الإلكتروني</strong><small>طلبات الإقامة ومتابعة الإجراءات</small></span><ExternalLink size={16} /></a>
@@ -1568,14 +1575,32 @@ export default function Home() {
             <a className="resident-service-card resident-service-health" href="https://enabiz.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Heart size={22} /></span><span className="resident-service-copy"><strong>السجل الصحي الإلكتروني e‑Nabız</strong><small>بوابة وزارة الصحة للسجلات الصحية الشخصية</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Trabzon+İl+Göç+İdaresi+Müdürlüğü" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>مكتب الإقامة وتجديدها — طرابزون</strong><small>موقع إدارة الهجرة الرسمية على الخريطة · تجديد الطلب عبر e‑İkamet</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Yomra+Noterliği+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Landmark size={22} /></span><span className="resident-service-copy"><strong>مكاتب النوتر (Noter) — يومرا وطرابزون</strong><small>الوكالات والتصديقات ومعاملات بيع المركبات · اختر الأقرب على الخريطة</small></span><ExternalLink size={16} /></a>
-            <h3 className="resident-service-group-title" style={{ gridColumn: "1 / -1" }}>الخدمات اليومية: الكهرباء والمياه والغاز</h3>
+                          </div>}
+            </div>
+            <div className="resident-accordion-group">
+              <button type="button" className="resident-accordion-trigger" aria-expanded={!!residentGroupOpen.daily} onClick={() => setResidentGroupOpen((current) => ({ ...current, daily: !current.daily }))}>
+                <span>الخدمات اليومية: الكهرباء والمياه والغاز</span><ChevronDown size={20} className={residentGroupOpen.daily ? "is-open" : ""} />
+              </button>
+              {residentGroupOpen.daily && <div className="resident-services-grid">
             <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=Aksa+Çoruh+Elektrik+Müşteri+Hizmetleri+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Zap size={22} /></span><span className="resident-service-copy"><strong>مكتب الكهرباء</strong><small>Aksa Çoruh Elektrik · مراكز خدمة المشتركين في طرابزون</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=TİSKİ+Abone+İşlemleri+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><LifeBuoy size={22} /></span><span className="resident-service-copy"><strong>مكتب المياه والصرف الصحي</strong><small>TİSKİ · الاشتراكات والفواتير والأعطال</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=Aksa+Doğalgaz+Trabzon+Müşteri+Hizmetleri" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Flame size={22} /></span><span className="resident-service-copy"><strong>مكتب الغاز الطبيعي</strong><small>Aksa Doğalgaz · فتح الاشتراك والعداد وخدمة العملاء</small></span><ExternalLink size={16} /></a>
-            <h3 className="resident-service-group-title" style={{ gridColumn: "1 / -1" }}>المركبات والجمارك</h3>
+                          </div>}
+            </div>
+            <div className="resident-accordion-group">
+              <button type="button" className="resident-accordion-trigger" aria-expanded={!!residentGroupOpen.vehicles} onClick={() => setResidentGroupOpen((current) => ({ ...current, vehicles: !current.vehicles }))}>
+                <span>المركبات والجمارك</span><ChevronDown size={20} className={residentGroupOpen.vehicles ? "is-open" : ""} />
+              </button>
+              {residentGroupOpen.vehicles && <div className="resident-services-grid">
             <a className="resident-service-card resident-service-vehicle" href="https://www.google.com/maps/search/?api=1&query=TÜVTÜRK+Araç+Muayene+İstasyonu+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><CarFront size={22} /></span><span className="resident-service-copy"><strong>مركز معاينة السيارات</strong><small>TÜVTÜRK · ابحث عن أقرب محطة، وتأكد من الموعد ونوع المركبة</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card resident-service-vehicle" href="https://www.google.com/maps/search/?api=1&query=Trabzon+Gümrük+Müdürlüğü" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ClipboardCheck size={22} /></span><span className="resident-service-copy"><strong>مكتب الجمارك — معاملات تسجيل المركبة</strong><small>موقع مكتب الجمارك على الخريطة · المتطلبات تختلف حسب وضع المركبة ولوحتها</small></span><ExternalLink size={16} /></a>
-            <h3 className="resident-service-group-title" style={{ gridColumn: "1 / -1" }}>المساعدة والتواصل</h3>
+                          </div>}
+            </div>
+            <div className="resident-accordion-group">
+              <button type="button" className="resident-accordion-trigger" aria-expanded={!!residentGroupOpen.help} onClick={() => setResidentGroupOpen((current) => ({ ...current, help: !current.help }))}>
+                <span>المساعدة والتواصل</span><ChevronDown size={20} className={residentGroupOpen.help ? "is-open" : ""} />
+              </button>
+              {residentGroupOpen.help && <div className="resident-services-grid">
             <a className="resident-service-card resident-service-yimer" href="https://en.goc.gov.tr/communication-center-for-foreigners" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Phone size={22} /></span><span className="resident-service-copy"><strong>مركز تواصل الأجانب YİMER 157</strong><small>استفسارات الإقامة وشؤون الأجانب · اتصل 157 داخل تركيا</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card resident-service-emergency" href="tel:112" aria-label="اتصال بالطوارئ التركية 112"><span className="resident-service-icon"><LifeBuoy size={22} /></span><span className="resident-service-copy"><strong>الطوارئ في تركيا — 112</strong><small>للحالات الطارئة فقط · اضغط للاتصال من الهاتف</small></span><Phone size={16} /></a>
           </div>
@@ -1609,7 +1634,13 @@ export default function Home() {
               <a className="resident-service-card resident-service-vehicle" href="https://www.google.com/maps/search/?api=1&query=Oto+Yol+Yard%C4%B1m+%C3%87ekici+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><CarFront size={22} /></span><span className="resident-service-copy"><strong>سطحات ومساعدة على الطريق</strong><small>Oto Yol Yardım · اتفق على السعر والوجهة قبل التحميل</small></span><ExternalLink size={16} /></a>
             </div>
           </div>
-          <div className="resident-local-focus resident-phrasebook">
+              </div>}
+            </div>
+          <div className="resident-accordion-group resident-phrasebook-accordion">
+            <button type="button" className="resident-accordion-trigger" aria-expanded={residentPhrasebookOpen} onClick={() => setResidentPhrasebookOpen((open) => !open)}>
+              <span><Languages size={19} /> عبارات تركية جاهزة</span><ChevronDown size={20} className={residentPhrasebookOpen ? "is-open" : ""} />
+            </button>
+            {residentPhrasebookOpen && <div className="resident-local-focus resident-phrasebook">
             <div className="resident-local-focus-heading">
               <span className="resident-local-focus-icon"><Languages size={19} /></span>
               <div><strong>عبارات تركية جاهزة للمواقف اليومية</strong><small>اضغط «نسخ العبارة» ثم أرسلها أو اعرضها على مقدم الخدمة. الترجمة العربية للتوضيح.</small></div>
@@ -1636,6 +1667,7 @@ export default function Home() {
               ))}
             </div>
             <p className="resident-phrase-status" aria-live="polite">{copiedTurkishPhrase && copiedTurkishPhrase !== "تعذر النسخ — اضغط مطولًا على العبارة" ? "تم نسخ العبارة التركية، يمكنك لصقها في الرسائل." : copiedTurkishPhrase}</p>
+          </div>}
           </div>
           <p className="resident-services-note"><ShieldCheck size={15} /> هذه روابط للبوابات الرسمية وليست استشارة قانونية أو ضمانًا لقبول الطلب. لا تشارك كلمة المرور أو رمز التحقق مع أي شخص، وتأكد من عنوان الموقع قبل إدخال بياناتك. رقم 112 للطوارئ فقط، وللاستفسارات العامة عن الإقامة وشؤون الأجانب استخدم YİMER 157.</p>
           </div>}
