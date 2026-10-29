@@ -93,7 +93,7 @@ describe("real-brain regression scenarios", () => {
     expect(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.at(-1)?.content).toBe(question);
   });
 
-  it("passes a clear RSS outage to the model instead of inventing current news", async () => {
+  it("returns a clear RSS outage without relying on the model or inventing current news", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
     vi.mocked(invokeLLM).mockResolvedValue({
       model: ENV.primaryModel,
@@ -102,13 +102,149 @@ describe("real-brain regression scenarios", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
     try {
       const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "ما آخر أخبار كرة القدم اليوم؟" }] });
-      expect(result.text).toContain("مصدر الأخبار الحي غير متاح");
+      expect(result.text).toContain("تعذر جلب عناوين الأخبار الحية");
       expect(result.text).not.toMatch(/فاز|خسر|نتيجة\s+\d/i);
-      expect(invokeLLM).toHaveBeenCalledOnce();
-      expect(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content).toContain("تعذر جلب عناوين الأخبار الحية");
+      expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
       vi.unstubAllEnvs();
     }
   });
+  it("returns live Qassim weather instead of calling the language model", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ current: { time: "2026-10-29T13:00", temperature_2m: 31, apparent_temperature: 33, weather_code: 0, wind_speed_10m: 12 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    try {
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "اخبار الطقس في القصيم" }] });
+      expect(result.text).toContain("القصيم (بريدة)");
+      expect(result.text).toContain("31° مئوية");
+      expect(result.text).toContain("Open-Meteo");
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not present old RSS articles as today's world news", async () => {
+    const staleFeed = `<?xml version="1.0"?><rss><channel><item><title>Old world headline</title><source>Example News</source><link>https://example.com/old</link><pubDate>Tue, 01 Jan 2019 10:00:00 GMT</pubDate></item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(staleFeed, { status: 200, headers: { "content-type": "application/rss+xml" } }),
+    );
+    try {
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "ما أبرز أخبار العالم اليوم؟" }] });
+      expect(result.text).toContain("لن أخمّن أخبار اليوم");
+      expect(result.text).not.toContain("Old world headline");
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+
+  it.each([
+    ["ما الطقس اليوم في حائل؟", "حائل"],
+    ["أبغى الطقس في الطائف", "الطائف"],
+    ["ما الجو في ينبع الصناعية؟", "ينبع الصناعية"],
+  ])("returns live weather directly for Saudi city question %s", async (question, city) => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ current: { time: "2026-10-29T13:00", temperature_2m: 28, apparent_temperature: 30, weather_code: 1, wind_speed_10m: 9 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    try {
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: question }] });
+      expect(result.text).toContain(city);
+      expect(result.text).toContain("28° مئوية");
+      expect(result.text).toContain("Open-Meteo");
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("answers Roshn League news using Saudi-league search results, never Turkish league guesses", async () => {
+    const rss = `<rss><channel><item><title>أخبار دوري روشن السعودي اليوم</title><source>وكالة اختبار</source><link>https://example.com/saudi-league</link><pubDate>${new Date(Date.now() - 60 * 60 * 1000).toUTCString()}</pubDate></item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      expect(new URL(url).searchParams.get("q")).toContain("دوري روشن السعودي");
+      return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
+    });
+    try {
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "أريد أخبار الدوري روشن" }] });
+      expect(result.text).toContain("أحدث أخبار دوري روشن السعودي");
+      expect(result.text).toContain("أخبار دوري روشن السعودي اليوم");
+      expect(result.text).not.toMatch(/الدوري التركي|غلطة سراي|فنربخشة/i);
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+
+  it("offers a useful Trabzon itinerary if both AI providers fail", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "رتب لي برنامجاً في طرابزون" }] });
+    expect(result.text).toContain("قصر أتاتورك");
+    expect(result.text).toContain("غانيتا");
+    expect(result.text).toContain("ليس تحققاً من الطقس");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
+  it("offers a real map search instead of inventing breakfast restaurants after provider failure", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [
+        { role: "user", content: "أريد مطعماً قريباً في ينبع الصناعية حي الصبح" },
+        { role: "assistant", content: "حاضر، هل تفضل نوعاً معيناً؟" },
+        { role: "user", content: "أبغى مطعم فطور" },
+      ],
+    });
+    expect(result.text).toContain("مطاعم فطور");
+    expect(result.text).toContain("ينبع الصناعية");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).not.toMatch(/مطعم\s+[\p{L}]+\s+(?:ممتاز|مفتوح الآن)|تقييمه\s+\d/i);
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
+
+  it("opens a direct Google Maps driving route from Yanbu Industrial to Madinah without calling the model", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "ممكن تفتح الخريطة من ينبع الصناعية إلى المدينة المنورة" }],
+    });
+    expect(result.text).toContain("https://www.google.com/maps/dir/");
+    expect(result.text).toContain("افتح الطريق في خرائط Google");
+    expect(result.text).toContain("origin=%D9%8A%D9%86%D8%A8%D8%B9");
+    expect(result.text).toContain("destination=");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("offers a grounded Google Maps search instead of guessing a supermarket address", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "أقرب سوبر ماركت في حي الصبح بمدينة ينبع الصناعية" }],
+    });
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).toContain("حي الصبح");
+    expect(result.text).not.toMatch(/يقع في منطقة|بجوار|عنوان الفرع هو/);
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("offers a direct map search for popular restaurants in Yanbu Industrial when the model returns a generic error", async () => {
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "لم أتمكن من تجهيز إجابة الآن. أعد إرسال السؤال بصياغة قصيرة." } }],
+    } as never);
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "أهم المطاعم في ينبع الصناعية" }],
+    });
+    expect(result.text).toContain("أفضل المطاعم في ينبع الصناعية");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).not.toContain("لم أتمكن من تجهيز إجابة الآن");
+  });
+
 });

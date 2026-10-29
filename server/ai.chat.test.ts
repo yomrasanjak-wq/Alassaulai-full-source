@@ -149,7 +149,7 @@ describe("ai.chat", () => {
     expect(request?.messages?.[0]?.content).toContain("لا تستبدل الإجابة بترحيب عام أو نص محفوظ");
   });
 
-  it("passes current weather as evidence to the model instead of returning the tool text directly", async () => {
+  it("returns current weather directly without depending on a model response", async () => {
     vi.mocked(invokeLLM).mockResolvedValue({
       model: ENV.primaryModel,
       choices: [{ message: { content: "النموذج يشرح قراءة الطقس الحي." } }],
@@ -160,29 +160,27 @@ describe("ai.chat", () => {
     try {
       const caller = appRouter.createCaller(createPublicContext());
       const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "ما طقس طرابزون الآن؟" }] });
-      expect(result.text).toBe("النموذج يشرح قراءة الطقس الحي.");
-      expect(invokeLLM).toHaveBeenCalledOnce();
-      expect(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content).toContain("الطقس الآن في طرابزون: 20°");
-      expect(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content).toContain("Open-Meteo");
+      expect(result.text).toContain("الطقس الآن في طرابزون: 20°");
+      expect(result.text).toContain("Open-Meteo");
+      expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
     }
   });
 
-  it("passes live news feed results into the LLM prompt and returns the model's answer", async () => {
+  it("returns fresh live news feed results directly without inventing a model summary", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
     vi.mocked(invokeLLM).mockResolvedValue({
       model: ENV.primaryModel,
       choices: [{ message: { content: "ملخص صاغه النموذج اعتماداً على العناوين الحية." } }],
     } as never);
-    const rss = `<rss><channel><item><title>عنوان تجريبي لأخبار اليوم</title><source>وكالة اختبار</source><link>https://example.com/story</link><pubDate>Sun, 18 Oct 2026 07:00:00 GMT</pubDate></item></channel></rss>`;
+    const rss = `<rss><channel><item><title>عنوان تجريبي لأخبار اليوم</title><source>وكالة اختبار</source><link>https://example.com/story</link><pubDate>${new Date(Date.now() - 60 * 60 * 1000).toUTCString()}</pubDate></item></channel></rss>`;
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
     try {
       const caller = appRouter.createCaller(createPublicContext());
       const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "ما أبرز أخبار العالم اليوم؟" }] });
-      expect(result.text).toBe("ملخص صاغه النموذج اعتماداً على العناوين الحية.");
-      expect(invokeLLM).toHaveBeenCalledOnce();
-      expect(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content).toContain("عنوان تجريبي لأخبار اليوم");
+      expect(result.text).toContain("عنوان تجريبي لأخبار اليوم");
+      expect(invokeLLM).not.toHaveBeenCalled();
       expect(fetchSpy).toHaveBeenCalledOnce();
     } finally {
       fetchSpy.mockRestore();

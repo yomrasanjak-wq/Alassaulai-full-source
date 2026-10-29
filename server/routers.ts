@@ -59,7 +59,7 @@ export function getAdaptiveTaskInstruction(message: string): string {
     return "نمط معالجة مشكلة: حدّد الاحتمال الأقرب دون الجزم، ثم أعطِ خطوات تشخيص مرتبة من الأبسط والأكثر أماناً إلى المتقدم. اذكر ما ينبغي عدم فعله، واسأل عن معلومة واحدة فقط إذا كانت ضرورية.";
   }
   if (/(رتب لي|برنامج|خطة|جدول|خطط|نظم|نظّم|رحلة|بكج|ميزانية|خلال \d+ أيام)/i.test(text)) {
-    const itinerary = "نمط التخطيط: قدّم خطة قابلة للتنفيذ بترتيب زمني واضح، وراعِ المسافات والوقت والتكلفة التقريبية والبدائل. لا تدّعِ حجزاً أو توافراً لم تتحقق منه، وبيّن الافتراضات المهمة.";
+    const itinerary = "نمط التخطيط: قدّم خطة قابلة للتنفيذ بترتيب زمني واضح، وراعِ المسافات والوقت والتكلفة التقريبية والبدائل. إذا ذكر المستخدم عدد الأشخاص والمدن وترتيبها ومدة كل محطة، التزم بها كما هي، واحسب الأيام بوضوح ولا تضف مدناً غير مطلوبة. اجمع الوجهات المتقاربة في اليوم نفسه، وتجنب وضع زيارات بعيدة في اليوم نفسه. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، وبيّن الافتراضات المهمة.";
     if (/(طرابزون|ترابزون|أوزنجول|اوزنجول|أيدر|ايدر|ريزه|سامسون|أوردو|جيرسون|إسطنبول|اسطنبول|شمال تركيا|سورميني|أراكلي)/i.test(text)) {
       return `${itinerary} خصّص الخطة لشمال تركيا: اجمع الوجهات المتقاربة في اليوم نفسه، وراعِ وقت القيادة والطقس الجبلي، وضمّن عند ملاءمة المسار سامسون وأوردو وجيرسون وأرسين وسورميني وأراكلي وإسطنبول، ولا تضعها كلها في مسار واحد إن كان الوقت لا يسمح.`;
     }
@@ -118,6 +118,14 @@ const WEATHER_CITIES = [
   { names: /ريزا|ريزه|rize/i, name: "ريزا", latitude: 41.0201, longitude: 40.5234, timezone: "Europe/Istanbul" },
   { names: /إسطنبول|اسطنبول|istanbul/i, name: "إسطنبول", latitude: 41.0082, longitude: 28.9784, timezone: "Europe/Istanbul" },
   { names: /آيدر|ايدر|ayder/i, name: "آيدر", latitude: 40.9527, longitude: 41.0969, timezone: "Europe/Istanbul" },
+  { names: /المدينة المنورة|المدينه المنوره|المدينة|المدينه|madinah|medina/i, name: "المدينة المنورة", latitude: 24.5247, longitude: 39.5692, timezone: "Asia/Riyadh" },
+  { names: /القصيم|بريدة|بريده|عنيزة|عنيزه|الرس|buraydah|qassim/i, name: "القصيم (بريدة)", latitude: 26.3260, longitude: 43.9750, timezone: "Asia/Riyadh" },
+  { names: /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i, name: "ينبع الصناعية", latitude: 23.9994, longitude: 38.2363, timezone: "Asia/Riyadh" },
+  { names: /ينبع|yanbu/i, name: "ينبع", latitude: 24.0895, longitude: 38.0618, timezone: "Asia/Riyadh" },
+  { names: /حائل|حايل|hail/i, name: "حائل", latitude: 27.5114, longitude: 41.7208, timezone: "Asia/Riyadh" },
+  { names: /الطائف|طايف|taif/i, name: "الطائف", latitude: 21.2703, longitude: 40.4158, timezone: "Asia/Riyadh" },
+  { names: /الرياض|رياض|riyadh/i, name: "الرياض", latitude: 24.7136, longitude: 46.6753, timezone: "Asia/Riyadh" },
+  { names: /مكة المكرمة|مكه المكرمه|مكة|مكه|makkah|mecca/i, name: "مكة المكرمة", latitude: 21.3891, longitude: 39.8579, timezone: "Asia/Riyadh" },
   { names: /جدة|جده|jeddah/i, name: "جدة", latitude: 21.5433, longitude: 39.1728, timezone: "Asia/Riyadh" },
 ] as const;
 
@@ -177,8 +185,139 @@ async function getJeddahWeatherAnswer(content: string) {
 
 const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
+function isLocalBusinessSearchQuestion(message: string) {
+  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast)/i.test(message);
+  const asksForPlace = /(?:أقرب|اقرب|قريب|بالقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث|يقع|عنوان|موقع|nearby|nearest|near me|best|where|location|address|search)/i.test(message);
+  return mentionsBusiness && asksForPlace;
+}
+
+function isSaudiLeagueQuestion(message: string) {
+  return /(?:روشن|الدوري السعودي|دوري روشن|السوبر السعودي|الدوري السعودي للمحترفين|Saudi Pro League)/i.test(message);
+}
+
 function isSaudiLeagueScheduleQuestion(message: string) {
-  return /(?:روشن|الدوري السعودي|دوري روشن|السوبر السعودي)/i.test(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
+  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
+}
+
+/** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
+async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", message: string) {
+  const scheduleQuestion = isSaudiLeagueScheduleQuestion(message);
+  const query = language === "AR"
+    ? scheduleQuestion ? "دوري روشن السعودي جدول مباريات الجولة القادمة مواعيد" : "أخبار دوري روشن السعودي اليوم"
+    : scheduleQuestion ? "Saudi Pro League fixtures schedule upcoming matches" : "Saudi Pro League latest news today";
+  const params = new URLSearchParams({
+    q: query,
+    hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US",
+    gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US",
+    ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en",
+  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4500);
+  try {
+    const response = await fetch(`https://news.google.com/rss/search?${params.toString()}`, {
+      headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (sports schedule lookup)" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Saudi league RSS returned ${response.status}`);
+    const xml = await response.text();
+    const items = (xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) ?? []).slice(0, 5).map((itemMarkup) => {
+      const body = itemMarkup.replace(/^<item\b[^>]*>/i, "").replace(/<\/item>$/i, "");
+      const title = decodeNewsXml(body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
+      const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? "Google News");
+      const url = decodeNewsXml(body.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? "");
+      const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
+      const date = published ? new Date(published) : null;
+      const dateText = date && !Number.isNaN(date.getTime())
+        ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeZone: "Asia/Riyadh" }).format(date)
+        : "";
+      return { title, source, dateText, url: /^https?:\/\//i.test(url) ? url : "" };
+    }).filter((item) => item.title.length > 5 && /(?:روشن|الدوري السعودي|السعودي|الهلال|النصر|الاتحاد|الأهلي|الاهلي|الشباب|التعاون|القادسية|Saudi Pro League|Al-Hilal|Al-Nassr|Al-Ittihad|Al-Ahli)/i.test(item.title));
+    if (!items.length) throw new Error("No Saudi league schedule articles returned");
+    const heading = language === "AR"
+      ? scheduleQuestion ? "أحدث نتائج البحث عن جدول دوري روشن السعودي" : "أحدث أخبار دوري روشن السعودي"
+      : language === "TR"
+        ? scheduleQuestion ? "Suudi Pro Lig fikstürü için güncel arama sonuçları" : "Suudi Pro Lig hakkında güncel haberler"
+        : scheduleQuestion ? "Recent Saudi Pro League schedule search results" : "Latest Saudi Pro League news";
+    const note = language === "AR"
+      ? scheduleQuestion ? "هذه روابط تقارير حديثة وليست جدول مباريات موحداً مؤكداً. افتح المصدر للتحقق من موعد المباراة قبل الاعتماد عليه." : "هذه عناوين بحث إخبارية وليست نتائج مباريات مؤكدة. افتح المصدر للتحقق من التفاصيل والتوقيت."
+      : language === "TR"
+        ? "Bunlar güncel haber bağlantılarıdır; maç saatlerini veya sonuçları kaynaktan doğrulayın."
+        : "These are recent news links, not verified live scores. Open the publisher to confirm details and match times.";
+    return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${note}`;
+  } catch (error) {
+    console.warn("[ALASSAUL sports] Saudi league schedule feed unavailable", safeProviderDiagnostic(error));
+    return language === "AR"
+      ? "تعذر جلب نتائج حديثة عن جدول دوري روشن الآن. لن أخمّن المواعيد؛ جرّب مجدداً بعد قليل أو افتح الموقع الرسمي للدوري."
+      : language === "TR"
+        ? "Suudi Pro Lig fikstürü için güncel sonuçlar alınamadı. Maç saatlerini tahmin etmeyeceğim; daha sonra tekrar deneyin."
+        : "Recent Saudi Pro League schedule results are unavailable. I won't guess match times; please try again later.";
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+
+function getContextualFallback(
+  messages: Array<{ role: "user" | "assistant"; content: string }>,
+  language: "AR" | "TR" | "EN",
+): string | undefined {
+  const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
+  const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
+    && /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
+  if (asksItinerary && language === "AR") {
+    return "تعذّر تشغيل المساعد الذكي مؤقتاً، لكن إليك برنامجاً مبدئياً ليوم في طرابزون:\n\n1. **الصباح:** قصر أتاتورك وحدائقه، ثم جولة قصيرة في ميدان طرابزون.\n2. **وقت الغداء:** اختر مطعماً محلياً في وسط المدينة، وتحقق من التقييمات وساعات العمل قبل التوجه إليه.\n3. **بعد الظهر:** ممشى غانيتا على البحر، أو أكواريوم طرابزون إذا كانت الرحلة عائلية.\n4. **قبل الغروب:** بو زتبه للإطلالة على المدينة والبحر.\n\nهذا اقتراح عام وليس تحققاً من الطقس أو أوقات الفتح اليوم. إذا أخبرتني بوجود أطفال أو سيارة وعدد أيام الرحلة، أرتّب لك نسخة أنسب عند عودة المساعد.";
+  }
+
+  const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
+  if (asksSupermarket) {
+    const area = /حي الصبح|الصبح/i.test(recentUserText) && /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i.test(recentUserText) ? "حي الصبح، ينبع الصناعية"
+      : /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i.test(recentUserText) ? "ينبع الصناعية"
+      : /ينبع|yanbu/i.test(recentUserText) ? "ينبع"
+      : /طرابزون|ترابزون|trabzon/i.test(recentUserText) ? "طرابزون"
+      : /يومرا|يومره|yomra/i.test(recentUserText) ? "يومرا"
+      : /جدة|جده|jeddah/i.test(recentUserText) ? "جدة"
+      : /المدينة المنورة|المدينه المنوره|madinah|medina/i.test(recentUserText) ? "المدينة المنورة"
+      : undefined;
+    const query = /لولو|lulu/i.test(latest) ? `لولو هايبر ماركت ${area ?? "ينبع"}`
+      : /أقرب|اقرب|قريب|بالقرب|nearest|nearby/i.test(latest) ? `سوبر ماركت قريب ${area ?? "من موقعي الحالي"}`
+      : `سوبر ماركت ${area ?? "من موقعي الحالي"}`;
+    const url = new URL("https://www.google.com/maps/search/");
+    url.searchParams.set("api", "1");
+    url.searchParams.set("query", query);
+    return language === "AR"
+      ? `لا أستطيع تأكيد أقرب متجر أو عنوان فرع لولو من دون نتيجة خرائط موثوقة، لذلك لن أخمّن الموقع. افتح البحث المباشر في الخرائط: [${query}](${url.toString()})${area ? "" : "\n\nاذكر المدينة والحي لأساعدك في تضييق البحث."}`
+      : language === "TR"
+        ? `En yakın marketin veya Lulu şubesinin adresini doğrulayamıyorum; haritada arayın: [${query}](${url.toString()})`
+        : `I can't verify the nearest store or Lulu branch address, so I won't guess. [Search Google Maps: ${query}](${url.toString()})`;
+  }
+
+  const asksRestaurant = /(?:مطعم|مطاعم|فطور|إفطار|فطور|وجبة|breakfast|restaurant|restaurants|food near me)/i.test(latest);
+  if (asksRestaurant) {
+    const area = /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i.test(recentUserText) ? "ينبع الصناعية"
+      : /ينبع|yanbu/i.test(recentUserText) ? "ينبع"
+      : /طرابزون|ترابزون|trabzon/i.test(recentUserText) ? "طرابزون"
+      : /يومرا|يومره|yomra/i.test(recentUserText) ? "يومرا"
+      : /جدة|جده|jeddah/i.test(recentUserText) ? "جدة"
+      : /حائل|حايل|hail/i.test(recentUserText) ? "حائل"
+      : undefined;
+    const asksBreakfast = /(?:فطور|إفطار|breakfast)/i.test(latest);
+    const asksBest = /(?:أهم|افضل|أفضل|مشهور|مميزة|مميزه|top|best|popular)/i.test(latest);
+    const asksNearest = /(?:أقرب|اقرب|قريب|بالقرب|near(?:est)?|close to me)/i.test(latest);
+    const restaurantType = asksBreakfast ? "مطاعم فطور" : asksBest ? "أفضل المطاعم" : "مطاعم";
+    const query = area
+      ? asksNearest ? `${restaurantType} بالقرب مني في ${area}` : `${restaurantType} في ${area}`
+      : asksNearest ? `${restaurantType} بالقرب من موقعي الحالي` : `${restaurantType} قريبة مني`;
+    const url = new URL("https://www.google.com/maps/search/");
+    url.searchParams.set("api", "1");
+    url.searchParams.set("query", query);
+    return language === "AR"
+      ? `تعذّر إكمال البحث عن المطاعم داخل المساعد مؤقتاً، ولا أريد اختراع أسماء أو تقييمات. افتح نتائج الخرائط المباشرة هنا: [${query}](${url.toString()})${area ? "" : "\n\nلنتائج أدق، اذكر المدينة والحي."}`
+      : language === "TR"
+        ? `Restoran araması şu anda tamamlanamadı; isim veya puan uydurmayacağım. [Haritada ara](${url.toString()})`
+        : `Restaurant search is temporarily unavailable, so I won't invent names or ratings. [Search Google Maps](${url.toString()})`;
+  }
+  return undefined;
 }
 
 
@@ -217,9 +356,9 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
       const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
       const date = published ? new Date(published) : null;
       const dateText = date && !Number.isNaN(date.getTime()) ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date) : "";
-      return { title, source, dateText, url: /^https?:\/\//i.test(url) ? url : "" };
-    }).filter((item) => item.title.length > 5);
-    if (!items.length) throw new Error("News RSS returned no headlines");
+      return { title, source, dateText, publishedAt: date && !Number.isNaN(date.getTime()) ? date.getTime() : 0, url: /^https?:\/\//i.test(url) ? url : "" };
+    }).filter((item) => item.title.length > 5 && item.publishedAt > Date.now() - 48 * 60 * 60 * 1000);
+    if (!items.length) throw new Error("News RSS returned no headlines published in the last 48 hours");
     const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
     const footer = language === "AR" ? "المصدر: Google News RSS. هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS. Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS. These are headlines; check the publisher for details and updates.";
     return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
@@ -476,6 +615,54 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
+        // A directions URL needs no Gemini or Google Maps API key.
+        // Return a usable link for explicit route-opening requests.
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
+          && /(افتح|فتح|ورني|ورّني|اعرض|الخريطة|الخريطه|المسار|الطريق|اتجاهات|directions|open map|route)/i.test(latestText)) {
+          const routeMatch = latestText.normalize("NFKC").match(/من\s+(.+?)\s+(?:إلى|الى|لـ)\s+(.+?)(?:[؟?!.،,]|$)/i);
+          if (routeMatch) {
+            const origin = routeMatch[1].trim().slice(0, 100);
+            const destination = routeMatch[2].trim().slice(0, 100);
+            if (origin && destination) {
+              const mapUrl = new URL("https://www.google.com/maps/dir/");
+              mapUrl.search = new URLSearchParams({ api: "1", origin, destination, travelmode: "driving" }).toString();
+              return { text: `تفضل، هذا مسار القيادة من **${origin}** إلى **${destination}**:\n\n[افتح الطريق في خرائط Google](${mapUrl.toString()})\n\nقد تختلف المسافة ومدة الرحلة بحسب الطريق وحالة المرور.` };
+            }
+          }
+        }
+
+        // Keep simple identity and supported live-data questions available even
+        // when the external language-model provider is temporarily unavailable.
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
+          if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|who are you|what is alassaul)/i.test(latestText)) {
+            return { text: "أنا روبوت ALASSAUL الرسمي، مساعد الذكاء الاصطناعي لمنصة ALASSAUL-AI. أساعدك في المعرفة العامة والأخبار والعلوم والرحلات، وأدلة وخدمات شمال تركيا، وأوضح لك عندما لا أستطيع التحقق من معلومة حديثة." };
+          }
+
+          const directWeather = await getLiveWeatherAnswer(latestText)
+            ?? await getAyderWeatherAnswer(latestText)
+            ?? await getJeddahWeatherAnswer(latestText);
+          if (directWeather) return { text: directWeather };
+
+          // Without verified Google Maps grounding, route local business lookups
+          // to an actual map search instead of allowing the model to guess branches,
+          // addresses, ratings, or opening status.
+          const mapsGroundingAvailable = Boolean(process.env.GEMINI_API_KEY?.trim())
+            && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true";
+          if (isLocalBusinessSearchQuestion(latestText) && !mapsGroundingAvailable) {
+            const localSearch = getContextualFallback(input.messages, input.language);
+            if (localSearch) return { text: localSearch };
+          }
+
+          if (isSaudiLeagueQuestion(latestText)) {
+            return { text: await getSaudiLeagueScheduleAnswer(input.language, latestText) };
+          }
+
+          if (isWorldNewsQuestion(latestText)) {
+            const directNews = await getWorldNewsAnswer(latestText, input.language);
+            if (directNews) return { text: directNews };
+          }
+        }
+
         const liveContext: string[] = [];
 
         // Live tools enrich the model prompt; they never replace the LLM answer.
@@ -518,8 +705,9 @@ ${searchContext}`);
               if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
             }
-            if (!grounded && isSaudiLeagueScheduleQuestion(latestText)) {
-              liveContext.push("لم تتوفر نتيجة موثقة من مصدر حي لمواعيد دوري روشن لهذا السؤال. لا تعرض جدولاً أو نتيجة حالية من الذاكرة؛ اذكر عدم التحقق ووجّه المستخدم للمصدر الرسمي عند الحاجة.");
+            if (isSaudiLeagueScheduleQuestion(latestText)) {
+              const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, latestText);
+              if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\n${scheduleContext}`);
             }
           } else if (isWorldNewsQuestion(latestText)) {
             const newsContext = await getWorldNewsAnswer(latestText, input.language);
@@ -584,7 +772,10 @@ ${newsContext}`);
             errorCode: classifyModelProviderFailure(primaryError),
             ...safeProviderDiagnostic(primaryError),
           });
-          if (!backupModel) return fail(primaryError);
+          if (!backupModel) {
+            const contextualFallback = getContextualFallback(input.messages, input.language);
+            return contextualFallback ? { text: contextualFallback } : fail(primaryError);
+          }
           try {
             response = await invokeLLM({ ...llmRequest, model: backupModel, reasoning: undefined });
             usedBackup = true;
@@ -595,7 +786,8 @@ ${newsContext}`);
               errorCode: classifyModelProviderFailure(backupError),
               ...safeProviderDiagnostic(backupError),
             });
-            return fail(backupError);
+            const contextualFallback = getContextualFallback(input.messages, input.language);
+            return contextualFallback ? { text: contextualFallback } : fail(backupError);
           }
         }
 
@@ -622,7 +814,8 @@ ${newsContext}`);
               backupModel: backupModel ?? null,
             });
           }
-          return fail(failure);
+          const contextualFallback = getContextualFallback(input.messages, input.language);
+          return contextualFallback ? { text: contextualFallback } : fail(failure);
         }
         return { text };
       }),

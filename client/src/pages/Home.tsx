@@ -751,7 +751,7 @@ export default function Home() {
   };
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { from: "assistant", text: "أهلاً بك. أنا مساعد ALASSAUL — اسألني عن مدن الشمال أو رتّب ليومك القادم." },
+    { from: "assistant", text: "أهلاً بك، أنا مساعد ALASSAUL-AI. اسألني عن أي موضوع، من الأخبار والعلوم والصحة والسفر إلى طرابزون وشمال تركيا، ويمكنك أيضاً إرسال صورة لفهم ما يظهر فيها." },
   ]);
   const [isListening, setIsListening] = useState(false);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -1417,7 +1417,7 @@ export default function Home() {
     }
   }
 
-  const latestRouteMessage = [...chatMessages].reverse().find((message) => message.route);
+  const latestRouteMessage = chatMessages[chatMessages.length - 1]?.route ? chatMessages[chatMessages.length - 1] : undefined;
 
   return (
     <main className={`site-shell season-${season}`} dir={dir} data-season={season}>

@@ -3,7 +3,7 @@ export type RouteRequest = {
   destinations: string[];
 };
 
-const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|وصلني|توصلني|يؤدي|اوصل|route|directions|way|yol|rota|götür)/i;
+const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|وصلني|توصلني|يؤدي|اوصل|اسلك|أسلك|route|directions|way|yol|rota|götür)/i;
 const DESTINATION_PATTERN = /(?:إلى|الى|لـ|لِ|ل|نحو|جهة|إتجاه|to|towards|for|için|üzerinden)\s+([^،,.!?؟؛;]+)/ig;
 const ORIGIN_PATTERN = /(?:من|ابتداءً من|بدءًا من|from|starting from|başlangıç)\s+([^،,.!?؟؛;]+?)\s+(?:إلى|الى|لـ|نحو|to|towards|için)\s+/i;
 
@@ -36,6 +36,11 @@ function collapseRepeatedSequences(text: string): string {
 }
 
 const destinationAliases: Array<{ pattern: RegExp; canonical: string }> = [
+  { pattern: /(?:ينبع|yanbu)/i, canonical: "Yanbu" },
+  { pattern: /(?:الرياض|رياض|riyadh)/i, canonical: "Riyadh" },
+  { pattern: /(?:جدة|جده|jeddah)/i, canonical: "Jeddah" },
+  { pattern: /(?:مكة|مكه|مكة المكرمة|mecca|makkah)/i, canonical: "Makkah" },
+  { pattern: /(?:المدينة المنورة|المدينه المنوره|المدينة|المدينه|madinah|medina)/i, canonical: "Madinah" },
   { pattern: /(?:همسه\s*كوي|همسي\s*كوي|هامسي\s*كوي|hamsik[oö]y)/i, canonical: "Hamsiköy" },
   { pattern: /(?:طرابزون|ترابزون|trabzon)/i, canonical: "Trabzon" },
   { pattern: /(?:يومرا|يمره|يمرة|يومره|يومرة|yomra)/i, canonical: "Yomra" },
@@ -78,7 +83,7 @@ export function parseRouteRequest(text: string): RouteRequest | null {
     ? destinationAliases.find((alias) => alias.pattern.test(originRaw))?.canonical ?? originRaw
     : inferredOrigin;
 
-  const rawDestination = lastDestinationMatch?.[1]?.trim();
+  const rawDestination = (destinationMatches.find((match) => /\s+(?:أو|او|or|ya da|veya)\s+/i.test(match[1] ?? "")) ?? lastDestinationMatch)?.[1]?.trim();
   if (!rawDestination) return null;
 
   // Keep alternative destinations when the user asks for one of several places.

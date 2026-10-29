@@ -21,6 +21,13 @@ describe("parseRouteRequest", () => {
     });
   });
 
+  it("parses a Saudi route request phrased as being in Yanbu and going to Riyadh", () => {
+    expect(parseRouteRequest("طيب انا في ينبع واريد الذهاب الى الرياض اي طريق اسلوك")).toEqual({
+      origin: "Yanbu",
+      destinations: ["Riyadh"],
+    });
+  });
+
   it("does not treat ordinary chat as a route request", () => {
     expect(parseRouteRequest("السلام عليكم كيف حالك")).toBeNull();
   });
