@@ -119,6 +119,7 @@ const WEATHER_CITIES = [
   { names: /إسطنبول|اسطنبول|istanbul/i, name: "إسطنبول", latitude: 41.0082, longitude: 28.9784, timezone: "Europe/Istanbul" },
   { names: /آيدر|ايدر|ayder/i, name: "آيدر", latitude: 40.9527, longitude: 41.0969, timezone: "Europe/Istanbul" },
   { names: /المدينة المنورة|المدينه المنوره|المدينة|المدينه|madinah|medina/i, name: "المدينة المنورة", latitude: 24.5247, longitude: 39.5692, timezone: "Asia/Riyadh" },
+  { names: /العلا|alula|al ula/i, name: "العلا", latitude: 26.6085, longitude: 37.9232, timezone: "Asia/Riyadh" },
   { names: /القصيم|بريدة|بريده|عنيزة|عنيزه|الرس|buraydah|qassim/i, name: "القصيم (بريدة)", latitude: 26.3260, longitude: 43.9750, timezone: "Asia/Riyadh" },
   { names: /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i, name: "ينبع الصناعية", latitude: 23.9994, longitude: 38.2363, timezone: "Asia/Riyadh" },
   { names: /ينبع|yanbu/i, name: "ينبع", latitude: 24.0895, longitude: 38.0618, timezone: "Asia/Riyadh" },
@@ -635,7 +636,15 @@ export const appRouter = router({
         // when the external language-model provider is temporarily unavailable.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
           if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|who are you|what is alassaul)/i.test(latestText)) {
+            // Answer common platform identity questions without depending on the model provider.
+            if (/(?:صاحب|مؤسس|مالك).{0,18}(?:المنصة|الموقع|العسول|alassaul)|(?:من هو|مين هو).{0,18}(?:صاحب|مؤسس|مالك)/i.test(latestText)) {
+              return { text: "صاحب ومؤسس مشروع ALASSAUL-AI هو يوسف عسول، وهو المشروع الذي يطوّره ليكون دليلاً ومساعداً للمعرفة والخدمات والرحلات، مع تركيز خاص على شمال تركيا." };
+            }
             return { text: "أنا روبوت ALASSAUL الرسمي، مساعد الذكاء الاصطناعي لمنصة ALASSAUL-AI. أساعدك في المعرفة العامة والأخبار والعلوم والرحلات، وأدلة وخدمات شمال تركيا، وأوضح لك عندما لا أستطيع التحقق من معلومة حديثة." };
+          }
+
+          if (/(?:ما اسم|اسم|ما هو|ماهو|وين|أين|اين).{0,24}مطار ينبع|مطار ينبع.{0,24}(?:اسم|ما هو|ما اسمه)?/i.test(latestText)) {
+            return { text: "مطار ينبع هو مطار الأمير عبد المحسن بن عبد العزيز (Prince Abdul Mohsin bin Abdulaziz Airport)، ورمز المطار الدولي IATA هو YNB. يخدم مدينة ينبع في منطقة المدينة المنورة بالمملكة العربية السعودية." };
           }
 
           const directWeather = await getLiveWeatherAnswer(latestText)
