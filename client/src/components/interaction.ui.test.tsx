@@ -431,7 +431,7 @@ describe("LiveStatusView UI", () => {
 describe("Directions in chat", () => {
   it("extracts an Arabic destination and optional origin", () => {
     expect(parseRouteRequest("أريد الطريق من طرابزون إلى يمرة")).toEqual({ origin: "Trabzon", destinations: ["Yomra"] });
-    expect(parseRouteRequest("أريد الطريق إلى جدة أو مكة")).toEqual({ destinations: ["جدة", "مكة"] });
+    expect(parseRouteRequest("أريد الطريق إلى جدة أو مكة")).toEqual({ destinations: ["Jeddah", "Makkah"] });
     expect(parseRouteRequest("أريد الطريق إلى بلدتي أو إلى يمرة")).toEqual({ destinations: ["بلدتي", "Yomra"] });
     expect(parseRouteRequest("ما أفضل مطعم في طرابزون؟")).toBeNull();
   });
@@ -599,9 +599,9 @@ describe("Interactive north map", () => {
     const { container } = render(<InteractiveNorthMap />);
     expect(screen.getAllByRole("textbox", { name: "ابحث في الخريطة" })).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: /فتح الخريطة بحجم كامل/ }));
-    expect(container.querySelector(".north-map-expanded")).toBeTruthy();
+    expect(document.body.querySelector(".north-map-expanded")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /إغلاق الخريطة/ }));
-    expect(container.querySelector(".north-map-expanded")).toBeNull();
+    expect(document.body.querySelector(".north-map-expanded")).toBeNull();
   });
 
   it("includes the eastern Trabzon coastal towns in the city picker", () => {
