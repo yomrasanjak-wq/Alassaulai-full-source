@@ -273,17 +273,17 @@ function getContextualFallback(
       : /جدة|جده|jeddah/i.test(recentUserText) ? "جدة"
       : /المدينة المنورة|المدينه المنوره|madinah|medina/i.test(recentUserText) ? "المدينة المنورة"
       : undefined;
-    const query = /لولو|lulu/i.test(latest) ? \`لولو هايبر ماركت \${area ?? "ينبع"}\`
-      : /أقرب|اقرب|قريب|بالقرب|nearest|nearby/i.test(latest) ? \`سوبر ماركت قريب \${area ?? "من موقعي الحالي"}\`
-      : \`سوبر ماركت \${area ?? "من موقعي الحالي"}\`;
+    const query = /لولو|lulu/i.test(latest) ? `لولو هايبر ماركت ${area ?? "ينبع"}`
+      : /أقرب|اقرب|قريب|بالقرب|nearest|nearby/i.test(latest) ? `سوبر ماركت قريب ${area ?? "من موقعي الحالي"}`
+      : `سوبر ماركت ${area ?? "من موقعي الحالي"}`;
     const url = new URL("https://www.google.com/maps/search/");
     url.searchParams.set("api", "1");
     url.searchParams.set("query", query);
     return language === "AR"
-      ? \`لا أستطيع تأكيد أقرب متجر أو عنوان فرع لولو من دون نتيجة خرائط موثوقة، لذلك لن أخمّن الموقع. افتح البحث المباشر في الخرائط: [\${query}](\${url.toString()})\${area ? "" : "\n\nاذكر المدينة والحي لأساعدك في تضييق البحث."}\`
+      ? `لا أستطيع تأكيد أقرب متجر أو عنوان فرع لولو من دون نتيجة خرائط موثوقة، لذلك لن أخمّن الموقع. افتح البحث المباشر في الخرائط: [${query}](${url.toString()})${area ? "" : "\n\nاذكر المدينة والحي لأساعدك في تضييق البحث."}`
       : language === "TR"
-        ? \`En yakın marketin veya Lulu şubesinin adresini doğrulayamıyorum; haritada arayın: [\${query}](\${url.toString()})\`
-        : \`I can't verify the nearest store or Lulu branch address, so I won't guess. [Search Google Maps: \${query}](\${url.toString()})\`;
+        ? `En yakın marketin veya Lulu şubesinin adresini doğrulayamıyorum; haritada arayın: [${query}](${url.toString()})`
+        : `I can't verify the nearest store or Lulu branch address, so I won't guess. [Search Google Maps: ${query}](${url.toString()})`;
   }
 
   const asksRestaurant = /(?:مطعم|مطاعم|فطور|إفطار|فطور|وجبة|breakfast|restaurant|restaurants|food near me)/i.test(latest);
