@@ -203,17 +203,17 @@ async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN") {
     });
     if (!response.ok) throw new Error(`Saudi league RSS returned ${response.status}`);
     const xml = await response.text();
-    const items = (xml.match(/<item\\b[^>]*>[\\s\\S]*?<\\/item>/gi) ?? []).slice(0, 5).map((itemMarkup) => {
-      const body = itemMarkup.replace(/^<item\\b[^>]*>/i, "").replace(/<\\/item>$/i, "");
-      const title = decodeNewsXml(body.match(/<title\\b[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1] ?? "");
-      const source = decodeNewsXml(body.match(/<source\\b[^>]*>([\\s\\S]*?)<\\/source>/i)?.[1] ?? "Google News");
-      const url = decodeNewsXml(body.match(/<link\\b[^>]*>([\\s\\S]*?)<\\/link>/i)?.[1] ?? "");
-      const published = decodeNewsXml(body.match(/<pubDate\\b[^>]*>([\\s\\S]*?)<\\/pubDate>/i)?.[1] ?? "");
+    const items = (xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) ?? []).slice(0, 5).map((itemMarkup) => {
+      const body = itemMarkup.replace(/^<item\b[^>]*>/i, "").replace(/<\/item>$/i, "");
+      const title = decodeNewsXml(body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
+      const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? "Google News");
+      const url = decodeNewsXml(body.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? "");
+      const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
       const date = published ? new Date(published) : null;
       const dateText = date && !Number.isNaN(date.getTime())
         ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeZone: "Asia/Riyadh" }).format(date)
         : "";
-      return { title, source, dateText, url: /^https?:\\/\\//i.test(url) ? url : "" };
+      return { title, source, dateText, url: /^https?:\/\//i.test(url) ? url : "" };
     }).filter((item) => item.title.length > 5);
     if (!items.length) throw new Error("No Saudi league schedule articles returned");
     const heading = language === "AR" ? "أحدث نتائج البحث عن جدول دوري روشن" : language === "TR" ? "Suudi Pro Lig fikstürü için güncel arama sonuçları" : "Recent Saudi Pro League schedule search results";
@@ -222,7 +222,7 @@ async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN") {
       : language === "TR"
         ? "Bunlar güncel haber bağlantılarıdır, doğrulanmış birleşik fikstür değildir. Maç saatini kaynaktan kontrol edin."
         : "These are recent reports, not a verified consolidated fixture list. Open the source to confirm match times.";
-    return `${heading}\\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\\n   ${item.url}` : ""}`).join("\\n")}\\n\\n${note}`;
+    return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${note}`;
   } catch (error) {
     console.warn("[ALASSAUL sports] Saudi league schedule feed unavailable", safeProviderDiagnostic(error));
     return language === "AR"
