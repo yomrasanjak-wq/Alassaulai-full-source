@@ -185,6 +185,12 @@ async function getJeddahWeatherAnswer(content: string) {
 
 const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
+function isLocalBusinessSearchQuestion(message: string) {
+  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\\s*ماركت|هايبرماركت|لولو|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast)/i.test(message);
+  const asksForPlace = /(?:أقرب|اقرب|قريب|بالقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث|يقع|عنوان|موقع|nearby|nearest|near me|best|where|location|address|search)/i.test(message);
+  return mentionsBusiness && asksForPlace;
+}
+
 function isSaudiLeagueQuestion(message: string) {
   return /(?:روشن|الدوري السعودي|دوري روشن|السوبر السعودي|الدوري السعودي للمحترفين|Saudi Pro League)/i.test(message);
 }
@@ -636,6 +642,16 @@ export const appRouter = router({
             ?? await getAyderWeatherAnswer(latestText)
             ?? await getJeddahWeatherAnswer(latestText);
           if (directWeather) return { text: directWeather };
+
+          // Without verified Google Maps grounding, route local business lookups
+          // to an actual map search instead of allowing the model to guess branches,
+          // addresses, ratings, or opening status.
+          const mapsGroundingAvailable = Boolean(process.env.GEMINI_API_KEY?.trim())
+            && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true";
+          if (isLocalBusinessSearchQuestion(latestText) && !mapsGroundingAvailable) {
+            const localSearch = getContextualFallback(input.messages, input.language);
+            if (localSearch) return { text: localSearch };
+          }
 
           if (isSaudiLeagueQuestion(latestText)) {
             return { text: await getSaudiLeagueScheduleAnswer(input.language, latestText) };
