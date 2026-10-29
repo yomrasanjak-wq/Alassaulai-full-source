@@ -476,6 +476,22 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
+        // A directions URL needs no Gemini or Google Maps API key.
+        // Return a usable link for explicit route-opening requests.
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
+          && /(افتح|فتح|ورني|ورّني|اعرض|الخريطة|الخريطه|المسار|الطريق|اتجاهات|directions|open map|route)/i.test(latestText)) {
+          const routeMatch = latestText.match(/من\s+(.+?)\s+(?:إلى|الى)\s+(.+?)(?:[؟?!.،,]|$)/i);
+          if (routeMatch) {
+            const origin = routeMatch[1].trim().slice(0, 100);
+            const destination = routeMatch[2].trim().slice(0, 100);
+            if (origin && destination) {
+              const mapUrl = new URL("https://www.google.com/maps/dir/");
+              mapUrl.search = new URLSearchParams({ api: "1", origin, destination, travelmode: "driving" }).toString();
+              return { text: `تفضل، هذا مسار القيادة من **${origin}** إلى **${destination}**:\n\n[افتح الطريق في خرائط Google](${mapUrl.toString()})\n\nقد تختلف المسافة ومدة الرحلة بحسب الطريق وحالة المرور.` };
+            }
+          }
+        }
+
         const liveContext: string[] = [];
 
         // Live tools enrich the model prompt; they never replace the LLM answer.
