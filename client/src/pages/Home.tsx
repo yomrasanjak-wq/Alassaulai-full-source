@@ -85,11 +85,11 @@ const ASSETS = {
 
 const DESTINATION_GALLERY = [
   { name: "شاطئ قانيتا", region: "طرابزون", category: "طرابزون", image: "/images/black-sea-coast.webp", alt: "الساحل والبحر الأسود في شمال تركيا", query: "Ganita Sahili Trabzon" },
-  { name: "الحديقة النباتية", region: "طرابزون", category: "طرابزون", image: "/images/forest-waterfall.webp", alt: "طبيعة خضراء في شمال تركيا", query: "Trabzon Botanik Parkı" },
-  { name: "أكواريوم طرابزون", region: "طرابزون", category: "طرابزون", image: "/images/trabzon.webp", alt: "صورة إرشادية من طرابزون؛ تحقق من صور الأكواريوم الحديثة قبل الزيارة", query: "Trabzon Akvaryum" },
+  { name: "الحديقة النباتية", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة للحديقة النباتية؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Trabzon Botanik Parkı" },
+  { name: "أكواريوم طرابزون", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة للأكواريوم؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Trabzon Akvaryum" },
   { name: "الميدان", region: "طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "مشهد حضري من طرابزون", query: "Trabzon Meydan Parkı" },
-  { name: "بوزتبه والمطل", region: "طرابزون", category: "طرابزون", image: "/images/trabzon-lake.webp", alt: "إطلالة طبيعية من منطقة طرابزون", query: "Boztepe Trabzon seyir terası" },
-  { name: "قصر أتاتورك", region: "طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "طرابزون ومعالمها", query: "Atatürk Köşkü Trabzon" },
+  { name: "بوزتبه والمطل", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة مؤكدة لمطل بوزتبه؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Boztepe Trabzon seyir terası" },
+  { name: "قصر أتاتورك", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة لقصر أتاتورك؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Atatürk Köşkü Trabzon" },
   { name: "بحيرة سيرا", region: "أكشابات", category: "طرابزون", image: "/images/trabzon-lake.webp", alt: "بحيرة وسط الطبيعة الخضراء", query: "Sera Gölü Trabzon" },
   { name: "ممشى كاشوستو", region: "يومرا", category: "يومرا وكاشوستو", image: "/images/yomra.webp", alt: "ساحل يومرا في طرابزون", query: "Kaşüstü Sahil Yürüyüş Yolu Yomra" },
   { name: "حديقة يومرا والميناء", region: "يومرا", category: "يومرا وكاشوستو", image: "/images/yomra.webp", alt: "الساحل والأنشطة البحرية", query: "Yomra Sahil Parkı Liman" },
@@ -100,9 +100,9 @@ const DESTINATION_GALLERY = [
   { name: "مرتفعات ديمركابي", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/black-sea-valley.webp", alt: "وادي جبلي أخضر في شمال تركيا", query: "Demirkapı Yaylası Çaykara" },
   { name: "السلطان مراد", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/uzungol.webp", alt: "مراعي ومرتفعات شمال تركيا", query: "Sultan Murat Yaylası Trabzon" },
   { name: "حيدر نبي", region: "أكشابات", category: "أوزنجول والمرتفعات", image: "/images/hidir-nebi.webp", alt: "مرتفعات حيدر نبي", query: "Hıdırnebi Yaylası Trabzon" },
-  { name: "مغارة تشال", region: "دوزكوي", category: "أوزنجول والمرتفعات", image: "/images/forest-waterfall.webp", alt: "طبيعة شمال تركيا قرب الكهوف والوديان", query: "Çal Mağarası Trabzon" },
-  { name: "دير صوميلا", region: "ماتشكا", category: "طرابزون", image: "/images/modern-waterfall.webp", alt: "طبيعة جبلية وغابات في منطقة طرابزون", query: "Sümela Manastırı Trabzon" },
-  { name: "هامسي كوي وزيقانا", region: "ماتشكا", category: "أوزنجول والمرتفعات", image: "/images/hidir-nebi.webp", alt: "جبال خضراء ومرتفعات شمال تركيا", query: "Hamsiköy Zigana Trabzon" },
+  { name: "مغارة تشال", region: "دوزكوي", category: "أوزنجول والمرتفعات", image: null, alt: "لم تتوفر بعد صورة موثقة لمغارة تشال؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Çal Mağarası Trabzon" },
+  { name: "دير صوميلا", region: "ماتشكا", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة لدير صوميلا؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Sümela Manastırı Trabzon" },
+  { name: "هامسي كوي وزيقانا", region: "ماتشكا", category: "أوزنجول والمرتفعات", image: null, alt: "لم تتوفر بعد صورة موثقة لهامسي كوي وزيقانا؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Hamsiköy Zigana Trabzon" },
   { name: "بحيرة مافي غول", region: "قيرسون", category: "أوردو وقيرسون", image: "/images/giresun.webp", alt: "طبيعة قيرسون في شمال تركيا", query: "Mavi Göl Kuzalan Giresun" },
   { name: "شاطئ أوردو وتلفريك بوزتبه", region: "أوردو", category: "أوردو وقيرسون", image: "/images/modern-ordu.webp", alt: "أوردو وساحل البحر الأسود", query: "Ordu Boztepe Teleferik" },
   { name: "بيرشمبه وياسون بورنو", region: "أوردو", category: "أوردو وقيرسون", image: "/images/modern-ordu.webp", alt: "الساحل في أوردو", query: "Yason Burnu Perşembe Ordu" },
@@ -123,7 +123,7 @@ const DESTINATION_GALLERY = [
   { name: "مدينة أوف وساحلها", region: "أوف، طرابزون", category: "الساحل الشرقي", image: "/images/black-sea-coast.webp", alt: "ساحل البحر الأسود", query: "Of Trabzon sahil" },
   { name: "ممشى وحديقة إيوف", region: "قرب فوروم طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "مدينة طرابزون ومرافقها", query: "EYOF Park Trabzon" },
   { name: "منزلق الجبل في كاشوستو", region: "يومرا، كاشوستو", category: "يومرا وكاشوستو", image: "/images/yomra.webp", alt: "منطقة يومرا الساحلية والمرتفعات المحيطة", query: "Kaşüstü Yomra mountain luge" },
-  { name: "شلال آغاران", region: "تشايلي، ريزا", category: "ريزا وآيدر", image: "/images/ayder.webp", alt: "شلال ومياه بين الغابات", query: "Ağaran Şelalesi Çayeli Rize" },
+  { name: "شلال آغاران", region: "تشايلي، ريزا", category: "ريزا وآيدر", image: null, alt: "لم تتوفر بعد صورة موثقة لشلال آغاران؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Ağaran Şelalesi Çayeli Rize" },
   { name: "قرية ياسون بورنو الساحلية", region: "بيرشمبه، أوردو", category: "أوردو وقيرسون", image: "/images/ordu.webp", alt: "مناظر ساحلية في أوردو", query: "Yason Burnu Perşembe Ordu" },
 ] as const;
 
@@ -1540,7 +1540,7 @@ export default function Home() {
                 {GALLERY_FILTERS.map((filter) => <button key={filter} type="button" className={galleryFilter === filter ? "gallery-filter-active" : ""} onClick={() => { setGalleryFilter(filter); setPhotoBookPage(0); }}>{filter}</button>)}
               </div>
               {(() => { const pages = DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter); const item = pages[Math.min(photoBookPage, Math.max(0, pages.length - 1))]; return item ? <article key={`${item.name}-${photoBookPage}`} className="photo-book-page">
-                <div className="photo-book-image-wrap"><img src={item.image} alt={item.alt} loading="eager" /><span className="photo-book-page-number">{String(photoBookPage + 1).padStart(2, "0")}</span></div>
+                <div className={`photo-book-image-wrap${item.image ? "" : " photo-book-image-unverified"}`}>{item.image ? <img src={item.image} alt={item.alt} loading="eager" /> : <div className="photo-book-no-image" role="img" aria-label={item.alt}><span>ALASSAUL</span><strong>{item.name}</strong><small>الصورة الأصلية قيد التوثيق</small></div>}<span className="photo-book-page-number">{String(photoBookPage + 1).padStart(2, "0")}</span></div>
                 <div className="photo-book-page-copy"><span>{item.region}</span><h3>{item.name}</h3><p>{item.alt}. اكتشف الموقع وخطط الطريق قبل الزيارة، فالمسافات والظروف قد تختلف حسب الموسم.</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.query)}`} target="_blank" rel="noreferrer">افتح الموقع على الخريطة <ExternalLink size={15} /></a></div>
               </article> : <p className="media-empty">لا توجد صور في هذا التصنيف.</p>; })()}
               <div className="photo-book-controls"><button type="button" className="button button-quiet" onClick={() => setPhotoBookPage((page) => Math.max(0, page - 1))} disabled={photoBookPage === 0}><ArrowRight size={16} /> الصفحة السابقة</button><span>{photoBookPage + 1} / {DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length}</span><button type="button" className="button button-primary" onClick={() => setPhotoBookPage((page) => Math.min(DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length - 1, page + 1))} disabled={photoBookPage >= DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length - 1}>الصفحة التالية <ArrowLeft size={16} /></button></div>
