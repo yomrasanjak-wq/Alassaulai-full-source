@@ -206,7 +206,7 @@ describe("real-brain regression scenarios", () => {
     expect(result.text).toContain("ينبع الصناعية");
     expect(result.text).toContain("https://www.google.com/maps/search/");
     expect(result.text).not.toMatch(/مطعم\s+[\p{L}]+\s+(?:ممتاز|مفتوح الآن)|تقييمه\s+\d/i);
-    expect(invokeLLM).toHaveBeenCalled();
+    expect(invokeLLM).not.toHaveBeenCalled();
   });
 
 
@@ -230,7 +230,7 @@ describe("real-brain regression scenarios", () => {
     expect(result.text).toContain("https://www.google.com/maps/search/");
     expect(result.text).toContain("حي الصبح");
     expect(result.text).not.toMatch(/يقع في منطقة|بجوار|عنوان الفرع هو/);
-    expect(invokeLLM).toHaveBeenCalled();
+    expect(invokeLLM).not.toHaveBeenCalled();
   });
 
   it("offers a direct map search for popular restaurants in Yanbu Industrial when the model returns a generic error", async () => {
