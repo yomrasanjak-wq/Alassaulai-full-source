@@ -1605,7 +1605,15 @@ export default function Home() {
             <a className="resident-service-card resident-service-yimer" href="https://en.goc.gov.tr/communication-center-for-foreigners" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Phone size={22} /></span><span className="resident-service-copy"><strong>مركز تواصل الأجانب YİMER 157</strong><small>استفسارات الإقامة وشؤون الأجانب · اتصل 157 داخل تركيا</small></span><ExternalLink size={16} /></a>
             <a className="resident-service-card resident-service-emergency" href="tel:112" aria-label="اتصال بالطوارئ التركية 112"><span className="resident-service-icon"><LifeBuoy size={22} /></span><span className="resident-service-copy"><strong>الطوارئ في تركيا — 112</strong><small>للحالات الطارئة فقط · اضغط للاتصال من الهاتف</small></span><Phone size={16} /></a>
           </div>
-          <div className="resident-local-focus">
+
+              </div>}
+            </div>
+          <div className="resident-accordion-group resident-local-help-accordion">
+            <button type="button" className="resident-accordion-trigger" aria-expanded={residentLocalHelpOpen} onClick={() => setResidentLocalHelpOpen((open) => !open)}>
+              <span><MapPin size={19} /> دليل الخدمات المحلية والاحتياجات اليومية</span><ChevronDown size={20} className={residentLocalHelpOpen ? "is-open" : ""} />
+            </button>
+            {residentLocalHelpOpen && <div className="resident-local-help-content">
+            <div className="resident-local-focus">
             <div className="resident-local-focus-heading">
               <span className="resident-local-focus-icon"><MapPin size={19} /></span>
               <div><strong>دليل يومرا وطرابزون أولًا</strong><small>روابط بحث محلية للخدمات التي يحتاجها المقيم. اختر الخدمة ثم تأكد من العنوان وساعات العمل قبل الذهاب.</small></div>
@@ -1637,6 +1645,8 @@ export default function Home() {
           </div>
               </div>}
             </div>
+            </div>}
+          </div>
           <div className="resident-accordion-group resident-phrasebook-accordion">
             <button type="button" className="resident-accordion-trigger" aria-expanded={residentPhrasebookOpen} onClick={() => setResidentPhrasebookOpen((open) => !open)}>
               <span><Languages size={19} /> عبارات تركية جاهزة</span><ChevronDown size={20} className={residentPhrasebookOpen ? "is-open" : ""} />
