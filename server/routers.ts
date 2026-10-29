@@ -265,7 +265,8 @@ function getContextualFallback(
 
   const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
   if (asksSupermarket) {
-    const area = /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i.test(recentUserText) ? "حي الصبح، ينبع الصناعية"
+    const area = /حي الصبح|الصبح/i.test(recentUserText) && /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i.test(recentUserText) ? "حي الصبح، ينبع الصناعية"
+      : /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i.test(recentUserText) ? "ينبع الصناعية"
       : /ينبع|yanbu/i.test(recentUserText) ? "ينبع"
       : /طرابزون|ترابزون|trabzon/i.test(recentUserText) ? "طرابزون"
       : /يومرا|يومره|yomra/i.test(recentUserText) ? "يومرا"
