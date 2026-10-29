@@ -184,4 +184,28 @@ describe("real-brain regression scenarios", () => {
     }
   });
 
+
+  it("offers a useful Trabzon itinerary if both AI providers fail", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "رتب لي برنامجاً في طرابزون" }] });
+    expect(result.text).toContain("قصر أتاتورك");
+    expect(result.text).toContain("غانيتا");
+    expect(result.text).toContain("ليس تحققاً من الطقس");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
+  it("offers a real map search instead of inventing breakfast restaurants after provider failure", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [
+        { role: "user", content: "أريد مطعماً قريباً في ينبع الصناعية حي الصبح" },
+        { role: "assistant", content: "حاضر، هل تفضل نوعاً معيناً؟" },
+        { role: "user", content: "أبغى مطعم فطور" },
+      ],
+    });
+    expect(result.text).toContain("مطاعم فطور في ينبع الصناعية");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).not.toMatch(/مطعم\s+[\p{L}]+\s+(?:ممتاز|مفتوح الآن)|تقييمه\s+\d/i);
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
 });
