@@ -1806,7 +1806,7 @@ img { display: block; max-width: 100%; }
 /* ALASSAUL V24 — resident services portal */
 .resident-services-section { background: #edf2ec; border-block: 1px solid #dce5da; }
 .resident-services-section > .container > .section-heading { margin-bottom: 25px; }
-.resident-services-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.resident-services-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
 .resident-service-card { min-width: 0; min-height: 92px; padding: 16px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: #173d36; background: #fffdf8; border: 1px solid #dce4d9; box-shadow: 0 5px 16px rgb(23 61 54 / 4%); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
 .resident-service-card:hover { transform: translateY(-2px); border-color: #b69a64; box-shadow: 0 9px 22px rgb(23 61 54 / 9%); }
 .resident-service-icon { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; color: #a17a3e; background: #f3eee2; border-radius: 12px; }
