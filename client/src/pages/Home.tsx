@@ -1417,7 +1417,7 @@ export default function Home() {
     }
   }
 
-  const latestRouteMessage = [...chatMessages].reverse().find((message) => message.route);
+  const latestRouteMessage = chatMessages[chatMessages.length - 1]?.route ? chatMessages[chatMessages.length - 1] : undefined;
 
   return (
     <main className={`site-shell season-${season}`} dir={dir} data-season={season}>
