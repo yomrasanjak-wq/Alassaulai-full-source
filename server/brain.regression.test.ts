@@ -93,7 +93,7 @@ describe("real-brain regression scenarios", () => {
     expect(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.at(-1)?.content).toBe(question);
   });
 
-  it("passes a clear RSS outage to the model instead of inventing current news", async () => {
+  it("returns a clear RSS outage without relying on the model or inventing current news", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
     vi.mocked(invokeLLM).mockResolvedValue({
       model: ENV.primaryModel,
@@ -102,10 +102,9 @@ describe("real-brain regression scenarios", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
     try {
       const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "ما آخر أخبار كرة القدم اليوم؟" }] });
-      expect(result.text).toContain("مصدر الأخبار الحي غير متاح");
+      expect(result.text).toContain("تعذر جلب عناوين الأخبار الحية");
       expect(result.text).not.toMatch(/فاز|خسر|نتيجة\s+\d/i);
-      expect(invokeLLM).toHaveBeenCalledOnce();
-      expect(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content).toContain("تعذر جلب عناوين الأخبار الحية");
+      expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
       vi.unstubAllEnvs();
