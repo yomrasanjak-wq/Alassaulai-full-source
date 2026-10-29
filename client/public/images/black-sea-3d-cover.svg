@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">ALASSAUL — بوابتك للشمال التركي</title>
+<desc id="desc">غلاف فني ثلاثي الأبعاد الطابع يجمع البحر الأسود والجبال الخضراء والغيوم والمدينة والتلفريك.</desc>
+<defs>
+ <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#75c8d9"/><stop offset=".54" stop-color="#d4eee8"/><stop offset="1" stop-color="#f0e8d4"/></linearGradient>
+ <linearGradient id="sea" x2=".1" y2="1"><stop stop-color="#37b9c3"/><stop offset="1" stop-color="#0b5862"/></linearGradient>
+ <linearGradient id="mountain" x2=".8" y2="1"><stop stop-color="#7bb69a"/><stop offset="1" stop-color="#174d42"/></linearGradient>
+ <linearGradient id="front" x2="0" y2="1"><stop stop-color="#246a50"/><stop offset="1" stop-color="#0b302b"/></linearGradient>
+ <linearGradient id="gold" x2="1" y2="1"><stop stop-color="#f6e2a3"/><stop offset="1" stop-color="#b88b36"/></linearGradient>
+ <linearGradient id="glass" x2="1" y2="1"><stop stop-color="#d8f5f3" stop-opacity=".95"/><stop offset="1" stop-color="#247f91" stop-opacity=".8"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="15"/></filter>
+ <pattern id="waves" width="90" height="26" patternUnits="userSpaceOnUse"><path d="M4 14 Q22 5 42 14 T82 14" fill="none" stroke="#b6f2e7" stroke-opacity=".24" stroke-width="2"/></pattern>
+</defs>
+<rect width="1600" height="900" fill="url(#sky)"/>
+<circle cx="1280" cy="170" r="90" fill="#fff6d7" opacity=".65"/>
+<g fill="#fff" opacity=".48"><ellipse cx="240" cy="175" rx="120" ry="34"/><ellipse cx="300" cy="151" rx="76" ry="43"/><ellipse cx="355" cy="176" rx="90" ry="28"/><ellipse cx="990" cy="120" rx="125" ry="30"/><ellipse cx="1050" cy="98" rx="72" ry="40"/><ellipse cx="1112" cy="123" rx="85" ry="25"/></g>
+<path d="M0 430 L160 330 280 365 430 230 550 315 710 180 850 300 1020 215 1160 330 1320 245 1450 320 1600 250 1600 580 0 600Z" fill="#83bca7" opacity=".7"/>
+<path d="M0 480 L180 360 315 435 485 300 620 400 780 255 920 390 1100 280 1260 390 1430 300 1600 375 1600 650 0 650Z" fill="url(#mountain)"/>
+<path d="M430 300 L485 300 453 332 485 326 516 350 480 342 460 370 452 337 425 347Z M730 280 L780 255 812 300 783 289 766 318 759 287Z M1285 295 L1320 245 1358 290 1326 278 1306 310Z" fill="#eaf3e9" opacity=".86"/>
+<path d="M0 520 Q200 465 390 500 T780 490 T1160 510 T1600 480 L1600 900 0 900Z" fill="url(#sea)"/>
+<rect y="520" width="1600" height="380" fill="url(#waves)"/>
+<path d="M0 620 Q230 570 420 622 T820 612 T1220 600 T1600 620" fill="none" stroke="#c4f4e9" stroke-width="5" opacity=".25"/>
+<path d="M0 700 Q190 635 360 680 T740 675 T1120 660 T1600 700 L1600 900 0 900Z" fill="#0a5250" opacity=".58"/>
+<g fill="#f1e6cb" stroke="#b6c7b4" stroke-width="2">
+ <path d="M115 540 L115 475 145 475 145 450 174 450 174 490 204 490 204 460 232 460 232 535Z"/>
+ <path d="M245 545 L245 490 275 490 275 465 302 465 302 505 330 505 330 470 360 470 360 545Z"/>
+ <path d="M355 550 L355 505 385 505 385 475 414 475 414 520 442 520 442 486 468 486 468 550Z"/>
+ <path d="M1160 530 L1160 465 1190 465 1190 440 1215 440 1215 480 1240 480 1240 452 1267 452 1267 530Z"/>
+ <path d="M1278 535 L1278 490 1305 490 1305 455 1335 455 1335 500 1362 500 1362 465 1390 465 1390 535Z"/>
+ <path d="M1400 538 L1400 490 1432 490 1432 465 1462 465 1462 507 1490 507 1490 480 1520 480 1520 538Z"/>
+</g>
+<g stroke="#f5e7bd" stroke-width="3" fill="#b9c9b6">
+ <path d="M210 495 L210 440 255 440 255 495Z"/><path d="M220 440 L232 418 245 440Z"/>
+ <path d="M1330 480 L1330 420 1370 420 1370 480Z"/><path d="M1340 420 L1350 395 1360 420Z"/>
+</g>
+<path d="M0 765 Q180 700 370 760 T740 735 T1110 755 T1600 710 L1600 900 0 900Z" fill="url(#front)"/>
+<g fill="#123e32"><path d="M0 850 L80 680 155 850Z"/><path d="M100 900 L200 700 300 900Z"/><path d="M1280 900 L1380 680 1480 900Z"/><path d="M1400 900 L1510 650 1600 850 1600 900Z"/></g>
+<g fill="#2f7957"><path d="M45 850 L80 760 115 850Z"/><path d="M145 880 L200 760 255 880Z"/><path d="M1325 860 L1380 750 1435 860Z"/><path d="M1460 850 L1510 720 1560 850Z"/></g>
+<g stroke="#e4d2a0" stroke-width="5" fill="none" opacity=".9"><path d="M700 0 L1020 520"/><path d="M695 0 L1015 520" stroke="#fff" stroke-opacity=".35"/></g>
+<g transform="translate(900 305) rotate(-29)">
+ <path d="M-32 -38 Q0 -56 32 -38 L29 32 Q0 48 -29 32Z" fill="#183e3a" stroke="#e4d2a0" stroke-width="4"/>
+ <path d="M-23 -29 Q0 -39 23 -29 L21 22 Q0 32 -21 22Z" fill="url(#glass)"/>
+ <path d="M0 -34 L0 27" stroke="#e4d2a0" stroke-width="3"/>
+ <path d="M-20 38 L20 38" stroke="#183e3a" stroke-width="7" stroke-linecap="round"/>
+</g>
+<g transform="translate(105 110)">
+ <rect width="8" height="175" rx="4" fill="#e8d39a"/><path d="M8 8 L95 27 8 51Z" fill="#d74740"/><path d="M48 23 l5 10 11 0 -9 7 3 11 -10 -6 -9 6 3 -11 -9 -7 11 0Z" fill="#fff4d9" opacity=".9"/>
+</g>
+<g transform="translate(80 660)" opacity=".9"><path d="M0 0 Q50 -35 100 0 L90 40 10 40Z" fill="#d9c79b"/><path d="M-12 3 Q50 -55 112 3" fill="none" stroke="#f3e2b6" stroke-width="10"/><rect x="16" y="12" width="12" height="20" fill="#477e7b"/><rect x="43" y="12" width="12" height="20" fill="#477e7b"/><rect x="70" y="12" width="12" height="20" fill="#477e7b"/></g>
+<g transform="translate(1120 610)" opacity=".85"><path d="M0 40 L0 0 110 0 110 40" fill="#e8d7b0"/><path d="M-12 3 L55 -42 122 3Z" fill="#a95e45"/><path d="M8 40 L8 15 102 15 102 40" fill="#d9c79b"/><rect x="20" y="17" width="18" height="23" fill="#3b7e7e"/><rect x="72" y="17" width="18" height="23" fill="#3b7e7e"/></g>
+<rect x="40" y="40" width="1520" height="820" rx="34" fill="none" stroke="url(#gold)" stroke-width="3" opacity=".7"/>
+<g transform="translate(110 125)">
+ <rect x="0" y="0" width="610" height="230" rx="26" fill="#0a302b" fill-opacity=".77" stroke="#e2c57c" stroke-opacity=".65" stroke-width="2"/>
+ <text x="560" y="62" fill="#e6cf8b" font-family="Arial,sans-serif" font-size="20" font-weight="700" text-anchor="end" letter-spacing="5">ALASSAUL · TRAVEL JOURNAL</text>
+ <text x="560" y="133" fill="#fff9eb" font-family="Arial,sans-serif" font-size="49" font-weight="700" text-anchor="end">بوابتك للشمال التركي</text>
+ <text x="560" y="184" fill="#c5e9df" font-family="Arial,sans-serif" font-size="26" text-anchor="end">من البحر الأسود إلى قمم الغيم</text>
+ <path d="M495 207 L560 207" stroke="#d6b86d" stroke-width="4" stroke-linecap="round"/>
+</g>
+<g transform="translate(1340 95)">
+ <circle cx="70" cy="70" r="62" fill="#0d4238" fill-opacity=".82" stroke="url(#gold)" stroke-width="3"/>
+ <path d="M22 91 L50 57 67 76 90 43 119 91Z" fill="#d6e7d8"/>
+ <path d="M43 91 L68 66 84 84 101 64 119 91Z" fill="#69aa8b"/>
+ <path d="M33 100 Q70 112 108 100" fill="none" stroke="#d8c07b" stroke-width="4" stroke-linecap="round"/>
+</g>
+</svg>
