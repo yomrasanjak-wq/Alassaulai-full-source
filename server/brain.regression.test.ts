@@ -111,4 +111,37 @@ describe("real-brain regression scenarios", () => {
       vi.unstubAllEnvs();
     }
   });
+  it("returns live Qassim weather instead of calling the language model", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ current: { time: "2026-10-29T13:00", temperature_2m: 31, apparent_temperature: 33, weather_code: 0, wind_speed_10m: 12 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    try {
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "اخبار الطقس في القصيم" }] });
+      expect(result.text).toContain("القصيم (بريدة)");
+      expect(result.text).toContain("31° مئوية");
+      expect(result.text).toContain("Open-Meteo");
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not present old RSS articles as today's world news", async () => {
+    const staleFeed = `<?xml version="1.0"?><rss><channel><item><title>Old world headline</title><source>Example News</source><link>https://example.com/old</link><pubDate>Tue, 01 Jan 2019 10:00:00 GMT</pubDate></item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(staleFeed, { status: 200, headers: { "content-type": "application/rss+xml" } }),
+    );
+    try {
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "ما أبرز أخبار العالم اليوم؟" }] });
+      expect(result.text).toContain("لن أخمّن أخبار اليوم");
+      expect(result.text).not.toContain("Old world headline");
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
 });
