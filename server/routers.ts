@@ -263,6 +263,28 @@ function getContextualFallback(
     return "تعذّر تشغيل المساعد الذكي مؤقتاً، لكن إليك برنامجاً مبدئياً ليوم في طرابزون:\n\n1. **الصباح:** قصر أتاتورك وحدائقه، ثم جولة قصيرة في ميدان طرابزون.\n2. **وقت الغداء:** اختر مطعماً محلياً في وسط المدينة، وتحقق من التقييمات وساعات العمل قبل التوجه إليه.\n3. **بعد الظهر:** ممشى غانيتا على البحر، أو أكواريوم طرابزون إذا كانت الرحلة عائلية.\n4. **قبل الغروب:** بو زتبه للإطلالة على المدينة والبحر.\n\nهذا اقتراح عام وليس تحققاً من الطقس أو أوقات الفتح اليوم. إذا أخبرتني بوجود أطفال أو سيارة وعدد أيام الرحلة، أرتّب لك نسخة أنسب عند عودة المساعد.";
   }
 
+  const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
+  if (asksSupermarket) {
+    const area = /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i.test(recentUserText) ? "حي الصبح، ينبع الصناعية"
+      : /ينبع|yanbu/i.test(recentUserText) ? "ينبع"
+      : /طرابزون|ترابزون|trabzon/i.test(recentUserText) ? "طرابزون"
+      : /يومرا|يومره|yomra/i.test(recentUserText) ? "يومرا"
+      : /جدة|جده|jeddah/i.test(recentUserText) ? "جدة"
+      : /المدينة المنورة|المدينه المنوره|madinah|medina/i.test(recentUserText) ? "المدينة المنورة"
+      : undefined;
+    const query = /لولو|lulu/i.test(latest) ? \`لولو هايبر ماركت \${area ?? "ينبع"}\`
+      : /أقرب|اقرب|قريب|بالقرب|nearest|nearby/i.test(latest) ? \`سوبر ماركت قريب \${area ?? "من موقعي الحالي"}\`
+      : \`سوبر ماركت \${area ?? "من موقعي الحالي"}\`;
+    const url = new URL("https://www.google.com/maps/search/");
+    url.searchParams.set("api", "1");
+    url.searchParams.set("query", query);
+    return language === "AR"
+      ? \`لا أستطيع تأكيد أقرب متجر أو عنوان فرع لولو من دون نتيجة خرائط موثوقة، لذلك لن أخمّن الموقع. افتح البحث المباشر في الخرائط: [\${query}](\${url.toString()})\${area ? "" : "\n\nاذكر المدينة والحي لأساعدك في تضييق البحث."}\`
+      : language === "TR"
+        ? \`En yakın marketin veya Lulu şubesinin adresini doğrulayamıyorum; haritada arayın: [\${query}](\${url.toString()})\`
+        : \`I can't verify the nearest store or Lulu branch address, so I won't guess. [Search Google Maps: \${query}](\${url.toString()})\`;
+  }
+
   const asksRestaurant = /(?:مطعم|مطاعم|فطور|إفطار|فطور|وجبة|breakfast|restaurant|restaurants|food near me)/i.test(latest);
   if (asksRestaurant) {
     const area = /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i.test(recentUserText) ? "ينبع الصناعية"
@@ -589,8 +611,9 @@ export const appRouter = router({
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
-          && /(افتح|فتح|ورني|ورّني|اعرض|الخريطة|الخريطه|المسار|الطريق|اتجاهات|directions|open map|route)/i.test(latestText)) {
-          const routeMatch = latestText.match(/من\s+(.+?)\s+(?:إلى|الى)\s+(.+?)(?:[؟?!.،,]|$)/i);
+          && (/(افتح|فتح|ورني|ورّني|اعرض|الخريطة|الخريطه|المسار|الطريق|اتجاهات|directions|open map|route)/i.test(latestText)
+            || /من\s+.+?\s+(?:إلى|الى|لـ)\s+.+/i.test(latestText))) {
+          const routeMatch = latestText.normalize("NFKC").match(/من\s+(.+?)\s+(?:إلى|الى|لـ)\s+(.+?)(?:[؟?!.،,]|$)/i);
           if (routeMatch) {
             const origin = routeMatch[1].trim().slice(0, 100);
             const destination = routeMatch[2].trim().slice(0, 100);
