@@ -588,9 +588,9 @@ ${searchContext}`);
               if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
             }
-            if (!grounded && isSaudiLeagueScheduleQuestion(latestText)) {
+            if (isSaudiLeagueScheduleQuestion(latestText)) {
               const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language);
-              if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\\n${scheduleContext}`);
+              if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\n${scheduleContext}`);
             }
           } else if (isWorldNewsQuestion(latestText)) {
             const newsContext = await getWorldNewsAnswer(latestText, input.language);
