@@ -711,6 +711,7 @@ export default function Home() {
   const [residentServicesOpen, setResidentServicesOpen] = useState(false);
   const [residentGroupOpen, setResidentGroupOpen] = useState<Record<string, boolean>>({});
   const [residentPhrasebookOpen, setResidentPhrasebookOpen] = useState(false);
+  const [residentHealthOpen, setResidentHealthOpen] = useState(false);
   const [residentLocalHelpOpen, setResidentLocalHelpOpen] = useState(false);
   const [photoBookPage, setPhotoBookPage] = useState(0);
   const [activeSection, setActiveSection] = useState<"cities" | "live" | "map" | "partners" | "entertainment">("cities");
@@ -1668,6 +1669,17 @@ export default function Home() {
             </div>
             <p className="resident-phrase-status" aria-live="polite">{copiedTurkishPhrase && copiedTurkishPhrase !== "تعذر النسخ — اضغط مطولًا على العبارة" ? "تم نسخ العبارة التركية، يمكنك لصقها في الرسائل." : copiedTurkishPhrase}</p>
           </div>}
+          </div>
+          <div className="resident-accordion-group resident-health-accordion">
+            <button type="button" className="resident-accordion-trigger" aria-expanded={residentHealthOpen} onClick={() => setResidentHealthOpen((open) => !open)}>
+              <span><Heart size={19} /> المستشفيات والصيدليات المناوبة</span><ChevronDown size={20} className={residentHealthOpen ? "is-open" : ""} />
+            </button>
+            {residentHealthOpen && <div className="resident-services-grid">
+              <a className="resident-service-card resident-service-health" href="https://www.google.com/maps/search/?api=1&query=Trabzon+Nöbetçi+Hastane+Acil+Servis" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Heart size={22} /></span><span className="resident-service-copy"><strong>المستشفيات والطوارئ القريبة</strong><small>افتح خريطة طرابزون لعرض أقرب مستشفى أو قسم طوارئ</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-health" href="https://www.google.com/maps/search/?api=1&query=Yomra+Trabzon+Nöbetçi+Eczane" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Clock3 size={22} /></span><span className="resident-service-copy"><strong>الصيدليات المناوبة — يومرا</strong><small>افتح نتائج الخريطة وتحقق من صيدلية المناوبة وتاريخ القائمة قبل الذهاب</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-health" href="https://www.google.com/maps/search/?api=1&query=Trabzon+Nöbetçi+Eczane" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Clock3 size={22} /></span><span className="resident-service-copy"><strong>الصيدليات المناوبة — طرابزون</strong><small>تحقق من تاريخ المناوبة وساعات العمل في النتيجة الرسمية أو المحلية</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-health" href="https://www.mhrs.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><CalendarClock size={22} /></span><span className="resident-service-copy"><strong>حجز مواعيد المستشفيات الحكومية</strong><small>بوابة MHRS الرسمية للمواعيد؛ ليست قائمة مناوبات الطوارئ</small></span><ExternalLink size={16} /></a>
+            </div>}
           </div>
           <p className="resident-services-note"><ShieldCheck size={15} /> هذه روابط للبوابات الرسمية وليست استشارة قانونية أو ضمانًا لقبول الطلب. لا تشارك كلمة المرور أو رمز التحقق مع أي شخص، وتأكد من عنوان الموقع قبل إدخال بياناتك. رقم 112 للطوارئ فقط، وللاستفسارات العامة عن الإقامة وشؤون الأجانب استخدم YİMER 157.</p>
           </div>}
