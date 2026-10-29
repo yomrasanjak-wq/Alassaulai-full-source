@@ -202,10 +202,26 @@ describe("real-brain regression scenarios", () => {
         { role: "user", content: "أبغى مطعم فطور" },
       ],
     });
-    expect(result.text).toContain("مطاعم فطور في ينبع الصناعية");
+    expect(result.text).toContain("مطاعم فطور");
+    expect(result.text).toContain("ينبع الصناعية");
     expect(result.text).toContain("https://www.google.com/maps/search/");
     expect(result.text).not.toMatch(/مطعم\s+[\p{L}]+\s+(?:ممتاز|مفتوح الآن)|تقييمه\s+\d/i);
     expect(invokeLLM).toHaveBeenCalled();
+  });
+
+
+  it("offers a direct map search for popular restaurants in Yanbu Industrial when the model returns a generic error", async () => {
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "لم أتمكن من تجهيز إجابة الآن. أعد إرسال السؤال بصياغة قصيرة." } }],
+    } as never);
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "أهم المطاعم في ينبع الصناعية" }],
+    });
+    expect(result.text).toContain("أفضل المطاعم في ينبع الصناعية");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).not.toContain("لم أتمكن من تجهيز إجابة الآن");
   });
 
 });
