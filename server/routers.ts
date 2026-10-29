@@ -185,17 +185,20 @@ async function getJeddahWeatherAnswer(content: string) {
 
 const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
+function isSaudiLeagueQuestion(message: string) {
+  return /(?:روشن|الدوري السعودي|دوري روشن|السوبر السعودي|الدوري السعودي للمحترفين|Saudi Pro League)/i.test(message);
+}
+
 function isSaudiLeagueScheduleQuestion(message: string) {
-  return /(?:روشن|الدوري السعودي|دوري روشن|السوبر السعودي)/i.test(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
+  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
 }
 
 /** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
-async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN") {
+async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", message: string) {
+  const scheduleQuestion = isSaudiLeagueScheduleQuestion(message);
   const query = language === "AR"
-    ? "دوري روشن السعودي جدول مباريات الجولة القادمة مواعيد"
-    : language === "TR"
-      ? "Saudi Pro League fixtures schedule upcoming matches"
-      : "Saudi Pro League fixtures schedule upcoming matches";
+    ? scheduleQuestion ? "دوري روشن السعودي جدول مباريات الجولة القادمة مواعيد" : "أخبار دوري روشن السعودي اليوم"
+    : scheduleQuestion ? "Saudi Pro League fixtures schedule upcoming matches" : "Saudi Pro League latest news today";
   const params = new URLSearchParams({
     q: query,
     hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US",
@@ -566,6 +569,10 @@ export const appRouter = router({
             ?? await getJeddahWeatherAnswer(latestText);
           if (directWeather) return { text: directWeather };
 
+          if (isSaudiLeagueQuestion(latestText)) {
+            return { text: await getSaudiLeagueScheduleAnswer(input.language, latestText) };
+          }
+
           if (isWorldNewsQuestion(latestText)) {
             const directNews = await getWorldNewsAnswer(latestText, input.language);
             if (directNews) return { text: directNews };
@@ -615,7 +622,7 @@ ${searchContext}`);
 ${newsContext}`);
             }
             if (isSaudiLeagueScheduleQuestion(latestText)) {
-              const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language);
+              const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, latestText);
               if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\n${scheduleContext}`);
             }
           } else if (isWorldNewsQuestion(latestText)) {
