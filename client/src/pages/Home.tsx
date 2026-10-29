@@ -1643,8 +1643,6 @@ export default function Home() {
           </div>
               </div>}
             </div>
-            </div>}
-          </div>
           <div className="resident-accordion-group resident-phrasebook-accordion">
             <button type="button" className="resident-accordion-trigger" aria-expanded={residentPhrasebookOpen} onClick={() => setResidentPhrasebookOpen((open) => !open)}>
               <span><Languages size={19} /> عبارات تركية جاهزة</span><ChevronDown size={20} className={residentPhrasebookOpen ? "is-open" : ""} />
