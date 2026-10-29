@@ -272,15 +272,21 @@ function getContextualFallback(
       : /جدة|جده|jeddah/i.test(recentUserText) ? "جدة"
       : /حائل|حايل|hail/i.test(recentUserText) ? "حائل"
       : undefined;
-    const query = area ? `مطاعم فطور في ${area}` : "مطاعم فطور قريبة مني";
+    const asksBreakfast = /(?:فطور|إفطار|breakfast)/i.test(latest);
+    const asksBest = /(?:أهم|افضل|أفضل|مشهور|مميزة|مميزه|top|best|popular)/i.test(latest);
+    const asksNearest = /(?:أقرب|اقرب|قريب|بالقرب|near(?:est)?|close to me)/i.test(latest);
+    const restaurantType = asksBreakfast ? "مطاعم فطور" : asksBest ? "أفضل المطاعم" : "مطاعم";
+    const query = area
+      ? asksNearest ? `${restaurantType} بالقرب مني في ${area}` : `${restaurantType} في ${area}`
+      : asksNearest ? `${restaurantType} بالقرب من موقعي الحالي` : `${restaurantType} قريبة مني`;
     const url = new URL("https://www.google.com/maps/search/");
     url.searchParams.set("api", "1");
     url.searchParams.set("query", query);
     return language === "AR"
-      ? `تعذّر إكمال البحث داخل المساعد مؤقتاً، ولا أريد اختراع أسماء مطاعم أو تقييماتها. يمكنك فتح نتائج الخرائط مباشرة: [${query}](${url.toString()})${area ? "" : "\n\nإذا أردت نتائج أدق، أرسل اسم المدينة أو الحي."}`
+      ? `تعذّر إكمال البحث عن المطاعم داخل المساعد مؤقتاً، ولا أريد اختراع أسماء أو تقييمات. افتح نتائج الخرائط المباشرة هنا: [${query}](${url.toString()})${area ? "" : "\n\nلنتائج أدق، اذكر المدينة والحي."}`
       : language === "TR"
-        ? `Arama şu anda tamamlanamadı; restoran adı veya puanı uydurmayacağım. [Haritada ara](${url.toString()})`
-        : `The assistant search is temporarily unavailable, so I won't invent restaurant names or ratings. [Search Google Maps](${url.toString()})`;
+        ? `Restoran araması şu anda tamamlanamadı; isim veya puan uydurmayacağım. [Haritada ara](${url.toString()})`
+        : `Restaurant search is temporarily unavailable, so I won't invent names or ratings. [Search Google Maps](${url.toString()})`;
   }
   return undefined;
 }
@@ -769,7 +775,8 @@ ${newsContext}`);
               backupModel: backupModel ?? null,
             });
           }
-          return fail(failure);
+          const contextualFallback = getContextualFallback(input.messages, input.language);
+          return contextualFallback ? { text: contextualFallback } : fail(failure);
         }
         return { text };
       }),
