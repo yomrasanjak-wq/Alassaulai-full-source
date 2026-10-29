@@ -225,7 +225,7 @@ async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", messag
         ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeZone: "Asia/Riyadh" }).format(date)
         : "";
       return { title, source, dateText, url: /^https?:\/\//i.test(url) ? url : "" };
-    }).filter((item) => item.title.length > 5);
+    }).filter((item) => item.title.length > 5 && /(?:روشن|الدوري السعودي|السعودي|الهلال|النصر|الاتحاد|الأهلي|الاهلي|الشباب|التعاون|القادسية|Saudi Pro League|Al-Hilal|Al-Nassr|Al-Ittihad|Al-Ahli)/i.test(item.title));
     if (!items.length) throw new Error("No Saudi league schedule articles returned");
     const heading = language === "AR"
       ? scheduleQuestion ? "أحدث نتائج البحث عن جدول دوري روشن السعودي" : "أحدث أخبار دوري روشن السعودي"
