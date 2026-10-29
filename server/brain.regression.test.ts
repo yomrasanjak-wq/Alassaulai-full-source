@@ -170,7 +170,7 @@ describe("real-brain regression scenarios", () => {
     const rss = `<rss><channel><item><title>أخبار دوري روشن السعودي اليوم</title><source>وكالة اختبار</source><link>https://example.com/saudi-league</link><pubDate>${new Date(Date.now() - 60 * 60 * 1000).toUTCString()}</pubDate></item></channel></rss>`;
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
-      expect(url).toContain("دوري+روشن+السعودي");
+      expect(new URL(url).searchParams.get("q")).toContain("دوري روشن السعودي");
       return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
     });
     try {
