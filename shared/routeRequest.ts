@@ -83,7 +83,7 @@ export function parseRouteRequest(text: string): RouteRequest | null {
     ? destinationAliases.find((alias) => alias.pattern.test(originRaw))?.canonical ?? originRaw
     : inferredOrigin;
 
-  const rawDestination = lastDestinationMatch?.[1]?.trim();
+  const rawDestination = (destinationMatches.find((match) => /\s+(?:أو|او|or|ya da|veya)\s+/i.test(match[1] ?? "")) ?? lastDestinationMatch)?.[1]?.trim();
   if (!rawDestination) return null;
 
   // Keep alternative destinations when the user asks for one of several places.
