@@ -120,6 +120,12 @@ const WEATHER_CITIES = [
   { names: /آيدر|ايدر|ayder/i, name: "آيدر", latitude: 40.9527, longitude: 41.0969, timezone: "Europe/Istanbul" },
   { names: /المدينة المنورة|المدينه المنوره|المدينة|المدينه|madinah|medina/i, name: "المدينة المنورة", latitude: 24.5247, longitude: 39.5692, timezone: "Asia/Riyadh" },
   { names: /القصيم|بريدة|بريده|عنيزة|عنيزه|الرس|buraydah|qassim/i, name: "القصيم (بريدة)", latitude: 26.3260, longitude: 43.9750, timezone: "Asia/Riyadh" },
+  { names: /ينبع الصناعية|مدينة ينبع الصناعية|yanbu industrial/i, name: "ينبع الصناعية", latitude: 23.9994, longitude: 38.2363, timezone: "Asia/Riyadh" },
+  { names: /ينبع|yanbu/i, name: "ينبع", latitude: 24.0895, longitude: 38.0618, timezone: "Asia/Riyadh" },
+  { names: /حائل|حايل|hail/i, name: "حائل", latitude: 27.5114, longitude: 41.7208, timezone: "Asia/Riyadh" },
+  { names: /الطائف|طايف|taif/i, name: "الطائف", latitude: 21.2703, longitude: 40.4158, timezone: "Asia/Riyadh" },
+  { names: /الرياض|رياض|riyadh/i, name: "الرياض", latitude: 24.7136, longitude: 46.6753, timezone: "Asia/Riyadh" },
+  { names: /مكة المكرمة|مكه المكرمه|مكة|مكه|makkah|mecca/i, name: "مكة المكرمة", latitude: 21.3891, longitude: 39.8579, timezone: "Asia/Riyadh" },
   { names: /جدة|جده|jeddah/i, name: "جدة", latitude: 21.5433, longitude: 39.1728, timezone: "Asia/Riyadh" },
 ] as const;
 
