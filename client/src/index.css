@@ -2678,3 +2678,18 @@ img { display: block; max-width: 100%; }
   }
   .north-map-expanded .north-map-canvas-wrap { height: 48dvh !important; min-height: 360px !important; }
 }
+
+
+/* Independent resident-service accordions: only the selected category opens */
+.resident-accordion-group { margin: 12px 0; border: 1px solid #d8e4dc; border-radius: 16px; overflow: hidden; background: #fffdf7; box-shadow: 0 5px 18px rgb(18 65 52 / 5%); }
+.resident-accordion-trigger { width: 100%; min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 18px; border: 0; background: #f1f6f0; color: #174c40; text-align: start; font: inherit; font-weight: 700; cursor: pointer; }
+.resident-accordion-trigger > span { display: inline-flex; align-items: center; gap: 10px; }
+.resident-accordion-trigger > svg { flex: 0 0 auto; transition: transform .2s ease; color: #b28b4c; }
+.resident-accordion-trigger > svg.is-open { transform: rotate(180deg); }
+.resident-accordion-group > .resident-services-grid { padding: 14px; margin: 0; }
+.resident-phrasebook-accordion .resident-phrasebook { padding: 16px; }
+.resident-health-accordion .resident-services-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) {
+  .resident-accordion-trigger { min-height: 58px; padding: 14px; font-size: 14px; }
+  .resident-accordion-group > .resident-services-grid { grid-template-columns: minmax(0, 1fr); padding: 10px; gap: 10px; }
+}
