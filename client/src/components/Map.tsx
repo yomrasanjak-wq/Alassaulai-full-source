@@ -82,6 +82,8 @@ export function MapView({
     let cancelled = false;
     let resizeObserver: ResizeObserver | undefined;
     let leafletMap: any;
+    let scheduleMapSizeRefresh: (() => void) | undefined;
+    let refreshTimers: number[] = [];
     loadLeaflet().then((L) => {
       if (cancelled || !mapContainer.current) return;
       setMapError(false);
@@ -117,7 +119,7 @@ export function MapView({
           leafletMap.invalidateSize({ pan: false, animate: false });
         }
       };
-      const scheduleMapSizeRefresh = () => {
+      scheduleMapSizeRefresh = () => {
         requestAnimationFrame(() => requestAnimationFrame(refreshMapSize));
       };
       if (typeof ResizeObserver !== "undefined") {
@@ -130,7 +132,7 @@ export function MapView({
       document.addEventListener("visibilitychange", scheduleMapSizeRefresh);
       // Leaflet can initialize while the responsive/portal container is still settling.
       // Re-measure after the first paint and after mobile layout/full-screen transitions.
-      const refreshTimers = [0, 120, 350, 800].map((delay) =>
+      refreshTimers = [0, 120, 350, 800].map((delay) =>
         window.setTimeout(scheduleMapSizeRefresh, delay),
       );
       scheduleMapSizeRefresh();
@@ -143,9 +145,11 @@ export function MapView({
     return () => {
       cancelled = true;
       resizeObserver?.disconnect();
-      window.removeEventListener("resize", scheduleMapSizeRefresh);
-      window.removeEventListener("orientationchange", scheduleMapSizeRefresh);
-      document.removeEventListener("visibilitychange", scheduleMapSizeRefresh);
+      if (scheduleMapSizeRefresh) {
+        window.removeEventListener("resize", scheduleMapSizeRefresh);
+        window.removeEventListener("orientationchange", scheduleMapSizeRefresh);
+        document.removeEventListener("visibilitychange", scheduleMapSizeRefresh);
+      }
       refreshTimers.forEach((timer) => window.clearTimeout(timer));
       if (leafletMap) leafletMap.remove();
       mapRef.current = null;
