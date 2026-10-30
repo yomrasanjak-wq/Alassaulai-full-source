@@ -82,6 +82,8 @@ export function MapView({
     let cancelled = false;
     let resizeObserver: ResizeObserver | undefined;
     let leafletMap: any;
+    let scheduleMapSizeRefresh: (() => void) | undefined;
+    let refreshTimers: number[] = [];
     loadLeaflet().then((L) => {
       if (cancelled || !mapContainer.current) return;
       setMapError(false);
@@ -110,11 +112,31 @@ export function MapView({
       };
       mapRef.current = adapter;
       callbackRef.current?.(adapter);
+      const refreshMapSize = () => {
+        if (cancelled || !leafletMap || !mapContainer.current) return;
+        const bounds = mapContainer.current.getBoundingClientRect();
+        if (bounds.width > 0 && bounds.height > 0) {
+          leafletMap.invalidateSize({ pan: false, animate: false });
+        }
+      };
+      const schedule = () => {
+        requestAnimationFrame(() => requestAnimationFrame(refreshMapSize));
+      };
+      scheduleMapSizeRefresh = schedule;
       if (typeof ResizeObserver !== "undefined") {
-        resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => leafletMap?.invalidateSize()));
+        resizeObserver = new ResizeObserver(schedule);
         resizeObserver.observe(mapContainer.current);
+        if (mapContainer.current.parentElement) resizeObserver.observe(mapContainer.current.parentElement);
       }
-      requestAnimationFrame(() => leafletMap.invalidateSize());
+      window.addEventListener("resize", schedule, { passive: true });
+      window.addEventListener("orientationchange", schedule, { passive: true });
+      document.addEventListener("visibilitychange", schedule);
+      // Leaflet can initialize while the responsive/portal container is still settling.
+      // Re-measure after the first paint and after mobile layout/full-screen transitions.
+      refreshTimers = [0, 120, 350, 800].map((delay) =>
+        window.setTimeout(schedule, delay),
+      );
+      schedule();
     }).catch((cause) => {
       if (cancelled) return;
       const error = cause instanceof Error ? cause : new Error("تعذر تهيئة الخريطة");
@@ -124,6 +146,12 @@ export function MapView({
     return () => {
       cancelled = true;
       resizeObserver?.disconnect();
+      if (scheduleMapSizeRefresh) {
+        window.removeEventListener("resize", scheduleMapSizeRefresh);
+        window.removeEventListener("orientationchange", scheduleMapSizeRefresh);
+        document.removeEventListener("visibilitychange", scheduleMapSizeRefresh);
+      }
+      refreshTimers.forEach((timer) => window.clearTimeout(timer));
       if (leafletMap) leafletMap.remove();
       mapRef.current = null;
     };
