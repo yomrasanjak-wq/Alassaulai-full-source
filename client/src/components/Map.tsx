@@ -119,23 +119,24 @@ export function MapView({
           leafletMap.invalidateSize({ pan: false, animate: false });
         }
       };
-      scheduleMapSizeRefresh = () => {
+      const schedule = () => {
         requestAnimationFrame(() => requestAnimationFrame(refreshMapSize));
       };
+      scheduleMapSizeRefresh = schedule;
       if (typeof ResizeObserver !== "undefined") {
-        resizeObserver = new ResizeObserver(scheduleMapSizeRefresh);
+        resizeObserver = new ResizeObserver(schedule);
         resizeObserver.observe(mapContainer.current);
         if (mapContainer.current.parentElement) resizeObserver.observe(mapContainer.current.parentElement);
       }
-      window.addEventListener("resize", scheduleMapSizeRefresh, { passive: true });
-      window.addEventListener("orientationchange", scheduleMapSizeRefresh, { passive: true });
-      document.addEventListener("visibilitychange", scheduleMapSizeRefresh);
+      window.addEventListener("resize", schedule, { passive: true });
+      window.addEventListener("orientationchange", schedule, { passive: true });
+      document.addEventListener("visibilitychange", schedule);
       // Leaflet can initialize while the responsive/portal container is still settling.
       // Re-measure after the first paint and after mobile layout/full-screen transitions.
       refreshTimers = [0, 120, 350, 800].map((delay) =>
-        window.setTimeout(scheduleMapSizeRefresh, delay),
+        window.setTimeout(schedule, delay),
       );
-      scheduleMapSizeRefresh();
+      schedule();
     }).catch((cause) => {
       if (cancelled) return;
       const error = cause instanceof Error ? cause : new Error("تعذر تهيئة الخريطة");
