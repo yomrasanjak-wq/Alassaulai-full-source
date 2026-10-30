@@ -1476,7 +1476,7 @@ export default function Home() {
             <p>{t.heroDesc}</p>
             <div className="hero-cta-row">
               <button className="button button-primary" onClick={() => { setDiscoveryImageLoaded(false); setDiscoveryIndex(0); setDiscoveryOpen(true); }}>{t.explore} <ArrowLeft size={17} /></button>
-              <button className="button button-quiet camera-hero-button" onClick={() => scrollTo("cameras")}><span className="camera-cta-thumb"><img src={cameraFeeds[0]?.image} alt="" /></span> {t.viewLive}</button>
+              <button className="button button-quiet camera-hero-button" onClick={() => scrollTo("cameras")}><span className="camera-cta-thumb"><img src={cameraFeeds[0]?.image ?? undefined} alt="" /></span> {t.viewLive}</button>
               <button className="button button-assistant" onClick={() => setChatOpen(true)}><span className="assistant-button-avatar"><img src={ASSETS.officialRobot} alt="" /></span> {t.askAssistant}</button>
             </div>
             <div className="hero-proof"><span><ShieldCheck size={15} /> 8 مدن موثقة</span><span><Clock3 size={15} /> تحديثات يومية</span><span><Sparkles size={15} /> مساعد ذكي</span></div>
