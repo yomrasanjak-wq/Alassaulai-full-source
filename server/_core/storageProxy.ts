@@ -1,5 +1,8 @@
 import type { Express } from "express";
+import { del } from "@vercel/blob";
 import { neon } from "@neondatabase/serverless";
+import { createMediaItem, deleteMediaItem, listMediaItems } from "../db";
+import { storagePut } from "../storage";
 import { NEON_SCHEMA_STATEMENTS } from "./neonSchema";
 import { ENV } from "./env";
 
@@ -30,6 +33,60 @@ export function registerStorageProxy(app: Express) {
     } catch (error) {
       console.error("[NeonMigration] failed:", error);
       res.status(502).json({ ok: false, error: "Neon schema migration failed" });
+    }
+  });
+
+  // Temporary preview-only integration smoke test; all uploaded data is deleted before returning.
+  app.get("/api/__alassaul_media_smoke", async (_req, res) => {
+    if (
+      process.env.VERCEL_ENV !== "preview" ||
+      process.env.VERCEL_GIT_COMMIT_REF !== "fix/neon-postgres-driver"
+    ) {
+      res.status(404).end();
+      return;
+    }
+
+    let blobUrl: string | undefined;
+    let mediaId: number | undefined;
+    try {
+      const png = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII=",
+        "base64",
+      );
+      const stored = await storagePut(`health-check/${Date.now()}-alassaul.png`, png, "image/png");
+      blobUrl = stored.url;
+      const uploaded = await fetch(stored.url, { cache: "no-store" });
+      const uploadedBytes = Buffer.from(await uploaded.arrayBuffer());
+      if (!uploaded.ok || uploadedBytes.length !== png.length) {
+        throw new Error(`Blob readback failed: HTTP ${uploaded.status}`);
+      }
+
+      const item = await createMediaItem({
+        name: "ALASSAUL temporary media smoke test",
+        url: stored.url,
+        mimeType: "image/png",
+        category: "test",
+      });
+      if (!item?.id) throw new Error("Database insert did not return a media ID");
+      mediaId = item.id;
+
+      const listed = await listMediaItems("test");
+      const databaseReadback = listed.some((entry) => entry.id === mediaId);
+
+      res.set("Cache-Control", "no-store");
+      res.status(200).json({
+        ok: databaseReadback,
+        blobUpload: "success",
+        blobReadback: "success",
+        databaseInsert: "success",
+        databaseReadback: databaseReadback ? "success" : "failed",
+      });
+    } catch (error) {
+      console.error("[MediaSmokeTest] failed:", error);
+      res.status(502).json({ ok: false, error: "Media upload/readback integration failed" });
+    } finally {
+      if (mediaId) await deleteMediaItem(mediaId).catch((error) => console.error("[MediaSmokeTest] DB cleanup failed:", error));
+      if (blobUrl) await del(blobUrl).catch((error) => console.error("[MediaSmokeTest] Blob cleanup failed:", error));
     }
   });
 
