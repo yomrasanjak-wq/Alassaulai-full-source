@@ -5,7 +5,7 @@ import { ENV } from "./env";
 
 export function registerStorageProxy(app: Express) {
   // Temporary, preview-only, additive migration for the app tables missing from Neon.
-  app.post("/api/__alassaul_db_migrate", async (_req, res) => {
+  app.get("/api/__alassaul_db_migrate", async (_req, res) => {
     if (
       process.env.VERCEL_ENV !== "preview" ||
       process.env.VERCEL_GIT_COMMIT_REF !== "fix/neon-postgres-driver"
