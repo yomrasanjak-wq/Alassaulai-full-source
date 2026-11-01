@@ -28,7 +28,8 @@ export async function storagePut(
 
   // Vercel Blob obtains its short-lived OIDC credential from the connected
   // Vercel project. No storage token is exposed to the browser or stored here.
-  const blob = await put(pathname, data, {
+  const body = typeof data === "string" ? data : Buffer.from(data);
+  const blob = await put(pathname, body, {
     access: "public",
     addRandomSuffix: true,
     contentType,
