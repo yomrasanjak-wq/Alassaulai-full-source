@@ -1,5 +1,5 @@
 import type { Application } from "express";
-import { del } from "@vercel/blob";
+import { del, list } from "@vercel/blob";
 import { neon } from "@neondatabase/serverless";
 import { createMediaItem, deleteMediaItem, listMediaItems } from "../db";
 import { storagePut } from "../storage";
@@ -27,6 +27,15 @@ export function registerStorageProxy(app: Application) {
       }
       const sql = neon(process.env.DATABASE_URL);
       const action = typeof req.query.action === "string" ? req.query.action : "inspect";
+
+      if (action === "cleanup") {
+        const page = await list({ prefix: "health-check/", limit: 1000 });
+        const urls = page.blobs.map((blob) => blob.url);
+        if (urls.length) await del(urls);
+        res.set("Cache-Control", "no-store");
+        res.status(200).json({ ok: true, found: urls.length, deleted: urls.length, hasMore: page.hasMore });
+        return;
+      }
 
       if (action === "migrate") {
         const statements = [
