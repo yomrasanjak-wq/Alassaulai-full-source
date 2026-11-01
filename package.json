@@ -10,7 +10,7 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "db:push": "tsx scripts/migrate-neon.ts",
     "brain:preflight": "node scripts/brain-preflight.mjs",
     "brain:preflight:test": "node --test scripts/brain-preflight.test.mjs",
     "brain:live-check": "node scripts/brain-live-probe.mjs"
