@@ -5,7 +5,7 @@ import { ENV } from "./env";
 export function registerStorageProxy(app: Express) {
   // Temporary, preview-only smoke test. It writes one tiny PNG, reads it back,
   // then deletes it. This route is disabled outside this exact test branch.
-  app.get("/__alassaul_blob_readback", async (_req, res) => {
+  app.get("/api/__alassaul_blob_readback", async (_req, res) => {
     if (
       process.env.VERCEL_ENV !== "preview" ||
       process.env.VERCEL_GIT_COMMIT_REF !== "feat/vercel-blob-media-storage"
@@ -42,7 +42,7 @@ export function registerStorageProxy(app: Express) {
     }
   });
 
-  app.get("/manus-storage/*", async (req, res) => {
+  app.get(["/manus-storage/*", "/api/manus-storage/*"], async (req, res) => {
     const key = (req.params as Record<string, string>)[0];
     if (!key) {
       res.status(400).send("Missing storage key");
