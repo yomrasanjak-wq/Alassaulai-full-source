@@ -1210,6 +1210,52 @@ export default function Home() {
     });
   }
 
+  async function prepareDiscoveryImage(file: File): Promise<{ name: string; mimeType: string; dataBase64: string }> {
+    const source = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("تعذر قراءة الصورة"));
+      reader.onerror = () => reject(reader.error ?? new Error("تعذر قراءة الصورة"));
+      reader.readAsDataURL(file);
+    });
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new window.Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error("تعذر فتح الصورة المختارة"));
+      element.src = source;
+    });
+
+    // Vercel Functions reject request bodies above 4.5 MB. Compress on-device
+    // so the base64 JSON payload remains comfortably below that platform limit.
+    const maxDimension = 1600;
+    let scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+    let quality = 0.82;
+    let blob: Blob | null = null;
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("تعذر تجهيز الصورة للرفع");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+      if (!blob) throw new Error("تعذر ضغط الصورة");
+      if (blob.size <= 2_800_000) break;
+      scale *= 0.8;
+      quality = Math.max(0.58, quality - 0.06);
+    }
+    if (!blob || blob.size > 2_800_000) throw new Error("الصورة كبيرة جداً؛ اختر صورة أصغر");
+    const dataBase64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+      reader.onerror = () => reject(reader.error ?? new Error("تعذر تجهيز الصورة"));
+      reader.readAsDataURL(blob as Blob);
+    });
+    const baseName = file.name.replace(/\\.[^.]+$/, "") || "discovery-image";
+    return { name: `${baseName}.jpg`, mimeType: "image/jpeg", dataBase64 };
+  }
+
   function captureVisitorPhoto() {
     const video = cameraVideoRef.current;
     if (!video || !video.videoWidth || !video.videoHeight) {
@@ -1341,7 +1387,8 @@ export default function Home() {
     try {
       await Promise.all(files.map(async (file) => {
         if (!file.type.startsWith("image/")) throw new Error("image-only");
-        await discoveryUploadMutation.mutateAsync({ name: file.name, mimeType: file.type, dataBase64: await readFileAsBase64(file) });
+        const prepared = await prepareDiscoveryImage(file);
+        await discoveryUploadMutation.mutateAsync(prepared);
       }));
       await discoveryItemsQuery.refetch();
       setDiscoveryUploadMessage(`تم حفظ ${files.length} صورة. ستدخل الدورة الأسبوعية تلقائياً.`);
