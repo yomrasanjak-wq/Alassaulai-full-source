@@ -137,11 +137,18 @@ export async function listMediaItems(category?: string): Promise<MediaItem[]> {
     const query = db.select().from(mediaItems).orderBy(desc(mediaItems.createdAt)).limit(100);
     return category ? query.where(eq(mediaItems.category, category)) : query;
   } catch (error) {
-    const detail = error as { code?: string; errno?: number; sqlMessage?: string; message?: string };
+    const detail = error as { name?: string; code?: string; errno?: number; sqlMessage?: string; message?: string; cause?: { name?: string; code?: string; errno?: number; sqlMessage?: string; message?: string } };
     console.error("[Database] listMediaItems failed", {
+      name: detail.name,
       code: detail.code,
       errno: detail.errno,
       message: detail.sqlMessage ?? detail.message,
+      cause: detail.cause ? {
+        name: detail.cause.name,
+        code: detail.cause.code,
+        errno: detail.cause.errno,
+        message: detail.cause.sqlMessage ?? detail.cause.message,
+      } : undefined,
     });
     throw error;
   }
@@ -177,11 +184,18 @@ export async function listGuestMemories(): Promise<GuestMemory[]> {
   try {
     return await db.select().from(guestMemories).orderBy(desc(guestMemories.createdAt)).limit(100);
   } catch (error) {
-    const detail = error as { code?: string; errno?: number; sqlMessage?: string; message?: string };
+    const detail = error as { name?: string; code?: string; errno?: number; sqlMessage?: string; message?: string; cause?: { name?: string; code?: string; errno?: number; sqlMessage?: string; message?: string } };
     console.error("[Database] listGuestMemories failed", {
+      name: detail.name,
       code: detail.code,
       errno: detail.errno,
       message: detail.sqlMessage ?? detail.message,
+      cause: detail.cause ? {
+        name: detail.cause.name,
+        code: detail.cause.code,
+        errno: detail.cause.errno,
+        message: detail.cause.sqlMessage ?? detail.cause.message,
+      } : undefined,
     });
     throw error;
   }
