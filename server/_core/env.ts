@@ -56,6 +56,9 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: configuredBaseUrl || "",
   forgeApiKey: explicitProviderKey,
+  // Dedicated Manus Forge credentials for object storage; never reuse LLM provider credentials.
+  storageApiUrl: firstConfigured("BUILT_IN_FORGE_API_URL"),
+  storageApiKey: firstConfigured("BUILT_IN_FORGE_API_KEY"),
   llmApiUrl: resolvedLlmBaseUrl,
   llmApiKey: resolvedLlmApiKey,
   primaryModel: firstConfigured("ALASSAUL_PRIMARY_MODEL") || (usesNetlifyAiGateway
