@@ -10,7 +10,7 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "db:push": "tsx scripts/migrate-neon.ts",
     "brain:preflight": "node scripts/brain-preflight.mjs",
     "brain:preflight:test": "node --test scripts/brain-preflight.test.mjs",
     "brain:live-check": "node scripts/brain-live-probe.mjs"
@@ -19,6 +19,7 @@
     "@aws-sdk/client-s3": "^3.693.0",
     "@aws-sdk/s3-request-presigner": "^3.693.0",
     "@hookform/resolvers": "^5.2.2",
+    "@neondatabase/serverless": "1.2.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.7",

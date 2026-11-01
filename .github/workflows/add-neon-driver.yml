@@ -1,0 +1,36 @@
+name: Add Neon serverless driver dependency
+
+on:
+  push:
+    branches:
+      - fix/neon-postgres-driver
+    paths:
+      - ".github/workflows/add-neon-driver.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  add-dependency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/neon-postgres-driver
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Add pinned Neon serverless driver and refresh lockfile
+        run: pnpm add @neondatabase/serverless@1.2.0
+      - name: Commit generated manifest and lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json pnpm-lock.yaml
+          git commit -m "chore(db): add Neon serverless driver"
+          git push origin HEAD:fix/neon-postgres-driver

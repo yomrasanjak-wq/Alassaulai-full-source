@@ -25,6 +25,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.64.0(react@19.2.1))
+      '@neondatabase/serverless':
+        specifier: 1.2.0
+        version: 1.2.0
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.1(@types/react@19.2.1))(@types/react@19.2.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -141,7 +144,7 @@ importers:
         version: 17.4.2
       drizzle-orm:
         specifier: ^0.44.5
-        version: 0.44.7(mysql2@3.24.3(@types/node@24.7.0))
+        version: 0.44.7(@neondatabase/serverless@1.2.0)(mysql2@3.24.3(@types/node@24.7.0))
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.2.1)
@@ -1402,6 +1405,10 @@ packages:
 
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
+
+  '@neondatabase/serverless@1.2.0':
+    resolution: {integrity: sha512-tnaqgixUengZQNd9ZrS3ytQfamJzLKY8QxgqWQTNHHtB+KrFQWk77JTbbpg4RD+J3qE4eO2lVytvGDX5Kj6FdQ==}
+    engines: {node: '>=19.0.0'}
 
   '@netlify/binary-info@1.0.0':
     resolution: {integrity: sha512-4wMPu9iN3/HL97QblBsBay3E1etIciR84izI3U+4iALY+JHCrI+a2jO0qbAZ/nxKoegypYEaiiqWXylm+/zfrw==}
@@ -7065,6 +7072,8 @@ snapshots:
     dependencies:
       langium: 3.3.1
 
+  '@neondatabase/serverless@1.2.0': {}
+
   '@netlify/binary-info@1.0.0': {}
 
   '@netlify/blobs@9.1.2':
@@ -9333,8 +9342,9 @@ snapshots:
       esbuild: 0.25.10
       tsx: 4.23.13
 
-  drizzle-orm@0.44.7(mysql2@3.24.3(@types/node@24.7.0)):
+  drizzle-orm@0.44.7(@neondatabase/serverless@1.2.0)(mysql2@3.24.3(@types/node@24.7.0)):
     optionalDependencies:
+      '@neondatabase/serverless': 1.2.0
       mysql2: 3.24.3(@types/node@24.7.0)
 
   dunder-proto@1.0.1:

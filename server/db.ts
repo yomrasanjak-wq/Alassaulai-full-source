@@ -1,17 +1,29 @@
 import { count, desc, eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { ControlRequest, GuestMemory, InsertUser, MediaItem, controlRequests, guestMemories, mediaItems, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import {
+  ControlRequest,
+  GuestMemory,
+  InsertUser,
+  MediaItem,
+  controlRequests,
+  guestMemories,
+  mediaItems,
+  users,
+} from "../drizzle/schema";
+import * as schema from "../drizzle/schema";
+import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
+// Neon HTTP avoids opening TCP connections from short-lived Vercel functions.
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db && ENV.databaseUrl) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const sql = neon(ENV.databaseUrl);
+      _db = drizzle({ client: sql, schema });
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.warn("[Database] Failed to initialize Neon client:", error);
       _db = null;
     }
   }
@@ -19,9 +31,7 @@ export async function getDb() {
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
+  if (!user.openId) throw new Error("User openId is required for upsert");
 
   const db = await getDb();
   if (!db) {
@@ -29,52 +39,42 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     return;
   }
 
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
+  const values: InsertUser = { openId: user.openId };
+  const updateSet: Partial<InsertUser> = {};
 
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
+  const textFields = ["name", "email", "loginMethod"] as const;
+  type TextField = (typeof textFields)[number];
 
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
+  const assignNullable = (field: TextField) => {
+    const value = user[field];
+    if (value === undefined) return;
+    values[field] = value ?? null;
+    updateSet[field] = value ?? null;
+  };
 
-    textFields.forEach(assignNullable);
+  textFields.forEach(assignNullable);
 
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
+  if (user.lastSignedIn !== undefined) {
+    values.lastSignedIn = user.lastSignedIn;
+    updateSet.lastSignedIn = user.lastSignedIn;
   }
+
+  if (user.role !== undefined) {
+    values.role = user.role;
+    updateSet.role = user.role;
+  } else if (user.openId === ENV.ownerOpenId) {
+    values.role = "admin";
+    updateSet.role = "admin";
+  }
+
+  values.lastSignedIn ??= new Date();
+  updateSet.lastSignedIn ??= values.lastSignedIn;
+  updateSet.updatedAt = new Date();
+
+  await db.insert(users).values(values).onConflictDoUpdate({
+    target: users.openId,
+    set: updateSet,
+  });
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -83,10 +83,8 @@ export async function getUserByOpenId(openId: string) {
     console.warn("[Database] Cannot get user: database not available");
     return undefined;
   }
-
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+  return result[0];
 }
 
 export async function countRegisteredVisitors(): Promise<number> {
@@ -96,13 +94,12 @@ export async function countRegisteredVisitors(): Promise<number> {
   return Number(result[0]?.total ?? 0);
 }
 
-export async function createControlRequest(input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority">): Promise<ControlRequest | undefined> {
+export async function createControlRequest(
+  input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority">,
+): Promise<ControlRequest | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(controlRequests).values(input).$returningId();
-  const id = result[0]?.id;
-  if (!id) return undefined;
-  const rows = await db.select().from(controlRequests).where(eq(controlRequests.id, id)).limit(1);
+  const rows = await db.insert(controlRequests).values(input).returning();
   return rows[0];
 }
 
@@ -112,21 +109,26 @@ export async function listControlRequests(): Promise<ControlRequest[]> {
   return db.select().from(controlRequests).orderBy(desc(controlRequests.createdAt)).limit(100);
 }
 
-export async function updateControlRequest(id: number, input: Partial<Pick<ControlRequest, "status" | "assignee" | "decisionNote">>): Promise<ControlRequest | undefined> {
+export async function updateControlRequest(
+  id: number,
+  input: Partial<Pick<ControlRequest, "status" | "assignee" | "decisionNote">>,
+): Promise<ControlRequest | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  await db.update(controlRequests).set(input).where(eq(controlRequests.id, id));
+  await db.update(controlRequests).set({ ...input, updatedAt: new Date() }).where(eq(controlRequests.id, id));
   const rows = await db.select().from(controlRequests).where(eq(controlRequests.id, id)).limit(1);
   return rows[0];
 }
 
-export async function createMediaItem(input: { name: string; url: string; mimeType: string; category?: string }): Promise<MediaItem | undefined> {
+export async function createMediaItem(input: {
+  name: string;
+  url: string;
+  mimeType: string;
+  category?: string;
+}): Promise<MediaItem | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(mediaItems).values(input).$returningId();
-  const id = result[0]?.id;
-  if (!id) return undefined;
-  const rows = await db.select().from(mediaItems).where(eq(mediaItems.id, id)).limit(1);
+  const rows = await db.insert(mediaItems).values(input).returning();
   return rows[0];
 }
 
@@ -137,18 +139,19 @@ export async function listMediaItems(category?: string): Promise<MediaItem[]> {
     const query = db.select().from(mediaItems).orderBy(desc(mediaItems.createdAt)).limit(100);
     return category ? query.where(eq(mediaItems.category, category)) : query;
   } catch (error) {
-    const detail = error as { name?: string; code?: string; errno?: number; sqlMessage?: string; message?: string; cause?: { name?: string; code?: string; errno?: number; sqlMessage?: string; message?: string } };
+    const detail = error as {
+      name?: string;
+      code?: string;
+      message?: string;
+      cause?: { name?: string; code?: string; message?: string };
+    };
     console.error("[Database] listMediaItems failed", {
       name: detail.name,
       code: detail.code,
-      errno: detail.errno,
-      message: detail.sqlMessage ?? detail.message,
-      cause: detail.cause ? {
-        name: detail.cause.name,
-        code: detail.cause.code,
-        errno: detail.cause.errno,
-        message: detail.cause.sqlMessage ?? detail.cause.message,
-      } : undefined,
+      message: detail.message,
+      cause: detail.cause
+        ? { name: detail.cause.name, code: detail.cause.code, message: detail.cause.message }
+        : undefined,
     });
     throw error;
   }
@@ -169,37 +172,40 @@ export async function deleteMediaItem(id: number): Promise<boolean> {
   return true;
 }
 
-export async function createGuestMemory(input: { imageUrl?: string; caption?: string }): Promise<GuestMemory | undefined> {
+export async function createGuestMemory(input: {
+  imageUrl?: string;
+  caption?: string;
+}): Promise<GuestMemory | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(guestMemories).values(input).$returningId();
-  const id = result[0]?.id;
-  if (!id) return undefined;
-  const rows = await db.select().from(guestMemories).where(eq(guestMemories.id, id)).limit(1);
+  const rows = await db.insert(guestMemories).values(input).returning();
   return rows[0];
 }
+
 export async function listGuestMemories(): Promise<GuestMemory[]> {
   const db = await getDb();
   if (!db) return [];
   try {
     return await db.select().from(guestMemories).orderBy(desc(guestMemories.createdAt)).limit(100);
   } catch (error) {
-    const detail = error as { name?: string; code?: string; errno?: number; sqlMessage?: string; message?: string; cause?: { name?: string; code?: string; errno?: number; sqlMessage?: string; message?: string } };
+    const detail = error as {
+      name?: string;
+      code?: string;
+      message?: string;
+      cause?: { name?: string; code?: string; message?: string };
+    };
     console.error("[Database] listGuestMemories failed", {
       name: detail.name,
       code: detail.code,
-      errno: detail.errno,
-      message: detail.sqlMessage ?? detail.message,
-      cause: detail.cause ? {
-        name: detail.cause.name,
-        code: detail.cause.code,
-        errno: detail.cause.errno,
-        message: detail.cause.sqlMessage ?? detail.cause.message,
-      } : undefined,
+      message: detail.message,
+      cause: detail.cause
+        ? { name: detail.cause.name, code: detail.cause.code, message: detail.cause.message }
+        : undefined,
     });
     throw error;
   }
 }
+
 export async function deleteGuestMemory(id: number): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
