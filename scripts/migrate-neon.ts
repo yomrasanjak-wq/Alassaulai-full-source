@@ -1,14 +1,22 @@
 import "dotenv/config";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { neon } from "@neondatabase/serverless";
-import { NEON_SCHEMA_STATEMENTS } from "../server/_core/neonSchema";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   throw new Error("DATABASE_URL is required to apply the Neon PostgreSQL schema.");
 }
 
+const migrationPath = resolve(process.cwd(), "drizzle/neon/0001_application_schema.sql");
+const migration = await readFile(migrationPath, "utf8");
+const statements = migration
+  .split("--> statement-breakpoint")
+  .map((statement) => statement.trim())
+  .filter(Boolean);
+
 const sql = neon(connectionString);
-for (const statement of NEON_SCHEMA_STATEMENTS) {
+for (const statement of statements) {
   await sql.query(statement, []);
 }
 
