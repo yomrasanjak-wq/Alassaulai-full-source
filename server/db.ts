@@ -133,8 +133,18 @@ export async function createMediaItem(input: { name: string; url: string; mimeTy
 export async function listMediaItems(category?: string): Promise<MediaItem[]> {
   const db = await getDb();
   if (!db) return [];
-  const query = db.select().from(mediaItems).orderBy(desc(mediaItems.createdAt)).limit(100);
-  return category ? query.where(eq(mediaItems.category, category)) : query;
+  try {
+    const query = db.select().from(mediaItems).orderBy(desc(mediaItems.createdAt)).limit(100);
+    return category ? query.where(eq(mediaItems.category, category)) : query;
+  } catch (error) {
+    const detail = error as { code?: string; errno?: number; sqlMessage?: string; message?: string };
+    console.error("[Database] listMediaItems failed", {
+      code: detail.code,
+      errno: detail.errno,
+      message: detail.sqlMessage ?? detail.message,
+    });
+    throw error;
+  }
 }
 
 export async function updateMediaItem(id: number, name: string): Promise<MediaItem | undefined> {
@@ -164,7 +174,17 @@ export async function createGuestMemory(input: { imageUrl?: string; caption?: st
 export async function listGuestMemories(): Promise<GuestMemory[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(guestMemories).orderBy(desc(guestMemories.createdAt)).limit(100);
+  try {
+    return await db.select().from(guestMemories).orderBy(desc(guestMemories.createdAt)).limit(100);
+  } catch (error) {
+    const detail = error as { code?: string; errno?: number; sqlMessage?: string; message?: string };
+    console.error("[Database] listGuestMemories failed", {
+      code: detail.code,
+      errno: detail.errno,
+      message: detail.sqlMessage ?? detail.message,
+    });
+    throw error;
+  }
 }
 export async function deleteGuestMemory(id: number): Promise<boolean> {
   const db = await getDb();
