@@ -22,12 +22,12 @@ export function registerStorageProxy(app: Application) {
       forgeUrl.searchParams.set("path", key);
 
       const forgeResp = await fetch(forgeUrl, {
-        headers: { Authorization: \`Bearer \${ENV.storageApiKey}\` },
+        headers: { Authorization: "Bearer " + ENV.storageApiKey },
       });
 
       if (!forgeResp.ok) {
         const body = await forgeResp.text().catch(() => "");
-        console.error(\`[StorageProxy] forge error: \${forgeResp.status} \${body}\`);
+        console.error("[StorageProxy] forge error: " + forgeResp.status + " " + body);
         res.status(502).send("Storage backend error");
         return;
       }
