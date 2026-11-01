@@ -17,17 +17,17 @@ export function registerStorageProxy(app: Application) {
     try {
       const forgeUrl = new URL(
         "v1/storage/presign/get",
-        ENV.storageApiUrl.replace(/\\/+$/, "") + "/",
+        ENV.storageApiUrl.replace(/\/+$/, "") + "/",
       );
       forgeUrl.searchParams.set("path", key);
 
       const forgeResp = await fetch(forgeUrl, {
-        headers: { Authorization: `Bearer ${ENV.storageApiKey}` },
+        headers: { Authorization: \`Bearer \${ENV.storageApiKey}\` },
       });
 
       if (!forgeResp.ok) {
         const body = await forgeResp.text().catch(() => "");
-        console.error(`[StorageProxy] forge error: ${forgeResp.status} ${body}`);
+        console.error(\`[StorageProxy] forge error: \${forgeResp.status} \${body}\`);
         res.status(502).send("Storage backend error");
         return;
       }
