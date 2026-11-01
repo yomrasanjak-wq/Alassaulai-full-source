@@ -11,6 +11,10 @@
   },
   "rewrites": [
     {
+      "source": "/manus-storage/(.*)",
+      "destination": "/api/manus-storage/$1"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index.ts"
     }
