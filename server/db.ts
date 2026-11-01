@@ -6,9 +6,34 @@ import { ENV } from './_core/env';
 let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
+let _databaseConfigLogged = false;
+
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
+      if (!_databaseConfigLogged) {
+        _databaseConfigLogged = true;
+        try {
+          const parsed = new URL(process.env.DATABASE_URL);
+          const host = parsed.hostname.toLowerCase();
+          const provider = host.endsWith(".neon.tech") ? "neon-postgres"
+            : host.endsWith(".supabase.co") ? "supabase-postgres"
+            : host.endsWith(".planetscale.com") ? "planetscale-mysql"
+            : host.endsWith(".tidbcloud.com") ? "tidb-mysql"
+            : host.endsWith(".aivencloud.com") ? "aiven-managed"
+            : "other-or-custom";
+          console.info("[Database] Connection configuration (sanitized)", {
+            protocol: parsed.protocol,
+            provider,
+            port: parsed.port || "default",
+            hasSslMode: parsed.searchParams.has("sslmode"),
+            hasChannelBinding: parsed.searchParams.has("channel_binding"),
+            driver: "drizzle-orm/mysql2",
+          });
+        } catch {
+          console.warn("[Database] DATABASE_URL could not be parsed as a standard URL");
+        }
+      }
       _db = drizzle(process.env.DATABASE_URL);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
