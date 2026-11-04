@@ -95,10 +95,29 @@ export function getAdaptiveTaskInstruction(message: string): string {
   return "نمط الإجابة العامة: حدّد المطلوب بدقة، أجب مباشرة، واذكر أهم معلومة أو خطوات عملية. إذا كانت الإجابة تعتمد على بيانات حديثة غير متاحة في هذه المحادثة فقل ذلك بوضوح ولا تخترع مصدراً أو نتيجة.";
 }
 
+/** Collapse an exact phrase repeated by incremental speech recognition.
+ * Only removes 3+ consecutive copies of a substantial (6+ word) opening phrase;
+ * ordinary repetition and the rest of the user's sentence are preserved. */
+export function collapseRepeatedSpeechText(value: string): string {
+  const tokens = value.trim().split(/\s+/).filter(Boolean);
+  const maxBlockLength = Math.floor(tokens.length / 3);
+  for (let blockLength = maxBlockLength; blockLength >= 6; blockLength -= 1) {
+    let repetitions = 1;
+    while (repetitions < Math.floor(tokens.length / blockLength)
+      && tokens.slice(0, blockLength).every((token, index) => token === tokens[repetitions * blockLength + index])) {
+      repetitions += 1;
+    }
+    if (repetitions >= 3) {
+      return [...tokens.slice(0, blockLength), ...tokens.slice(repetitions * blockLength)].join(" ");
+    }
+  }
+  return value.trim();
+}
+
 export function compactChatHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
   return messages.slice(-MAX_CHAT_HISTORY).map((message) => ({
     role: message.role,
-    content: message.content.slice(-MAX_CHAT_MESSAGE_CHARS),
+    content: (message.role === "user" ? collapseRepeatedSpeechText(message.content) : message.content).slice(-MAX_CHAT_MESSAGE_CHARS),
   }));
 }
 
@@ -757,7 +776,9 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const latestMessage = input.messages[input.messages.length - 1];
-        const latestText = latestMessage?.content ?? "";
+        const latestText = latestMessage?.role === "user"
+          ? collapseRepeatedSpeechText(latestMessage.content ?? "")
+          : latestMessage?.content ?? "";
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
