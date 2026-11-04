@@ -157,7 +157,7 @@ describe("City card imagery", () => {
     await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
     expect(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
-    expect(screen.getByRole("button", { name: /افتح صفحة المدينة/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "عرض شاطئ قانيتا على خريطة ALASSAUL" })).toBeTruthy();
   });
 
   it("shows named camera previews with separate Uzungol scenes and official links", () => {
