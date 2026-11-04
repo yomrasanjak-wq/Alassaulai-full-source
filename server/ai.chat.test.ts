@@ -80,6 +80,15 @@ describe("adaptive brain response strategy", () => {
     expect(getAdaptiveTaskInstruction("رتب لي برنامج 5 أيام في طرابزون وأوزنجول")).toContain("خطة قابلة للتنفيذ");
   });
 
+  it("plans trips for destinations outside North Turkey, including Taif and Al-Baha", () => {
+    const taif = getAdaptiveTaskInstruction("رتب لي رحلة ٤ أيام في الطائف");
+    const baha = getAdaptiveTaskInstruction("أبغى برنامج سياحي أربعة أيام في الباحة");
+    expect(taif).toContain("أي مدينة أو دولة في العالم");
+    expect(taif).toContain("رابط بحث خرائط");
+    expect(baha).toContain("سؤالاً واحداً محدداً");
+    expect(baha).toContain("الطقس والمواسم والإغلاقات");
+  });
+
   it("selects comparison criteria instead of a generic answer", () => {
     expect(getAdaptiveTaskInstruction("قارن بين السكن في طرابزون وريزه")).toContain("معايير واضحة");
   });
