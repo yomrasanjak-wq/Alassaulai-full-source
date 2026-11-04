@@ -192,7 +192,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     markersRef.current.forEach(({ destination, marker }) => {
       const matchesCity = destination.city === selectedCity;
       const matchesCategory = filter === "all" || destination.category === filter;
-      const matchesQuery = !normalized || `${destination.name} ${destination.latin} ${destination.label}`.toLocaleLowerCase().includes(normalized);
+      const matchesQuery = !normalized || `${destination.name} ${destination.latin} ${destination.label} ${destination.query}`.toLocaleLowerCase().includes(normalized);
       const visible = matchesCity && matchesCategory && matchesQuery;
       if (typeof marker.setMap === "function") marker.setMap(visible ? map : null);
     });
