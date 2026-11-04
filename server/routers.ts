@@ -197,15 +197,42 @@ function isSaudiLeagueQuestion(message: string) {
 }
 
 function isSaudiLeagueScheduleQuestion(message: string) {
-  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
+  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الخميس|الخميس القادم|الأحد|الاحد|الاثنين|الإثنين|الثلاثاء|الأربعاء|الاربعاء|الجمعة|السبت|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week|thursday|sunday|monday|tuesday|wednesday|friday|saturday)/i.test(message);
+}
+
+/** Resolve a weekday to its next calendar date in the Saudi local timezone. */
+export function getNextSaudiWeekdayDate(weekday: number, now = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const localMidnight = Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day));
+  const localWeekday = new Date(localMidnight).getUTCDay();
+  const daysAhead = (weekday - localWeekday + 7) % 7;
+  return new Date(localMidnight + daysAhead * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function getSaudiLeagueTargetDate(message: string): { label: string; date: string } | undefined {
+  const days = [
+    { pattern: /الأحد|الاحد|sunday/i, weekday: 0, label: "الأحد" },
+    { pattern: /الاثنين|الإثنين|monday/i, weekday: 1, label: "الاثنين" },
+    { pattern: /الثلاثاء|tuesday/i, weekday: 2, label: "الثلاثاء" },
+    { pattern: /الأربعاء|الاربعاء|wednesday/i, weekday: 3, label: "الأربعاء" },
+    { pattern: /الخميس|thursday/i, weekday: 4, label: "الخميس" },
+    { pattern: /الجمعة|friday/i, weekday: 5, label: "الجمعة" },
+    { pattern: /السبت|saturday/i, weekday: 6, label: "السبت" },
+  ];
+  const day = days.find((item) => item.pattern.test(message));
+  return day ? { label: day.label, date: getNextSaudiWeekdayDate(day.weekday) } : undefined;
 }
 
 /** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
 async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", message: string) {
   const scheduleQuestion = isSaudiLeagueScheduleQuestion(message);
+  const targetDate = scheduleQuestion ? getSaudiLeagueTargetDate(message) : undefined;
   const query = language === "AR"
-    ? scheduleQuestion ? "دوري روشن السعودي جدول مباريات الجولة القادمة مواعيد" : "أخبار دوري روشن السعودي اليوم"
-    : scheduleQuestion ? "Saudi Pro League fixtures schedule upcoming matches" : "Saudi Pro League latest news today";
+    ? scheduleQuestion ? `دوري روشن السعودي مباريات ${targetDate ? targetDate.label : "الجولة القادمة"} ${targetDate?.date ?? ""} مواعيد` : "أخبار دوري روشن السعودي اليوم"
+    : scheduleQuestion ? `Saudi Pro League fixtures schedule ${targetDate?.date ?? "upcoming matches"}` : "Saudi Pro League latest news today";
   const params = new URLSearchParams({
     q: query,
     hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US",
@@ -235,16 +262,17 @@ async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", messag
     }).filter((item) => item.title.length > 5 && /(?:روشن|الدوري السعودي|السعودي|الهلال|النصر|الاتحاد|الأهلي|الاهلي|الشباب|التعاون|القادسية|Saudi Pro League|Al-Hilal|Al-Nassr|Al-Ittihad|Al-Ahli)/i.test(item.title));
     if (!items.length) throw new Error("No Saudi league schedule articles returned");
     const heading = language === "AR"
-      ? scheduleQuestion ? "أحدث نتائج البحث عن جدول دوري روشن السعودي" : "أحدث أخبار دوري روشن السعودي"
+      ? scheduleQuestion ? `نتائج البحث عن مباريات دوري روشن السعودي${targetDate ? ` — ${targetDate.label} ${targetDate.date}` : ""}` : "أحدث أخبار دوري روشن السعودي"
       : language === "TR"
         ? scheduleQuestion ? "Suudi Pro Lig fikstürü için güncel arama sonuçları" : "Suudi Pro Lig hakkında güncel haberler"
         : scheduleQuestion ? "Recent Saudi Pro League schedule search results" : "Latest Saudi Pro League news";
     const note = language === "AR"
-      ? scheduleQuestion ? "هذه روابط تقارير حديثة وليست جدول مباريات موحداً مؤكداً. افتح المصدر للتحقق من موعد المباراة قبل الاعتماد عليه." : "هذه عناوين بحث إخبارية وليست نتائج مباريات مؤكدة. افتح المصدر للتحقق من التفاصيل والتوقيت."
+      ? scheduleQuestion ? `تنبيه: هذه تقارير بحثية وليست قائمة مواجهات رسمية مؤكدة. ${targetDate ? `بحثت عن يوم ${targetDate.label} الموافق ${targetDate.date} بتوقيت السعودية. ` : ""}لم أستخرج جدولاً رسمياً موحداً؛ لا تعتمد أي موعد قبل تأكيده من رابط المصدر أو إعلان رابطة الدوري/النادي.` : "هذه عناوين بحث إخبارية وليست نتائج مباريات مؤكدة. افتح المصدر للتحقق من التفاصيل والتوقيت."
       : language === "TR"
         ? "Bunlar güncel haber bağlantılarıdır; maç saatlerini veya sonuçları kaynaktan doğrulayın."
         : "These are recent news links, not verified live scores. Open the publisher to confirm details and match times.";
-    return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${note}`;
+    const checkedAt = new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(new Date());
+    return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${note}\nوقت التحقق من الموجز: ${checkedAt} بتوقيت السعودية (Asia/Riyadh).`;
   } catch (error) {
     console.warn("[ALASSAUL sports] Saudi league schedule feed unavailable", safeProviderDiagnostic(error));
     return language === "AR"
