@@ -110,27 +110,37 @@ describe("live trip place discovery", () => {
     expect(extractTripDestination("ما عاصمة الفلبين؟")).toBeUndefined();
   });
 
-  it("uses OpenStreetMap-backed Photon results and provides map links without inventing hours", async () => {
-    const feature = (name: string, lon: number, lat: number) => ({
-      type: "Feature",
-      properties: { name, city: "Taif", country: "Saudi Arabia", osm_type: "N", osm_id: name.length },
-      geometry: { type: "Point", coordinates: [lon, lat] },
-    });
+  it("resolves the destination and returns named nearby attractions from OpenStreetMap", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(new Response(JSON.stringify({ features: [feature("Taif", 40.4, 21.27)] }), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ features: [feature("Shubra Palace", 40.42, 21.28)] }), { status: 200 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        features: [{
+          type: "Feature",
+          properties: { name: "Taif", city: "Taif", country: "Saudi Arabia" },
+          geometry: { type: "Point", coordinates: [40.4167, 21.2703] },
+        }],
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        elements: [{
+          type: "way",
+          id: 12345,
+          center: { lat: 21.27, lon: 40.42 },
+          tags: { name: "Shubra Palace", tourism: "attraction" },
+        }],
+      }), { status: 200 }));
     try {
       const answer = await getLiveTripPlacesAnswer("رتب لي رحلة ٤ أيام في الطائف");
+      expect(answer).toContain("Taif");
       expect(answer).toContain("Shubra Palace");
-      expect(answer).toContain("openstreetmap.org");
+      expect(answer).toContain("openstreetmap.org/way/12345");
       expect(answer).toContain("ليست تأكيداً لساعات العمل");
       expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy.mock.calls[1]?.[0]).toContain("overpass-api.de");
     } finally {
       fetchSpy.mockRestore();
     }
   });
 
-  it("does not fabricate place results when the live search fails", async () => {
+  it("does not fabricate destinations when live geocoding fails", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
     try {
       const answer = await getLiveTripPlacesAnswer("رتب لي رحلة يومين في الطائف");
