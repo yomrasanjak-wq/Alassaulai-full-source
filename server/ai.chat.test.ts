@@ -141,6 +141,32 @@ describe("model fallback selection", () => {
   });
 });
 
+describe("context-aware follow-up intent", () => {
+  it("carries the previous travel request into a short confirmation", () => {
+    expect(getContextualTaskMessage([
+      { role: "user", content: "رتب لي رحلة يومين في المدينة المنورة" },
+      { role: "assistant", content: "إليك برنامجاً مقترحاً" },
+      { role: "user", content: "نعم" },
+    ])).toContain("رحلة يومين في المدينة المنورة");
+  });
+
+  it("carries the previous hotel request into a short distance follow-up", () => {
+    expect(getContextualTaskMessage([
+      { role: "user", content: "أبغى فنادق بالقرب من المسجد النبوي" },
+      { role: "assistant", content: "هذه خيارات تحتاج إلى تحقق" },
+      { role: "user", content: "كم تبعد؟" },
+    ])).toContain("فنادق بالقرب من المسجد النبوي");
+  });
+
+  it("does not replace a complete new question with old context", () => {
+    expect(getContextualTaskMessage([
+      { role: "user", content: "رتب لي رحلة يومين في المدينة المنورة" },
+      { role: "assistant", content: "إليك برنامجاً" },
+      { role: "user", content: "ما أبرز أخبار العالم اليوم؟" },
+    ])).toBeUndefined();
+  });
+});
+
 describe("adaptive brain response strategy", () => {
   it("selects safe step-by-step guidance for troubleshooting requests", () => {
     expect(getAdaptiveTaskInstruction("السيارة متعطلة وما تشتغل")).toContain("خطوات تشخيص مرتبة");
@@ -157,6 +183,12 @@ describe("adaptive brain response strategy", () => {
     expect(taif).toContain("رابط بحث خرائط");
     expect(baha).toContain("سؤالاً واحداً محدداً");
     expect(baha).toContain("الطقس والمواسم والإغلاقات");
+  });
+
+  it("requires verified dates and live evidence for hotel prices", () => {
+    const hotel = getAdaptiveTaskInstruction("طيب كم سعر الليلة بفندق إنتركونتيننتال المدينة؟");
+    expect(hotel).toContain("لا تعطِ سعراً تقديرياً");
+    expect(hotel).toContain("تاريخ الدخول والخروج");
   });
 
   it("selects comparison criteria instead of a generic answer", () => {
