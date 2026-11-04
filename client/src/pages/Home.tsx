@@ -813,6 +813,7 @@ export default function Home() {
   const [controlPriority, setControlPriority] = useState<"low" | "normal" | "high" | "urgent">("normal");
   const [controlAssignee, setControlAssignee] = useState<"CEO" | "السكرتير" | "IT">("CEO");
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [weatherCode, setWeatherCode] = useState<number | null>(null);
   const notificationIdRef = useRef(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const t = copy[language];
@@ -836,6 +837,7 @@ export default function Home() {
   ];
   const dir = language === "AR" ? "rtl" : "ltr";
   const season = getSeason();
+  const weatherMood = weatherCode === null ? "unknown" : weatherCode === 0 ? "clear" : [1, 2, 3].includes(weatherCode) ? "cloudy" : [45, 48].includes(weatherCode) ? "fog" : [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(weatherCode) ? "rain" : [71, 73, 75, 77, 85, 86].includes(weatherCode) ? "snow" : [95, 96, 99].includes(weatherCode) ? "storm" : "cloudy";
   const chatMutation = trpc.ai.chat.useMutation();
   const controlMutation = trpc.control.submit.useMutation();
   const controlRequestsQuery = trpc.control.list.useQuery(undefined, { staleTime: 10_000, enabled: modal === "control" && Boolean(auth.user) });
@@ -900,6 +902,47 @@ export default function Home() {
     notificationIdRef.current = id;
     setNotifications((current) => [...current.slice(-2), { id, title, message, tone }]);
   }, []);
+
+  const handleWeatherChange = React.useCallback((weather: { temperature: number; weatherCode: number } | null) => {
+    setWeatherCode(weather?.weatherCode ?? null);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const localDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(new Date());
+      const storageKey = `alassaul-welcome:${localDay}`;
+      try {
+        if (window.localStorage.getItem(storageKey)) return;
+        window.localStorage.setItem(storageKey, "shown");
+      } catch {
+        // Continue with a one-time welcome even when browser storage is unavailable.
+      }
+
+      const seasonalGreeting: Record<string, string> = {
+        spring: "ربيع الشمال يفتح نوافذه بالخضرة والزهور.",
+        summer: "صيف الشمال يدعوك إلى البحر والمرتفعات والهواء العليل.",
+        autumn: "ألوان الخريف تجعل طرق الشمال أكثر دفئًا وجمالًا.",
+        winter: "شتاء الشمال حكاية من الغيم والثلج والدفء.",
+      };
+      const weatherGreeting: Record<string, string> = {
+        clear: "والسماء صافية اليوم؛ نتمنى لك جولة مشرقة.",
+        cloudy: "والغيوم ترسم مشهدًا هادئًا فوق البحر الأسود.",
+        fog: "والضباب يضيف سحرًا خاصًا للمرتفعات؛ قد بهدوء.",
+        rain: "والمطر يمنح الشمال سحره الأخضر؛ انتبه للطريق.",
+        snow: "والثلوج تكسو المرتفعات؛ استمتع بالمشهد وتحقق من الطرق قبل الانطلاق.",
+        storm: "الأجواء غير مستقرة؛ نوصيك بمتابعة حالة الطقس قبل الرحلات.",
+        unknown: "نتمنى لك يومًا جميلًا واكتشافًا ممتعًا.",
+      };
+      const title = language === "AR" ? "يا هلا بك في ALASSAUL-AI 🌿" : language === "TR" ? "ALASSAUL-AI'ye hoş geldiniz 🌿" : "Welcome to ALASSAUL-AI 🌿";
+      const message = language === "AR"
+        ? `${seasonalGreeting[season]} ${weatherGreeting[weatherMood]}`
+        : language === "TR"
+          ? "Karadeniz'in mevsimini ve güncel havasını keşfedin. Size güzel bir gün dileriz."
+          : "Discover the Black Sea through the season and today's weather. Have a wonderful day.";
+      notify(title, message, "success");
+    }, 1100);
+    return () => window.clearTimeout(timer);
+  }, [language, notify, season, weatherMood]);
   const quickPrompts = language === "AR"
     ? activeSection === "live"
       ? [`شغّل بث ${selectedCity.name} إن وجد`, "ما القنوات المباشرة المتاحة الآن؟", "ما الفرق بين مكة والمدينة والحدث؟"]
@@ -1477,7 +1520,7 @@ export default function Home() {
   const latestRouteMessage = chatMessages[chatMessages.length - 1]?.route ? chatMessages[chatMessages.length - 1] : undefined;
 
   return (
-    <main className={`site-shell season-${season}`} dir={dir} data-season={season}>
+    <main className={`site-shell season-${season} weather-${weatherMood}`} dir={dir} data-season={season} data-weather={weatherMood}>
       <NotificationCenter notifications={notifications} onDismiss={dismissNotification} />
       <div className="topline">
         <div className="container topline-inner">
@@ -1548,7 +1591,7 @@ export default function Home() {
 
       <LiveBroadcastSection />
 
-      <LivePulse language={language} onPlanRoute={() => scrollTo("map")} />
+      <LivePulse language={language} onPlanRoute={() => scrollTo("map")} onWeatherChange={handleWeatherChange} />
 
       <section id="cities" className="cities-section section-pad">
         <div className="container">
