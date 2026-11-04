@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, collapseRepeatedSpeechText, buildTripGroupDirectionsUrl, extractTripDestination, getAdaptiveTaskInstruction, groupTripPlaces, haversineKm, getDistinctBackupModel, getLiveTripPlacesAnswer, getLiveWeatherAnswer } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, collapseRepeatedSpeechText, buildTripGroupDirectionsUrl, extractTripDestination, getAdaptiveTaskInstruction, getContextualTaskMessage, groupTripPlaces, haversineKm, getDistinctBackupModel, getLiveTripPlacesAnswer, getLiveWeatherAnswer } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -183,6 +183,12 @@ describe("adaptive brain response strategy", () => {
     expect(taif).toContain("رابط بحث خرائط");
     expect(baha).toContain("سؤالاً واحداً محدداً");
     expect(baha).toContain("الطقس والمواسم والإغلاقات");
+  });
+
+  it("requires verified dates and live evidence for hotel prices", () => {
+    const hotel = getAdaptiveTaskInstruction("طيب كم سعر الليلة بفندق إنتركونتيننتال المدينة؟");
+    expect(hotel).toContain("لا تعطِ سعراً تقديرياً");
+    expect(hotel).toContain("تاريخ الدخول والخروج");
   });
 
   it("requires verified dates and live evidence for hotel prices", () => {
