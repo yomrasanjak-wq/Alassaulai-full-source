@@ -184,7 +184,16 @@ async function getJeddahWeatherAnswer(content: string) {
   }
 }
 
-const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
+const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,24}(?:خبر|أخبار|اخبار|مستجدات|تطورات)|(?:أخبار|اخبار).{0,24}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|وش صاير في العالم|ايش صاير في العالم|ما الذي يحدث في العالم|مستجدات العالم|تطورات العالم|آخر التطورات|اخر التطورات|أهم الأخبار|اهم الاخبار|تابع الأخبار|تابع الاخبار|world updates|global updates|latest news|world news|breaking news|current events)/i.test(message);
+
+function getWorldNewsSearchQuery(message: string, language: "AR" | "TR" | "EN") {
+  const text = message.normalize("NFKC");
+  const asksBroadRoundup = /(?:العالم|world|global|وش صاير|ايش صاير|ماذا يحدث|ما الذي يحدث|مستجدات|تطورات|تابع الأخبار|تابع الاخبار)/i.test(text);
+  if (asksBroadRoundup) {
+    return language === "AR" ? "أبرز أخبار العالم اليوم آخر المستجدات دولياً" : language === "TR" ? "Dünyadan son dakika ve güncel gelişmeler" : "latest world news global developments today";
+  }
+  return text.slice(0, 160);
+}
 
 function isLocalBusinessSearchQuestion(message: string) {
   const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast)/i.test(message);
@@ -339,7 +348,7 @@ function decodeNewsXml(value: string) {
  * unreachable, return a clear status instead of letting the model invent news. */
 async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN") {
   if (!isWorldNewsQuestion(message)) return undefined;
-  const params = new URLSearchParams({ q: message.slice(0, 160), hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US", gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US", ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en" });
+  const params = new URLSearchParams({ q: getWorldNewsSearchQuery(message, language), hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US", gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US", ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en" });
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   try {
