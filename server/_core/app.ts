@@ -3,7 +3,7 @@ import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { ENV } from "./env";
-import { createContext } from "./context";
+import { sdk } from "./sdk";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
@@ -29,9 +29,9 @@ export function createApp() {
         body,
         request: req,
         onBeforeGenerateToken: async (_pathname, clientPayload) => {
-          const context = await createContext({ req, res });
-          const isOwner = Boolean(ENV.ownerOpenId && context.user?.openId === ENV.ownerOpenId);
-          if (!context.user || (context.user.role !== "admin" && !isOwner)) {
+          const user = await sdk.authenticateRequest(req);
+          const isOwner = Boolean(ENV.ownerOpenId && user.openId === ENV.ownerOpenId);
+          if (user.role !== "admin" && !isOwner) {
             throw new Error("ليس لديك صلاحية رفع الوسائط.");
           }
 
