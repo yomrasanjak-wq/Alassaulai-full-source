@@ -602,7 +602,7 @@ describe("City and place detail actions", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /أوزنجول/ })[0]!);
     expect(screen.getByRole("heading", { name: "أوزنجول" })).toBeTruthy();
     expect(screen.getByAltText(/طرابزون — أوزنجول/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: /خطط الطريق/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /اعرض المكان على الخريطة/ })).toBeTruthy();
   });
 });
 
