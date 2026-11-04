@@ -512,7 +512,7 @@ describe("Account, live modal, and place details", () => {
     expect(placeButton).toBeTruthy();
     fireEvent.click(placeButton);
     expect(screen.getByText("ما الذي ستجده هنا؟")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /خطط الطريق/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /اعرض المكان على الخريطة/ })).toBeTruthy();
   });
 
   it("opens the selected live channel inside the broadcast box without the old modal", () => {
