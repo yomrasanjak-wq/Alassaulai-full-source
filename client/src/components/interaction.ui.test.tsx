@@ -139,8 +139,8 @@ describe("Entertainment media uploads", () => {
       success: true,
       item: { id: 55, name: "clip.mp4", url: "https://example.public.blob.vercel-storage.com/media/clip.mp4", mimeType: "video/mp4" },
     });
-    render(<Home />);
     mediaCanManageMock.mockReturnValue(false);
+    render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: /مقاطع قصيرة/ }));
     expect(screen.queryByRole("button", { name: "إضافة فيديو" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /دخول غرفة التحكم/ }));
