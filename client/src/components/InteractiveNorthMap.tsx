@@ -168,9 +168,13 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     const normalize = (value: string) => value.toLocaleLowerCase().normalize("NFKD").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/[^a-z0-9\u0600-\u06FF]+/gi, "");
     const requested = normalize(destinationRequest.name);
     const requestedQuery = normalize(destinationRequest.query);
-    const match = destinations.find((item) => [item.name, item.latin, item.query].some((candidate) => {
+    const exactMatch = destinations.find((item) => [item.name, item.latin, item.query].some((candidate) => {
       const value = normalize(candidate);
-      return value === requested || value === requestedQuery || (requested.length > 3 && value.includes(requested)) || (requestedQuery.length > 5 && requestedQuery.includes(value));
+      return value === requested || value === requestedQuery;
+    }));
+    const match = exactMatch ?? destinations.find((item) => [item.name, item.latin, item.query].some((candidate) => {
+      const value = normalize(candidate);
+      return (requested.length > 3 && value.includes(requested)) || (requestedQuery.length > 5 && requestedQuery.includes(value));
     }));
     if (match) {
       openDestination(match);
