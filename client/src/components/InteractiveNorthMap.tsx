@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ExternalLink, Filter, MapPin, Navigation, Search, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, Filter, MapPin, Navigation, Search, Sparkles, X } from "lucide-react";
 import { MapView } from "@/components/Map";
 
 type MapCategory = "all" | "cities" | "nature" | "culture" | "family";
@@ -129,7 +129,9 @@ const categoryColor: Record<MapDestination["category"], string> = {
   family: "#79a7b3",
 };
 
-export function InteractiveNorthMap() {
+type DestinationRequest = { name: string; city: string; query: string } | null;
+
+export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }: { destinationRequest?: DestinationRequest; onBackToDestinations?: () => void }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<MapCategory>("all");
   const [selectedCity, setSelectedCity] = useState<string | null>("طرابزون");
@@ -145,7 +147,7 @@ export function InteractiveNorthMap() {
     return selectedCity ? destinations.filter((item) => {
       const matchesCity = item.city === selectedCity;
       const matchesFilter = filter === "all" || item.category === filter;
-      const matchesQuery = !normalized || `${item.name} ${item.latin} ${item.label}`.toLocaleLowerCase().includes(normalized);
+      const matchesQuery = !normalized || `${item.name} ${item.latin} ${item.label} ${item.query}`.toLocaleLowerCase().includes(normalized);
       return matchesCity && matchesFilter && matchesQuery;
     }) : [];
   }, [filter, query, selectedCity]);
@@ -160,6 +162,26 @@ export function InteractiveNorthMap() {
     map?.setZoom(13);
     window.setTimeout(() => document.querySelector(".north-map-detail")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 0);
   };
+
+  useEffect(() => {
+    if (!destinationRequest) return;
+    const normalize = (value: string) => value.toLocaleLowerCase().normalize("NFKD").replace(/[\\u064B-\\u065F\\u0670]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/[^\\p{L}\\p{N}]+/gu, "");
+    const requested = normalize(destinationRequest.name);
+    const requestedQuery = normalize(destinationRequest.query);
+    const match = destinations.find((item) => [item.name, item.latin, item.query].some((candidate) => {
+      const value = normalize(candidate);
+      return value === requested || value === requestedQuery || (requested.length > 3 && value.includes(requested)) || (requestedQuery.length > 5 && requestedQuery.includes(value));
+    }));
+    if (match) {
+      openDestination(match);
+      return;
+    }
+    const city = cityNames.includes(destinationRequest.city) ? destinationRequest.city : "طرابزون";
+    setSelectedCity(city);
+    setFilter("all");
+    setSelected(null);
+    setQuery(destinationRequest.name);
+  }, [destinationRequest?.name, destinationRequest?.query, destinationRequest?.city]);
 
   // Keep map markers synchronized with the city, category, and text search.
   // This avoids showing pins that are hidden from the destination list.
@@ -246,7 +268,7 @@ export function InteractiveNorthMap() {
               <span><strong>{destination.name}</strong><small>{destination.latin} · {destination.label}</small></span>
               <MapPin size={15} />
             </button>)}</div>) : <p className="north-map-empty">اختر مدينة من الأعلى لتظهر وجهاتها هنا.</p>}
-            {!visible.length && selectedCity && <p className="north-map-empty">لم نجد هذه الوجهة. جرّب اسم مدينة أو طبيعة.</p>}
+            {!visible.length && selectedCity && <div className="north-map-empty"><p>لم نعثر على نقطة موثقة لهذا الاسم داخل دليل الخريطة حتى الآن، لذلك لن نضع دبوسًا تخمينيًا.</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`} target="_blank" rel="noreferrer">ابحث عن الموقع على Google Maps <ExternalLink size={14} /></a></div>}
           </div>
         </aside>
 
@@ -283,6 +305,7 @@ export function InteractiveNorthMap() {
       </div>
 
       {selected && <div className="north-map-detail" role="region" aria-label={`تفاصيل ${selected.name}`}>
+        <button type="button" className="north-map-back" onClick={onBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button>
         <div className="north-map-detail-icon"><Sparkles size={20} /></div>
         <div className="north-map-detail-copy"><span>{selected.label} · {selected.latin}</span><strong>{selected.name}</strong><p>{selected.note}</p></div>
         <a className="north-map-directions" href={directionsUrl} target="_blank" rel="noreferrer"><Navigation size={17} /> احصل على الاتجاهات <ExternalLink size={14} /></a>
