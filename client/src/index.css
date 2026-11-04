@@ -2698,3 +2698,8 @@ img { display: block; max-width: 100%; }
   .resident-accordion-trigger { min-height: 58px; padding: 14px; font-size: 14px; }
   .resident-accordion-group > .resident-services-grid { grid-template-columns: minmax(0, 1fr); padding: 10px; gap: 10px; }
 }
+
+
+/* Keep the selected destination card in view after a map pin is tapped. */
+.north-map-detail { scroll-margin-block: 6rem 2rem; }
+.north-map-detail:focus { outline: 2px solid #d2ae62; outline-offset: 4px; }

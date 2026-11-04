@@ -160,7 +160,13 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     setSelected(destination);
     map?.panTo(destination.position);
     map?.setZoom(13);
-    window.setTimeout(() => document.querySelector(".north-map-detail")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 0);
+    window.setTimeout(() => {
+      const detail = document.querySelector<HTMLElement>(".north-map-detail");
+      if (!detail) return;
+      detail.scrollIntoView({ behavior: "smooth", block: "center" });
+      detail.setAttribute("tabindex", "-1");
+      detail.focus({ preventScroll: true });
+    }, 80);
   };
 
   useEffect(() => {
