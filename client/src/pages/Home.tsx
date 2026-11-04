@@ -19,6 +19,7 @@ import { LiveStatusView } from "@/components/LiveStatusView";
 import LiveBroadcastSection from "@/components/LiveBroadcastSection";
 import { LivePulse } from "@/components/LivePulse";
 import { InteractiveNorthMap } from "@/components/InteractiveNorthMap";
+import { DayRoutePlanner } from "@/components/DayRoutePlanner";
 import { getLiveStatusLabel, type LiveStatus } from "@shared/liveStatus";
 import { getChatErrorMessage, getLiveFrameMode, getMicrophoneErrorMessage, getSpeechTranscript } from "@shared/interactionFlow";
 import {
@@ -1596,16 +1597,18 @@ export default function Home() {
         </div>
         <div className="container hero-entry-only" aria-label="مسارات الاستكشاف السريعة">
           <button onClick={() => scrollTo("cities")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>ابدأ من المدينة المناسبة</small></span><ArrowLeft size={13} /></button>
-          <button onClick={() => scrollTo("map")}><Navigation size={14} /><span><strong>خريطة يومك</strong><small>رتّب الطريق على الخريطة</small></span><ArrowLeft size={13} /></button>
+          <button onClick={() => scrollTo("day-route-planner")}><Navigation size={14} /><span><strong>خريطة يومك</strong><small>اختر محطاتك ورتّب جولتك</small></span><ArrowLeft size={13} /></button>
           <button onClick={() => setChatOpen(true)}><span className="assistant-button-avatar assistant-button-avatar-small"><img src={ASSETS.officialRobot} alt="" /></span><span><strong>مساعد الرحلة</strong><small>اسأل عن الطريق والمكان</small></span><ArrowLeft size={13} /></button>
           <a className="gmail-shortcut" href="https://mail.google.com/mail/u/0/" target="_blank" rel="noreferrer" aria-label="فتح Gmail في تبويب جديد"><span className="gmail-shortcut-icon"><Mail size={18} /></span><span><strong>Gmail</strong><small>افتح بريدك بأمان</small></span><ExternalLink size={13} /></a>
         </div>
 
       </section>
 
+      <DayRoutePlanner />
+
       <LiveBroadcastSection />
 
-      <LivePulse language={language} onPlanRoute={() => scrollTo("map")} />
+      <LivePulse language={language} onPlanRoute={() => scrollTo("day-route-planner")} />
 
       <section id="cities" className="cities-section section-pad">
         <div className="container">
