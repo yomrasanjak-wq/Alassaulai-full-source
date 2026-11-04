@@ -26,11 +26,24 @@ function createPublicContext(): TrpcContext {
   };
 }
 
+describe("travel planning accuracy guardrails", () => {
+  it("requires verified hotel names and locations instead of guessing", () => {
+    const instruction = getAdaptiveTaskInstruction("رتب لي رحلة إلى حائل لمدة ثلاثة أيام");
+    expect(instruction).toContain("لا تخترع أسماء فنادق");
+    expect(instruction).toContain("مصدر خرائط/مصدر موثوق");
+  });
+});
+
 describe("speech transcript normalization", () => {
   it("collapses repeated opening phrases from incremental speech recognition", () => {
     const repeated = "طيب ابغى رحلة انا الى الباحه لمده خمس ايام";
     const transcript = Array(7).fill(repeated).concat(["ممكن ترتب لي اياها فين اروح فين اجي"]).join(" ");
     expect(collapseRepeatedSpeechText(transcript)).toBe(`${repeated} ممكن ترتب لي اياها فين اروح فين اجي`);
+  });
+
+  it("collapses six copies without retaining a two-copy block", () => {
+    const phrase = "رتب لي رحلة في حائل لمدة ثلاثة أيام";
+    expect(collapseRepeatedSpeechText(Array(6).fill(phrase).join(" "))).toBe(phrase);
   });
 
   it("preserves ordinary repeated words and short repeated phrases", () => {
