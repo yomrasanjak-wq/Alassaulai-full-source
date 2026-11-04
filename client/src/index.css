@@ -409,6 +409,7 @@ img { display: block; max-width: 100%; }
 .featured-destinations { margin: 22px 0 20px; padding: 16px; background: linear-gradient(135deg, #f5ead5, #fffaf1); border: 1px solid #ddc79f; box-shadow: 5px 5px 0 #ead8b7; }
 .featured-destination-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .featured-destination-card { min-height: 104px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 13px; color: #173d36; background: rgb(255 253 248 / 78%); border: 1px solid #dfceb0; text-decoration: none; transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+.featured-destination-card { width: 100%; font: inherit; text-align: right; cursor: pointer; }
 .featured-destination-card:hover { transform: translateY(-3px); background: #fffdf8; border-color: #b48b4a; }
 .featured-destination-card > span { min-width: 0; }
 .featured-destination-card strong, .featured-destination-card small { display: block; }
