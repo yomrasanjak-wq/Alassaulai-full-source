@@ -230,7 +230,6 @@ function getSaudiLeagueTargetDate(message: string): { label: string; date: strin
 async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", message: string) {
   const scheduleQuestion = isSaudiLeagueScheduleQuestion(message);
   const targetDate = scheduleQuestion ? getSaudiLeagueTargetDate(message) : undefined;
-  const dateQuery = targetDate ? ` ${targetDate.date}` : "";
   const query = language === "AR"
     ? scheduleQuestion ? `دوري روشن السعودي مباريات ${targetDate ? targetDate.label : "الجولة القادمة"} ${targetDate?.date ?? ""} مواعيد` : "أخبار دوري روشن السعودي اليوم"
     : scheduleQuestion ? `Saudi Pro League fixtures schedule ${targetDate?.date ?? "upcoming matches"}` : "Saudi Pro League latest news today";
