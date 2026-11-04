@@ -100,12 +100,12 @@ export function compactChatHistory(messages: Array<{ role: "user" | "assistant";
 }
 
 
-/** Search named places for trip-planning requests using OpenStreetMap-backed Photon.
- * Search results are candidates, not proof of opening hours, prices or suitability. */
+/** Discover named attractions around a resolved destination using OpenStreetMap data.
+ * Results are candidates only; this does not verify opening hours, prices or suitability. */
 export function extractTripDestination(message: string): string | undefined {
   if (!/(رتب لي|برنامج|خطة|خطط|رحلة|جدول سياحي|itinerary|trip plan|travel plan)/i.test(message)) return undefined;
   const normalized = message.normalize("NFKC").replace(/[؟?!،,؛;]+/g, " ").trim();
-  const match = normalized.match(/(?:في|إلى|الى|بمدينة|بمدينه|in|to)\s+(.+?)(?=\s+(?:لمدة|مدتها|خلال|لمده|لمدة|مدة|مده|لـ)?\s*[0-9٠-٩]+|$)/i);
+  const match = normalized.match(/(?:في|إلى|الى|بمدينة|بمدينه|in|to)\s+(.+?)(?=\s+(?:لمدة|مدتها|خلال|لمده|مدة|مده|لـ)?\s*[0-9٠-٩]+|$)/i);
   const destination = match?.[1]?.trim().replace(/\s+/g, " ");
   if (!destination || destination.length < 2) return undefined;
   return destination.slice(0, 80);
@@ -116,50 +116,78 @@ type PhotonFeature = {
   geometry?: { coordinates?: unknown[] };
 };
 
+type OverpassElement = {
+  type?: string;
+  id?: number;
+  lat?: number;
+  lon?: number;
+  center?: { lat?: number; lon?: number };
+  tags?: Record<string, string>;
+};
+
 export async function getLiveTripPlacesAnswer(message: string): Promise<string | undefined> {
   const destination = extractTripDestination(message);
   if (!destination) return undefined;
 
-  const endpoint = "https://photon.komoot.io/api/";
-  const searches = [destination, `tourist attractions ${destination}`];
-  const candidates: Array<{ name: string; detail: string; lat: number; lon: number; osmId: string }> = [];
   try {
-    for (const query of searches) {
-      const url = new URL(endpoint);
-      url.search = new URLSearchParams({ q: query, limit: query === destination ? "5" : "10", lang: "en" }).toString();
-      const response = await fetch(url, {
-        headers: { Accept: "application/json", "User-Agent": "ALASSAUL-AI/1.0 (travel place discovery)" },
-        signal: AbortSignal.timeout(7000),
-      });
-      if (!response.ok) throw new Error(`Photon HTTP ${response.status}`);
-      const payload = await response.json() as { features?: PhotonFeature[] };
-      for (const feature of payload.features ?? []) {
-        const properties = feature.properties ?? {};
-        const coordinates = feature.geometry?.coordinates;
-        const name = typeof properties.name === "string" ? properties.name.trim() : "";
-        const lon = Number(coordinates?.[0]);
-        const lat = Number(coordinates?.[1]);
-        if (!name || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-        const osmType = typeof properties.osm_type === "string" ? properties.osm_type : "";
-        const osmId = String(properties.osm_id ?? "");
-        const key = `${osmType}/${osmId}`;
-        if (candidates.some((item) => item.osmId === key || (item.name.toLocaleLowerCase() === name.toLocaleLowerCase() && Math.abs(item.lat - lat) < 0.001 && Math.abs(item.lon - lon) < 0.001))) continue;
-        const locality = [properties.city, properties.state, properties.country].filter((part): part is string => typeof part === "string" && Boolean(part)).join("، ");
-        candidates.push({ name, detail: locality, lat, lon, osmId: key });
-      }
+    const geocodeUrl = new URL("https://photon.komoot.io/api/");
+    geocodeUrl.search = new URLSearchParams({ q: destination, limit: "5", lang: "en" }).toString();
+    const geocodeResponse = await fetch(geocodeUrl, {
+      headers: { Accept: "application/json", "User-Agent": "ALASSAUL-AI/1.0 (travel place discovery)" },
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!geocodeResponse.ok) throw new Error(`Photon HTTP ${geocodeResponse.status}`);
+    const geocode = await geocodeResponse.json() as { features?: PhotonFeature[] };
+    const resolved = (geocode.features ?? []).find((feature) => {
+      const coords = feature.geometry?.coordinates;
+      return typeof feature.properties?.name === "string"
+        && Number.isFinite(Number(coords?.[0])) && Number.isFinite(Number(coords?.[1]));
+    });
+    if (!resolved) {
+      return `لم أتمكن من تحديد موقع جغرافي موثوق لوجهة «${destination}». حدّد الدولة أو المنطقة حتى لا نبحث في مدينة تحمل الاسم نفسه في مكان آخر.`;
     }
-    if (!candidates.length) {
-      return `لم يعثر البحث الجغرافي المفتوح على أماكن مسماة كافية في ${destination}. لا أريد اختلاق وجهات؛ يمكننا تضييق البحث إلى حي أو نوع نشاط محدد. المصدر: OpenStreetMap عبر Photon.`;
+
+    const properties = resolved.properties ?? {};
+    const coordinates = resolved.geometry?.coordinates ?? [];
+    const lon = Number(coordinates[0]);
+    const lat = Number(coordinates[1]);
+    const resolvedName = String(properties.name);
+    const locality = [properties.city, properties.state, properties.country]
+      .filter((part): part is string => typeof part === "string" && Boolean(part)).join("، ");
+
+    const overpassQuery = `[out:json][timeout:12];(nwr(around:25000,${lat},${lon})["name"]["tourism"~"attraction|museum|viewpoint|zoo|theme_park|gallery|artwork"];nwr(around:25000,${lat},${lon})["name"]["historic"];nwr(around:25000,${lat},${lon})["name"]["leisure"~"park|garden"];nwr(around:25000,${lat},${lon})["name"]["natural"~"beach|waterfall|cave"];);out center 50;`;
+    const placesResponse = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "ALASSAUL-AI/1.0 (travel place discovery)" },
+      body: new URLSearchParams({ data: overpassQuery }).toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!placesResponse.ok) throw new Error(`Overpass HTTP ${placesResponse.status}`);
+    const placesData = await placesResponse.json() as { elements?: OverpassElement[] };
+    const places = (placesData.elements ?? []).flatMap((element) => {
+      const name = element.tags?.name?.trim();
+      const placeLat = Number(element.lat ?? element.center?.lat);
+      const placeLon = Number(element.lon ?? element.center?.lon);
+      if (!name || !Number.isFinite(placeLat) || !Number.isFinite(placeLon)) return [];
+      const kind = element.tags?.tourism ?? element.tags?.historic ?? element.tags?.leisure ?? element.tags?.natural ?? "place";
+      return [{ name, lat: placeLat, lon: placeLon, kind, type: element.type ?? "node", id: element.id ?? 0 }];
+    }).filter((place, index, all) => all.findIndex((candidate) => candidate.type === place.type && candidate.id === place.id) === index);
+
+    const mapSearch = new URL("https://www.google.com/maps/search/");
+    mapSearch.searchParams.set("api", "1");
+    mapSearch.searchParams.set("query", `tourist attractions near ${resolvedName}${locality ? `, ${locality}` : ""}`);
+    if (!places.length) {
+      return `تم تحديد الوجهة جغرافياً: ${resolvedName}${locality ? `، ${locality}` : ""}، لكن قاعدة OpenStreetMap لم تُرجع معالم مسماة كافية ضمن 25 كم. لن أضع أسماء غير متحققة؛ يمكنك فتح [بحث المعالم على الخريطة](${mapSearch.toString()}) أو تحديد نوع الأماكن المطلوبة.`;
     }
-    const list = candidates.slice(0, 8).map((place, index) => {
-      const map = new URL("https://www.openstreetmap.org/");
-      map.search = new URLSearchParams({ mlat: String(place.lat), mlon: String(place.lon) }).toString();
-      return `${index + 1}. ${place.name}${place.detail ? ` — ${place.detail}` : ""} | ${map.toString()}`;
+
+    const list = places.slice(0, 8).map((place, index) => {
+      const map = new URL(`https://www.openstreetmap.org/${place.type}/${place.id}`);
+      return `${index + 1}. ${place.name} — نوع التصنيف: ${place.kind} | ${map.toString()}`;
     }).join("\n");
-    return `نتائج بحث أماكن مبدئية لوجهة ${destination} من OpenStreetMap عبر Photon (وقت البحث: ${new Date().toISOString()}):\n${list}\nهذه أسماء ومواضع مرشحة وليست تأكيداً لساعات العمل أو الأسعار أو جودة المكان. تحقّق من ملاءمة كل نتيجة قبل إدراجها كزيارة مؤكدة، ولا تفترض أن جميع النتائج معالم سياحية.`;
+    return `تم تحديد الوجهة عبر Photon: ${resolvedName}${locality ? `، ${locality}` : ""}. وهذه أماكن مسماة من بيانات OpenStreetMap ضمن نطاق 25 كم (وقت البحث: ${new Date().toISOString()}):\n${list}\nهذه نتائج جغرافية مرشحة وليست تأكيداً لساعات العمل أو الأسعار أو جودة المكان. رتّبها بحسب قربها وملاءمتها، ولا تعرضها كأماكن مفتوحة الآن دون تحقق إضافي.`;
   } catch (error) {
     console.warn("[ALASSAUL places] live place search unavailable", error);
-    return `تعذر إكمال البحث الجغرافي الحي عن ${destination} الآن. لا تخترع أسماء أماكن أو مواقع؛ قدّم اقتراحات عامة بوضوح أو اطلب إعادة المحاولة. المصدر المستخدم عند التوفر: OpenStreetMap عبر Photon.`;
+    return `تعذر إكمال البحث الجغرافي الحي عن ${destination} الآن. لا تخترع أسماء أماكن أو مواقع؛ اطلب إعادة المحاولة أو قدّم رابط بحث خرائط واضحاً مع التنبيه إلى أنه لم يتم التحقق من النتائج.`;
   }
 }
 
