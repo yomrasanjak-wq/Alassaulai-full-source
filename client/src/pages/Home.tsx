@@ -823,16 +823,16 @@ export default function Home() {
       ? ["Allah'ım, Peygamberimiz Muhammed'e salât ve selâm eyle", "Sübhanallahi ve bihamdihi, Sübhanallahil azim", "Allah'ım, rahmet kapılarını bize aç", "Rabbim, göğsümü genişlet ve işimi kolaylaştır", "Allah'ım yolcuları koru ve onları selametle döndür"]
       : ["O Allah, send blessings and peace upon Prophet Muhammad", "Glory be to Allah and praise Him", "O Allah, open for us the doors of Your mercy", "My Lord, ease my heart and make my journey easy", "O Allah, protect travelers and return them safely"];
   const fallbackDiscoverySlides = [
-    { src: "/images/modern-trabzon.webp", alt: "جبال وساحل الشمال التركي", title: "بين الغيم والبحر", note: "الشمال التركي يبدأ من المشهد الأول." },
-    { src: "/images/modern-uzungol.webp", alt: "بحيرة أوزنجول", title: "أوزنجول", note: "بحيرة وقرية ومرتفعات في يوم واحد." },
-    { src: "/images/modern-waterfall.webp", alt: "شلالات الشمال التركي", title: "شلالات بين الغيم", note: "طبيعة خضراء وماء لا ينقطع." },
-    { src: "/images/modern-rize.webp", alt: "مرتفعات ريزا", title: "ريزا", note: "وادي هادئ للرحلات والمغامرة." },
-    { src: "/images/modern-ayder.webp", alt: "مرتفعات آيدر", title: "آيدر", note: "مرتفعات خضراء وهواء بارد." },
-    { src: "/images/modern-giresun.webp", alt: "غيرسون", title: "غيرسون", note: "ساحل هادئ وطبيعة خضراء على البحر الأسود." },
-    { src: "/images/modern-ordu.webp", alt: "أوردو", title: "أوردو", note: "تلفريك وساحل واسع وإطلالة من بوزتبه." },
-    { src: "/images/modern-samsun.webp", alt: "سامسون", title: "سامسون", note: "واجهة بحرية ومتنزهات ورحلات عائلية." },
-    { src: "/images/modern-istanbul.webp", alt: "إسطنبول", title: "إسطنبول", note: "البوسفور، الأسواق، والتاريخ في مدينة واحدة." },
-    { src: "/images/modern-batumi.webp", alt: "باتومي جورجيا", title: "باتومي", note: "امتداد ساحلي قريب بحدائق وتلفريك وبحر." },
+    { src: "/images/modern-trabzon.webp", alt: "جبال وساحل الشمال التركي", title: "بين الغيم والبحر", mapTarget: null, note: "الشمال التركي يبدأ من المشهد الأول." },
+    { src: "/images/modern-uzungol.webp", alt: "بحيرة أوزنجول", title: "أوزنجول", mapTarget: "أوزنجول", note: "بحيرة وقرية ومرتفعات في يوم واحد." },
+    { src: "/images/modern-waterfall.webp", alt: "شلالات الشمال التركي", title: "شلالات بين الغيم", mapTarget: null, note: "طبيعة خضراء وماء لا ينقطع." },
+    { src: "/images/modern-rize.webp", alt: "مرتفعات ريزا", title: "ريزا", mapTarget: "ريزا", note: "وادي هادئ للرحلات والمغامرة." },
+    { src: "/images/modern-ayder.webp", alt: "مرتفعات آيدر", title: "آيدر", mapTarget: "آيدر", note: "مرتفعات خضراء وهواء بارد." },
+    { src: "/images/modern-giresun.webp", alt: "غيرسون", title: "غيرسون", mapTarget: "غيرسون", note: "ساحل هادئ وطبيعة خضراء على البحر الأسود." },
+    { src: "/images/modern-ordu.webp", alt: "أوردو", title: "أوردو", mapTarget: "أوردو", note: "تلفريك وساحل واسع وإطلالة من بوزتبه." },
+    { src: "/images/modern-samsun.webp", alt: "سامسون", title: "سامسون", mapTarget: "سامسون", note: "واجهة بحرية ومتنزهات ورحلات عائلية." },
+    { src: "/images/modern-istanbul.webp", alt: "إسطنبول", title: "إسطنبول", mapTarget: "إسطنبول", note: "البوسفور، الأسواق، والتاريخ في مدينة واحدة." },
+    { src: "/images/modern-batumi.webp", alt: "باتومي جورجيا", title: "باتومي", mapTarget: "باتومي", note: "امتداد ساحلي قريب بحدائق وتلفريك وبحر." },
   ];
   const dir = language === "AR" ? "rtl" : "ltr";
   const season = getSeason();
@@ -858,15 +858,16 @@ export default function Home() {
   const speechRecognitionAvailable = typeof window !== "undefined" && Boolean((window as Window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition || (window as Window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
   const discoveryWeek = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
   const freshDiscoverySlides = [
-    { src: "/images/trabzon-lake.webp", alt: "بحيرة وقرى طرابزون الحديثة", title: "طرابزون بين البحيرة والغيم", note: "صورة جديدة من مشاهد البحر الأسود والطبيعة الخضراء." },
-    { src: "/images/black-sea-valley.webp", alt: "وادي البحر الأسود", title: "وادي البحر الأسود", note: "طريق عائلي هادئ بين الجبال والمزارع." },
-    { src: "/images/forest-waterfall.webp", alt: "شلال في غابات الشمال التركي", title: "شلالات الغابة", note: "ماء وغابة ومنظر مناسب لاستراحة قصيرة." },
-    { src: "/images/uzungol-scenery.webp", alt: "منظر حديث لأوزنجول", title: "أوزنجول من زاوية جديدة", note: "بحيرة ومرتفعات وقرية تستحق يوماً مستقلاً." },
-    { src: "/images/black-sea-coast.webp", alt: "ساحل البحر الأسود", title: "ساحل البحر الأسود", note: "مشهد مفتوح لمحبي البحر والطرق الساحلية." },
-    { src: "/images/rize-nature.webp", alt: "طبيعة ريزا الخضراء", title: "ريزا الخضراء", note: "وديان وشلالات ومزارع شاي في رحلة واحدة." },
+    { src: "/images/trabzon-lake.webp", alt: "بحيرة وقرى طرابزون الحديثة", title: "طرابزون بين البحيرة والغيم", mapTarget: "طرابزون", note: "صورة جديدة من مشاهد البحر الأسود والطبيعة الخضراء." },
+    { src: "/images/black-sea-valley.webp", alt: "وادي البحر الأسود", title: "وادي البحر الأسود", mapTarget: null, note: "طريق عائلي هادئ بين الجبال والمزارع." },
+    { src: "/images/forest-waterfall.webp", alt: "شلال في غابات الشمال التركي", title: "شلالات الغابة", mapTarget: null, note: "ماء وغابة ومنظر مناسب لاستراحة قصيرة." },
+    { src: "/images/uzungol-scenery.webp", alt: "منظر حديث لأوزنجول", title: "أوزنجول من زاوية جديدة", mapTarget: "أوزنجول", note: "بحيرة ومرتفعات وقرية تستحق يوماً مستقلاً." },
+    { src: "/images/black-sea-coast.webp", alt: "ساحل البحر الأسود", title: "ساحل البحر الأسود", mapTarget: null, note: "مشهد مفتوح لمحبي البحر والطرق الساحلية." },
+    { src: "/images/rize-nature.webp", alt: "طبيعة ريزا الخضراء", title: "ريزا الخضراء", mapTarget: "ريزا", note: "وديان وشلالات ومزارع شاي في رحلة واحدة." },
   ];
   const discoverySlides = useMemo(() => {
     const uploadedSlides = (discoveryItemsQuery.data ?? []).map((item) => ({
+      mapTarget: null as string | null,
       src: item.url,
       alt: item.name,
       title: item.name.replace(/\.[^/.]+$/, ""),
@@ -1812,7 +1813,7 @@ export default function Home() {
       {discoveryOpen && <div className="discovery-viewer" role="dialog" aria-modal="true" aria-label="اكتشف الشمال التركي">
         <button className="discovery-close" aria-label="إغلاق معرض الشمال" onClick={() => setDiscoveryOpen(false)}><X size={21} /></button>
         <div className="discovery-progress"><span>اكتشف الشمال التركي</span><strong>{String(discoveryIndex + 1).padStart(2, "0")} / {String(discoverySlides.length).padStart(2, "0")}</strong></div>
-        <div className="discovery-stage"><img key={discoverySlides[discoveryIndex].src} src={discoverySlides[discoveryIndex].src} alt={discoverySlides[discoveryIndex].alt} onLoad={() => setDiscoveryImageLoaded(true)} /><div className="discovery-caption"><span>ALASSAUL / BLACK SEA ROUTE</span><h2>{discoverySlides[discoveryIndex].title}</h2><p>{discoverySlides[discoveryIndex].note}</p></div></div>
+        <div className="discovery-stage"><img key={discoverySlides[discoveryIndex].src} src={discoverySlides[discoveryIndex].src} alt={discoverySlides[discoveryIndex].alt} onLoad={() => setDiscoveryImageLoaded(true)} /><div className="discovery-caption"><span>ALASSAUL / BLACK SEA ROUTE</span><h2>{discoverySlides[discoveryIndex].title}</h2><p>{discoverySlides[discoveryIndex].note}</p>{discoverySlides[discoveryIndex].mapTarget && <button type="button" className="button button-primary discovery-map-cta" onClick={() => { const target = discoverySlides[discoveryIndex].mapTarget; if (!target) return; setDiscoveryOpen(false); window.setTimeout(() => { scrollTo("map"); window.dispatchEvent(new CustomEvent("alassaul:open-destination", { detail: { name: target } })); }, 180); }}><MapPin size={17} /> اعرض الوجهة على الخريطة</button>}</div></div>
         <div className="discovery-controls"><button aria-label="الصورة السابقة" onClick={() => { setDiscoveryImageLoaded(false); setDiscoveryIndex((current) => (current - 1 + discoverySlides.length) % discoverySlides.length); }}><ArrowRight size={18} /></button><div className="discovery-dots">{discoverySlides.map((slide, index) => <button key={slide.src} className={index === discoveryIndex ? "active" : ""} aria-label={`عرض ${slide.title}`} onClick={() => { setDiscoveryImageLoaded(false); setDiscoveryIndex(index); }} />)}</div><button aria-label="الصورة التالية" onClick={() => { setDiscoveryImageLoaded(false); setDiscoveryIndex((current) => (current + 1) % discoverySlides.length); }}><ArrowLeft size={18} /></button></div>
       </div>}
 
