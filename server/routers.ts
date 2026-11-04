@@ -155,8 +155,8 @@ export async function getLiveTripPlacesAnswer(message: string): Promise<string |
       const map = new URL("https://www.openstreetmap.org/");
       map.search = new URLSearchParams({ mlat: String(place.lat), mlon: String(place.lon) }).toString();
       return `${index + 1}. ${place.name}${place.detail ? ` — ${place.detail}` : ""} | ${map.toString()}`;
-    }).join("\\n");
-    return `نتائج بحث أماكن مبدئية لوجهة ${destination} من OpenStreetMap عبر Photon (وقت البحث: ${new Date().toISOString()}):\\n${list}\\nهذه أسماء ومواضع مرشحة وليست تأكيداً لساعات العمل أو الأسعار أو جودة المكان. تحقّق من ملاءمة كل نتيجة قبل إدراجها كزيارة مؤكدة، ولا تفترض أن جميع النتائج معالم سياحية.`;
+    }).join("\n");
+    return `نتائج بحث أماكن مبدئية لوجهة ${destination} من OpenStreetMap عبر Photon (وقت البحث: ${new Date().toISOString()}):\n${list}\nهذه أسماء ومواضع مرشحة وليست تأكيداً لساعات العمل أو الأسعار أو جودة المكان. تحقّق من ملاءمة كل نتيجة قبل إدراجها كزيارة مؤكدة، ولا تفترض أن جميع النتائج معالم سياحية.`;
   } catch (error) {
     console.warn("[ALASSAUL places] live place search unavailable", error);
     return `تعذر إكمال البحث الجغرافي الحي عن ${destination} الآن. لا تخترع أسماء أماكن أو مواقع؛ قدّم اقتراحات عامة بوضوح أو اطلب إعادة المحاولة. المصدر المستخدم عند التوفر: OpenStreetMap عبر Photon.`;
