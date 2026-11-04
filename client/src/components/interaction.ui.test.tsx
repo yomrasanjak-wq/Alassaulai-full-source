@@ -160,6 +160,23 @@ describe("City card imagery", () => {
     expect(screen.getByRole("button", { name: "عرض شاطئ قانيتا على خريطة ALASSAUL" })).toBeTruthy();
   });
 
+  it("scrolls the selected destination detail into view after a destination tap", async () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });
+
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
+    fireEvent.click(screen.getByRole("button", { name: /افتح صفحة المدينة/ }));
+    fireEvent.click(screen.getByRole("button", { name: "عرض أوزنجول على خريطة ALASSAUL" }));
+
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" }));
+    expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" }).getAttribute("tabindex")).toBe("-1");
+
+    if (originalDescriptor) Object.defineProperty(HTMLElement.prototype, "scrollIntoView", originalDescriptor);
+    else delete (HTMLElement.prototype as { scrollIntoView?: () => void }).scrollIntoView;
+  });
+
   it("opens the map when the visitor taps a photo-book image", async () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: "افتح دفتر صور الشمال التركي" }));
