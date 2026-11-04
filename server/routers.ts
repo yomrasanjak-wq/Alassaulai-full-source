@@ -125,6 +125,48 @@ type OverpassElement = {
   tags?: Record<string, string>;
 };
 
+export type TripPlace = { name: string; lat: number; lon: number; kind?: string; type?: string; id?: number };
+
+export function haversineKm(a: Pick<TripPlace, "lat" | "lon">, b: Pick<TripPlace, "lat" | "lon">): number {
+  const radians = (degrees: number) => degrees * Math.PI / 180;
+  const dLat = radians(b.lat - a.lat);
+  const dLon = radians(b.lon - a.lon);
+  const lat1 = radians(a.lat);
+  const lat2 = radians(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** Groups valid mapped places around nearby anchors. Radius is straight-line distance, not driving distance. */
+export function groupTripPlaces(places: TripPlace[], radiusKm = 4): TripPlace[][] {
+  const remaining = places.filter((place) => Number.isFinite(place.lat) && Number.isFinite(place.lon)
+    && Math.abs(place.lat) <= 90 && Math.abs(place.lon) <= 180);
+  const groups: TripPlace[][] = [];
+  while (remaining.length) {
+    const anchor = remaining.shift()!;
+    const group = [anchor];
+    for (let index = remaining.length - 1; index >= 0; index -= 1) {
+      if (haversineKm(anchor, remaining[index]!) <= radiusKm) group.push(...remaining.splice(index, 1));
+    }
+    groups.push(group);
+  }
+  return groups;
+}
+
+export function buildTripGroupDirectionsUrl(group: TripPlace[]): string | undefined {
+  if (!group.length) return undefined;
+  const point = (place: TripPlace) => `${place.lat},${place.lon}`;
+  const url = new URL("https://www.google.com/maps/dir/");
+  url.search = new URLSearchParams({
+    api: "1",
+    origin: point(group[0]!),
+    destination: point(group[group.length - 1]!),
+    ...(group.length > 2 ? { waypoints: group.slice(1, -1).map(point).join("|") } : {}),
+    travelmode: "driving",
+  }).toString();
+  return url.toString();
+}
+
 export async function getLiveTripPlacesAnswer(message: string): Promise<string | undefined> {
   const destination = extractTripDestination(message);
   if (!destination) return undefined;
@@ -180,11 +222,17 @@ export async function getLiveTripPlacesAnswer(message: string): Promise<string |
       return `تم تحديد الوجهة جغرافياً: ${resolvedName}${locality ? `، ${locality}` : ""}، لكن قاعدة OpenStreetMap لم تُرجع معالم مسماة كافية ضمن 25 كم. لن أضع أسماء غير متحققة؛ يمكنك فتح [بحث المعالم على الخريطة](${mapSearch.toString()}) أو تحديد نوع الأماكن المطلوبة.`;
     }
 
-    const list = places.slice(0, 8).map((place, index) => {
-      const map = new URL(`https://www.openstreetmap.org/${place.type}/${place.id}`);
-      return `${index + 1}. ${place.name} — نوع التصنيف: ${place.kind} | ${map.toString()}`;
-    }).join("\n");
-    return `تم تحديد الوجهة عبر Photon: ${resolvedName}${locality ? `، ${locality}` : ""}. وهذه أماكن مسماة من بيانات OpenStreetMap ضمن نطاق 25 كم (وقت البحث: ${new Date().toISOString()}):\n${list}\nهذه نتائج جغرافية مرشحة وليست تأكيداً لساعات العمل أو الأسعار أو جودة المكان. رتّبها بحسب قربها وملاءمتها، ولا تعرضها كأماكن مفتوحة الآن دون تحقق إضافي.`;
+    const selectedPlaces = places.slice(0, 12);
+    const groups = groupTripPlaces(selectedPlaces, 4);
+    const itinerary = groups.map((group, index) => {
+      const routeUrl = buildTripGroupDirectionsUrl(group);
+      const names = group.map((place) => {
+        const map = new URL(`https://www.openstreetmap.org/${place.type}/${place.id}`);
+        return `${place.name} (${place.kind}) — ${map.toString()}`;
+      }).join("\\n   • ");
+      return `مجموعة ${index + 1} — أماكن متقاربة جغرافياً:\\n   • ${names}${routeUrl ? `\\n   افتح ترتيب هذه المجموعة في خرائط Google: ${routeUrl}` : ""}`;
+    }).join("\\n\\n");
+    return `تم تحديد الوجهة عبر Photon: ${resolvedName}${locality ? `، ${locality}` : ""}. جمعت ${selectedPlaces.length} معلماً مسمى من OpenStreetMap ضمن نطاق 25 كم إلى مجموعات متقاربة لتسهيل توزيعها على الأيام:\\n${itinerary}\\n\\nالمجموعات مبنية على مسافة خط مستقيم تقريبية (نطاق 4 كم من نقطة الارتكاز)، وليست مسافة طريق أو زمن قيادة. روابط الخرائط تساعدك على فتح المسار، لكن وقت القيادة وحالة المرور يحتاجان إلى التحقق داخل تطبيق الخرائط. البيانات لا تؤكد ساعات العمل أو الأسعار أو جودة المكان؛ وزّع مجموعة واحدة أو أكثر في اليوم بحسب مدة الرحلة ووقت الزيارة وراحة المسافر.`;
   } catch (error) {
     console.warn("[ALASSAUL places] live place search unavailable", error);
     return `تعذر إكمال البحث الجغرافي الحي عن ${destination} الآن. لا تخترع أسماء أماكن أو مواقع؛ اطلب إعادة المحاولة أو قدّم رابط بحث خرائط واضحاً مع التنبيه إلى أنه لم يتم التحقق من النتائج.`;
