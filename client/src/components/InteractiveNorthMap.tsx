@@ -161,6 +161,23 @@ export function InteractiveNorthMap() {
     window.setTimeout(() => document.querySelector(".north-map-detail")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 0);
   };
 
+  // Allow verified destination cards elsewhere on the page to focus the matching map pin.
+  useEffect(() => {
+    const handleDestinationRequest = (event: Event) => {
+      const name = (event as CustomEvent<{ name?: string }>).detail?.name?.trim();
+      if (!name) return;
+      const normalized = name.toLocaleLowerCase();
+      const destination = destinations.find((item) =>
+        item.name.toLocaleLowerCase() === normalized ||
+        item.latin.toLocaleLowerCase() === normalized ||
+        item.query.toLocaleLowerCase() === normalized
+      );
+      if (destination) openDestination(destination);
+    };
+    window.addEventListener("alassaul:open-destination", handleDestinationRequest);
+    return () => window.removeEventListener("alassaul:open-destination", handleDestinationRequest);
+  }, [map]);
+
   // Keep map markers synchronized with the city, category, and text search.
   // This avoids showing pins that are hidden from the destination list.
   useEffect(() => {
