@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, buildTripGroupDirectionsUrl, extractTripDestination, getAdaptiveTaskInstruction, groupTripPlaces, haversineKm, getDistinctBackupModel, getLiveTripPlacesAnswer, getLiveWeatherAnswer } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, collapseRepeatedSpeechText, buildTripGroupDirectionsUrl, extractTripDestination, getAdaptiveTaskInstruction, groupTripPlaces, haversineKm, getDistinctBackupModel, getLiveTripPlacesAnswer, getLiveWeatherAnswer } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -25,6 +25,29 @@ function createPublicContext(): TrpcContext {
     res: {} as TrpcContext["res"],
   };
 }
+
+describe("speech transcript normalization", () => {
+  it("collapses repeated opening phrases from incremental speech recognition", () => {
+    const repeated = "طيب ابغى رحلة انا الى الباحه لمده خمس ايام";
+    const transcript = Array(7).fill(repeated).concat(["ممكن ترتب لي اياها فين اروح فين اجي"]).join(" ");
+    expect(collapseRepeatedSpeechText(transcript)).toBe(`${repeated} ممكن ترتب لي اياها فين اروح فين اجي`);
+  });
+
+  it("preserves ordinary repeated words and short repeated phrases", () => {
+    expect(collapseRepeatedSpeechText("نعم نعم نعم هذا صحيح")).toBe("نعم نعم نعم هذا صحيح");
+    expect(collapseRepeatedSpeechText("أريد أريد رحلة قصيرة")).toBe("أريد أريد رحلة قصيرة");
+  });
+
+  it("normalizes only user messages in compact chat history", () => {
+    const repeated = "رتب لي رحلة في الباحة لمدة خمسة أيام";
+    const messages = [
+      { role: "user" as const, content: Array(3).fill(repeated).join(" ") },
+      { role: "assistant" as const, content: "حاضر حاضر حاضر" },
+    ];
+    expect(compactChatHistory(messages)[0]?.content).toBe(repeated);
+    expect(compactChatHistory(messages)[1]?.content).toBe("حاضر حاضر حاضر");
+  });
+});
 
 describe("brain governance", () => {
   it("does not expose administrative diagnostics or proposal actions to public visitors", async () => {
