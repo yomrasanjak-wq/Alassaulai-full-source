@@ -395,7 +395,8 @@ img { display: block; max-width: 100%; }
 .destination-group { margin-top: 17px; }
 .destination-group h4 { color: #a47d40; font-size: 11px; margin: 0 0 8px; font-family: "Noto Kufi Arabic"; }
 .destination-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.destination-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 66px; padding: 11px 12px; background: #f8f3e9; border: 1px solid #e5dccb; color: #31574c; text-decoration: none; transition: transform .18s ease, border-color .18s ease, background .18s ease; }\n.destination-link { width: 100%; font: inherit; text-align: right; cursor: pointer; }
+.destination-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 66px; padding: 11px 12px; background: #f8f3e9; border: 1px solid #e5dccb; color: #31574c; text-decoration: none; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.destination-link { width: 100%; font: inherit; text-align: right; cursor: pointer; }
 .destination-link:hover { transform: translateY(-2px); border-color: #c8a96b; background: #fffaf1; }
 .destination-link > span { min-width: 0; }
 .destination-link strong, .destination-link small { display: block; }
@@ -1109,7 +1110,9 @@ img { display: block; max-width: 100%; }
 .north-map-marker { display: flex; align-items: center; gap: 4px; padding: 4px 6px; border: 1px solid rgb(255 250 240 / 80%); border-radius: 999px; background: #173d36; color: #fffaf0; box-shadow: 0 3px 8px rgb(0 0 0 / 25%); cursor: pointer; direction: rtl; }
 .north-map-marker span { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 3px rgb(255 255 255 / 20%); }
 .north-map-marker b { font: 9px "Noto Kufi Arabic"; white-space: nowrap; }
-.north-map-detail { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 13px; padding: 16px 19px; background: #173d36; color: #fffaf0; direction: rtl; }\n.north-map-back { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 7px 11px; border: 1px solid rgb(210 174 98 / 55%); border-radius: 9px; background: rgb(255 250 240 / 8%); color: #fffaf0; font: 600 10px "Noto Kufi Arabic"; cursor: pointer; }\n.north-map-back:hover { background: rgb(255 250 240 / 16%); }
+.north-map-detail { display: grid; grid-template-columns: auto 42px minmax(0, 1fr) auto; align-items: center; gap: 13px; padding: 16px 19px; background: #173d36; color: #fffaf0; direction: rtl; }
+.north-map-back { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 7px 11px; border: 1px solid rgb(210 174 98 / 55%); border-radius: 9px; background: rgb(255 250 240 / 8%); color: #fffaf0; font: 600 10px "Noto Kufi Arabic"; cursor: pointer; }
+.north-map-back:hover { background: rgb(255 250 240 / 16%); }
 .north-map-detail-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #d2ae62; color: #173d36; }
 .north-map-detail-copy span { color: #d2c38f; font-size: 9px; }
 .north-map-detail-copy strong { display: block; margin-top: 2px; font-family: "Noto Kufi Arabic"; font-size: 16px; }
