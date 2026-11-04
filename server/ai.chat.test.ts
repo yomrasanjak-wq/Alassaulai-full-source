@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTripDestination, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveTripPlacesAnswer, getLiveWeatherAnswer } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -102,6 +102,45 @@ describe("adaptive brain response strategy", () => {
   });
 });
 
+
+describe("live trip place discovery", () => {
+  it("extracts a destination from an Arabic trip-planning request", () => {
+    expect(extractTripDestination("رتب لي رحلة ٤ أيام في الطائف")).toBe("الطائف");
+    expect(extractTripDestination("أبغى برنامج سياحي في الباحة لمدة 4 أيام")).toBe("الباحة");
+    expect(extractTripDestination("ما عاصمة الفلبين؟")).toBeUndefined();
+  });
+
+  it("uses OpenStreetMap-backed Photon results and provides map links without inventing hours", async () => {
+    const feature = (name: string, lon: number, lat: number) => ({
+      type: "Feature",
+      properties: { name, city: "Taif", country: "Saudi Arabia", osm_type: "N", osm_id: name.length },
+      geometry: { type: "Point", coordinates: [lon, lat] },
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ features: [feature("Taif", 40.4, 21.27)] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ features: [feature("Shubra Palace", 40.42, 21.28)] }), { status: 200 }));
+    try {
+      const answer = await getLiveTripPlacesAnswer("رتب لي رحلة ٤ أيام في الطائف");
+      expect(answer).toContain("Shubra Palace");
+      expect(answer).toContain("openstreetmap.org");
+      expect(answer).toContain("ليست تأكيداً لساعات العمل");
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not fabricate place results when the live search fails", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
+    try {
+      const answer = await getLiveTripPlacesAnswer("رتب لي رحلة يومين في الطائف");
+      expect(answer).toContain("تعذر إكمال البحث الجغرافي الحي");
+      expect(answer).not.toContain("Shubra Palace");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+});
 
 describe("live weather source", () => {
   it("uses a live Open-Meteo response for current Trabzon weather", async () => {
