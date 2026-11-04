@@ -105,8 +105,8 @@ export function compactChatHistory(messages: Array<{ role: "user" | "assistant";
 export function extractTripDestination(message: string): string | undefined {
   if (!/(رتب لي|برنامج|خطة|خطط|رحلة|جدول سياحي|itinerary|trip plan|travel plan)/i.test(message)) return undefined;
   const normalized = message.normalize("NFKC").replace(/[؟?!،,؛;]+/g, " ").trim();
-  const match = normalized.match(/(?:في|إلى|الى|بمدينة|بمدينه|in|to)\\s+(.+?)(?=\\s+(?:لمدة|مدتها|خلال|لمده|لمدة|مدة|مده|لـ)?\\s*[0-9٠-٩]+|$)/i);
-  const destination = match?.[1]?.trim().replace(/\\s+/g, " ");
+  const match = normalized.match(/(?:في|إلى|الى|بمدينة|بمدينه|in|to)\s+(.+?)(?=\s+(?:لمدة|مدتها|خلال|لمده|لمدة|مدة|مده|لـ)?\s*[0-9٠-٩]+|$)/i);
+  const destination = match?.[1]?.trim().replace(/\s+/g, " ");
   if (!destination || destination.length < 2) return undefined;
   return destination.slice(0, 80);
 }
