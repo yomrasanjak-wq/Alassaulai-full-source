@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Camera, Mic, Send, X } from "lucide-react";
+import { Camera, Mic, Paperclip, Send, X } from "lucide-react";
 
 type ChatComposerProps = {
   value: string;
@@ -17,6 +17,7 @@ type ChatComposerProps = {
 export function ChatComposer({ value, onChange, onSend, onVoice, isListening, voiceSupported, isLoading, placeholder, onImageSelected, imagePreview }: ChatComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -28,8 +29,12 @@ export function ChatComposer({ value, onChange, onSend, onVoice, isListening, vo
   return (
     <form className="chat-compose" onSubmit={(event) => { event.preventDefault(); onSend(); }}>
       <input ref={imageInputRef} className="chat-image-input" type="file" accept="image/*" capture="environment" aria-label="التقاط صورة أو اختيار صورة" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) onImageSelected(file); event.currentTarget.value = ""; }} />
+      <input ref={galleryInputRef} className="chat-image-input" type="file" accept="image/jpeg,image/png,image/webp" aria-label="اختيار صورة من المعرض" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) onImageSelected(file); event.currentTarget.value = ""; }} />
       <button type="button" className="chat-camera-button" onClick={() => imageInputRef.current?.click()} disabled={isLoading} aria-label="التقاط صورة أو إرفاق صورة" title="التقط صورة أو اختر صورة لتحليلها">
         <Camera size={19} />
+      </button>
+      <button type="button" className="chat-camera-button chat-attachment-button" onClick={() => galleryInputRef.current?.click()} disabled={isLoading} aria-label="إرفاق صورة من المعرض" title="إرفاق صورة من معرض الهاتف">
+        <Paperclip size={19} />
       </button>
       <button
         type="button"
