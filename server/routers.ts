@@ -55,6 +55,9 @@ export function getDistinctBackupModel(primaryModel: string | undefined, backupM
  * not grant tools or authority to perform external actions. */
 export function getAdaptiveTaskInstruction(message: string): string {
   const text = message.normalize("NFKC").toLowerCase();
+  if (/(?:فندق|فنادق|سكن|إقامة|اقامة|غرفة|سعر الليلة|كم الليلة|حجز|booking|hotel|accommodation|room rate)/i.test(text)) {
+    return "نمط الفنادق والأسعار: لا تخترع اسم فندق أو موقعه أو قربه من معلم، ولا تعطِ سعراً تقديرياً كأنه سعر حقيقي. السعر والتوافر يتغيران بحسب تاريخ الدخول والخروج وعدد النزلاء ونوع الغرفة؛ إذا لم تتوفر نتيجة بحث حية موثوقة فقل إن السعر غير متحقق واطلب تاريخ الإقامة، أو أعطِ رابط بحث واضحاً دون نسبة سعر إلى الفندق. ميّز بين السعر المنشور والسعر النهائي بعد الضرائب والرسوم، ولا تدّعِ أنك تحققت من التوافر.";
+  }
   if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|latest news|world news|breaking news)/i.test(text)) {
     return "نمط الأخبار: الأخبار تتغير بسرعة؛ لا تعرض معلومة على أنها حدث اليوم ما لم تتوفر نتيجة بحث حديثة موثوقة. افصل بين الخبر المؤكد والخلفية والتحليل، واذكر تاريخ الخبر ومصدره إذا كانا متاحين. إذا لم تتوفر لديك أداة بحث حي في هذه الجلسة، صرّح بذلك بوضوح واطلب من المستخدم رابط الخبر أو حدّد ما يمكنك شرحه من الخلفية دون اختلاق عناوين أو أرقام.";
   }
@@ -114,6 +117,22 @@ export function collapseRepeatedSpeechText(value: string): string {
     }
   }
   return value.trim();
+}
+
+/** Recover the previous user task when the newest message is a brief follow-up.
+ * The full history is still sent to the model; this helper keeps task guidance aligned too. */
+export function getContextualTaskMessage(messages: Array<{ role: "user" | "assistant"; content: string }>): string | undefined {
+  const latest = messages[messages.length - 1];
+  if (!latest || latest.role !== "user") return undefined;
+  const current = collapseRepeatedSpeechText(latest.content).trim();
+  const shortFollowUp = /^(?:نعم|ايه|أيوه|طيب|تمام|اكمل|كمل|والثاني|والثانية|طيب والثاني|كم يبعد|كم تبعد|وش الأفضل|ما الأفضل|وضح|تابع|موافق|لا|yes|okay|ok|continue|and the other one|how far)\s*[؟?!،.]*$/i.test(current)
+    || current.split(/\\s+/).length <= 3;
+  if (!shortFollowUp) return undefined;
+  for (let index = messages.length - 2; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === "user" && message.content.trim()) return collapseRepeatedSpeechText(message.content).slice(-MAX_CHAT_MESSAGE_CHARS);
+  }
+  return undefined;
 }
 
 export function compactChatHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
@@ -905,9 +924,12 @@ ${newsContext}`);
           : input.language === "TR"
             ? "Türkçe yanıt ver ve kısa, doğal cümleler kullan."
             : "Answer in clear, concise English.";
+        const contextualTaskMessage = getContextualTaskMessage(input.messages);
         const taskInstruction = latestMessage?.imageDataUrl
           ? "نمط تحليل صورة: صف العناصر الواضحة أولاً، ثم اشرح ما يمكن استنتاجه وما لا يمكن الجزم به. إذا طلب المستخدم التعرف على شيء، اذكر الاحتمالات وعلامات التمييز، ولا تخترع تفاصيل غير ظاهرة."
-          : getAdaptiveTaskInstruction(latestText);
+          : getAdaptiveTaskInstruction(latestText) + (contextualTaskMessage
+            ? `\\n\\nهذه رسالة متابعة قصيرة مرتبطة بطلب المستخدم السابق: «${contextualTaskMessage}». أجب عن المتابعة ضمن هذا السياق، ولا تبدأ موضوعاً جديداً ولا تطلب إعادة التفاصيل التي ذكرها.`
+            : "");
         const sourceInstruction = liveContext.length
           ? `\n\nبيانات داعمة من الأدوات الحية (ليست جواباً بديلاً عنك):\n${liveContext.join("\n\n")}\nاستخدم هذه البيانات عند صلتها بالسؤال، وانسب المصدر ووقت القراءة إن وُجدا، ولا تضف حقائق آنية غير موجودة فيها.`
           : "\n\nأجب بصفتك نموذجاً لغوياً عن السؤال الجديد مباشرة. لا تستبدل الإجابة بترحيب عام أو نص محفوظ أو رد مبني على مطابقة كلمات. في المعلومات الآنية لا تخترع؛ اذكر بوضوح إن لم يتوفر مصدر حي.";
