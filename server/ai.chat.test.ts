@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, collapseRepeatedSpeechText, buildTripGroupDirectionsUrl, extractTripDestination, getAdaptiveTaskInstruction, getContextualTaskMessage, groupTripPlaces, haversineKm, getDistinctBackupModel, getLiveTripPlacesAnswer, getLiveWeatherAnswer } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -25,6 +25,42 @@ function createPublicContext(): TrpcContext {
     res: {} as TrpcContext["res"],
   };
 }
+
+describe("travel planning accuracy guardrails", () => {
+  it("requires verified hotel names and locations instead of guessing", () => {
+    const instruction = getAdaptiveTaskInstruction("رتب لي رحلة إلى حائل لمدة ثلاثة أيام");
+    expect(instruction).toContain("لا تخترع أسماء فنادق");
+    expect(instruction).toContain("مصدر خرائط/مصدر موثوق");
+  });
+});
+
+describe("speech transcript normalization", () => {
+  it("collapses repeated opening phrases from incremental speech recognition", () => {
+    const repeated = "طيب ابغى رحلة انا الى الباحه لمده خمس ايام";
+    const transcript = Array(7).fill(repeated).concat(["ممكن ترتب لي اياها فين اروح فين اجي"]).join(" ");
+    expect(collapseRepeatedSpeechText(transcript)).toBe(`${repeated} ممكن ترتب لي اياها فين اروح فين اجي`);
+  });
+
+  it("collapses six copies without retaining a two-copy block", () => {
+    const phrase = "رتب لي رحلة في حائل لمدة ثلاثة أيام";
+    expect(collapseRepeatedSpeechText(Array(6).fill(phrase).join(" "))).toBe(phrase);
+  });
+
+  it("preserves ordinary repeated words and short repeated phrases", () => {
+    expect(collapseRepeatedSpeechText("نعم نعم نعم هذا صحيح")).toBe("نعم نعم نعم هذا صحيح");
+    expect(collapseRepeatedSpeechText("أريد أريد رحلة قصيرة")).toBe("أريد أريد رحلة قصيرة");
+  });
+
+  it("normalizes only user messages in compact chat history", () => {
+    const repeated = "رتب لي رحلة في الباحة لمدة خمسة أيام";
+    const messages = [
+      { role: "user" as const, content: Array(3).fill(repeated).join(" ") },
+      { role: "assistant" as const, content: "حاضر حاضر حاضر" },
+    ];
+    expect(compactChatHistory(messages)[0]?.content).toBe(repeated);
+    expect(compactChatHistory(messages)[1]?.content).toBe("حاضر حاضر حاضر");
+  });
+});
 
 describe("brain governance", () => {
   it("does not expose administrative diagnostics or proposal actions to public visitors", async () => {
@@ -57,6 +93,40 @@ describe("brain governance", () => {
   });
 });
 
+describe("trip geography grouping", () => {
+  it("calculates approximate great-circle distance and groups nearby mapped places", () => {
+    const a = { name: "A", lat: 21.2703, lon: 40.4158 };
+    const b = { name: "B", lat: 21.28, lon: 40.42 };
+    const c = { name: "C", lat: 21.5, lon: 40.8 };
+    expect(haversineKm(a, b)).toBeGreaterThan(0);
+    expect(haversineKm(a, b)).toBeLessThan(2);
+    expect(groupTripPlaces([a, b, c], 4)).toHaveLength(2);
+    expect(groupTripPlaces([a, b, c], 4)[0]).toHaveLength(2);
+  });
+
+  it("excludes places with invalid coordinates from route groups", () => {
+    const valid = { name: "Valid", lat: 21.27, lon: 40.41 };
+    const invalid = { name: "Invalid", lat: Number.NaN, lon: 40.4 };
+    expect(groupTripPlaces([valid, invalid])).toEqual([[valid]]);
+  });
+
+  it("creates an encoded directions URL with ordered waypoints and no driving-time claim", () => {
+    const url = buildTripGroupDirectionsUrl([
+      { name: "A & B", lat: 21.1, lon: 40.1 },
+      { name: "Middle", lat: 21.2, lon: 40.2 },
+      { name: "Last", lat: 21.3, lon: 40.3 },
+    ]);
+    expect(url).toContain("google.com/maps/dir/");
+    expect(url).toContain("waypoints=");
+    expect(decodeURIComponent(url ?? "")).toContain("21.2,40.2");
+    expect(url).not.toMatch(/\b(?:minutes?|hours?|km)\b/i);
+  });
+
+  it("returns no route URL for an empty group", () => {
+    expect(buildTripGroupDirectionsUrl([])).toBeUndefined();
+  });
+});
+
 describe("model fallback selection", () => {
   it("uses a distinct configured backup model", () => {
     expect(getDistinctBackupModel("primary-model", "backup-model")).toBe("backup-model");
@@ -71,6 +141,32 @@ describe("model fallback selection", () => {
   });
 });
 
+describe("context-aware follow-up intent", () => {
+  it("carries the previous travel request into a short confirmation", () => {
+    expect(getContextualTaskMessage([
+      { role: "user", content: "رتب لي رحلة يومين في المدينة المنورة" },
+      { role: "assistant", content: "إليك برنامجاً مقترحاً" },
+      { role: "user", content: "نعم" },
+    ])).toContain("رحلة يومين في المدينة المنورة");
+  });
+
+  it("carries the previous hotel request into a short distance follow-up", () => {
+    expect(getContextualTaskMessage([
+      { role: "user", content: "أبغى فنادق بالقرب من المسجد النبوي" },
+      { role: "assistant", content: "هذه خيارات تحتاج إلى تحقق" },
+      { role: "user", content: "كم تبعد؟" },
+    ])).toContain("فنادق بالقرب من المسجد النبوي");
+  });
+
+  it("does not replace a complete new question with old context", () => {
+    expect(getContextualTaskMessage([
+      { role: "user", content: "رتب لي رحلة يومين في المدينة المنورة" },
+      { role: "assistant", content: "إليك برنامجاً" },
+      { role: "user", content: "ما أبرز أخبار العالم اليوم؟" },
+    ])).toBeUndefined();
+  });
+});
+
 describe("adaptive brain response strategy", () => {
   it("selects safe step-by-step guidance for troubleshooting requests", () => {
     expect(getAdaptiveTaskInstruction("السيارة متعطلة وما تشتغل")).toContain("خطوات تشخيص مرتبة");
@@ -78,6 +174,21 @@ describe("adaptive brain response strategy", () => {
 
   it("selects practical itinerary planning for travel requests", () => {
     expect(getAdaptiveTaskInstruction("رتب لي برنامج 5 أيام في طرابزون وأوزنجول")).toContain("خطة قابلة للتنفيذ");
+  });
+
+  it("plans trips for destinations outside North Turkey, including Taif and Al-Baha", () => {
+    const taif = getAdaptiveTaskInstruction("رتب لي رحلة ٤ أيام في الطائف");
+    const baha = getAdaptiveTaskInstruction("أبغى برنامج سياحي أربعة أيام في الباحة");
+    expect(taif).toContain("أي مدينة أو دولة في العالم");
+    expect(taif).toContain("رابط بحث خرائط");
+    expect(baha).toContain("سؤالاً واحداً محدداً");
+    expect(baha).toContain("الطقس والمواسم والإغلاقات");
+  });
+
+  it("requires verified dates and live evidence for hotel prices", () => {
+    const hotel = getAdaptiveTaskInstruction("طيب كم سعر الليلة بفندق إنتركونتيننتال المدينة؟");
+    expect(hotel).toContain("لا تعطِ سعراً تقديرياً");
+    expect(hotel).toContain("تاريخ الدخول والخروج");
   });
 
   it("selects comparison criteria instead of a generic answer", () => {
@@ -93,6 +204,55 @@ describe("adaptive brain response strategy", () => {
   });
 });
 
+
+describe("live trip place discovery", () => {
+  it("extracts a destination from an Arabic trip-planning request", () => {
+    expect(extractTripDestination("رتب لي رحلة ٤ أيام في الطائف")).toBe("الطائف");
+    expect(extractTripDestination("أبغى برنامج سياحي في الباحة لمدة 4 أيام")).toBe("الباحة");
+    expect(extractTripDestination("ما عاصمة الفلبين؟")).toBeUndefined();
+  });
+
+  it("resolves the destination and returns named nearby attractions from OpenStreetMap", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        features: [{
+          type: "Feature",
+          properties: { name: "Taif", city: "Taif", country: "Saudi Arabia" },
+          geometry: { type: "Point", coordinates: [40.4167, 21.2703] },
+        }],
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        elements: [{
+          type: "way",
+          id: 12345,
+          center: { lat: 21.27, lon: 40.42 },
+          tags: { name: "Shubra Palace", tourism: "attraction" },
+        }],
+      }), { status: 200 }));
+    try {
+      const answer = await getLiveTripPlacesAnswer("رتب لي رحلة ٤ أيام في الطائف");
+      expect(answer).toContain("Taif");
+      expect(answer).toContain("Shubra Palace");
+      expect(answer).toContain("openstreetmap.org/way/12345");
+      expect(answer).toContain("ليست تأكيداً لساعات العمل");
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy.mock.calls[1]?.[0]).toContain("overpass-api.de");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not fabricate destinations when live geocoding fails", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
+    try {
+      const answer = await getLiveTripPlacesAnswer("رتب لي رحلة يومين في الطائف");
+      expect(answer).toContain("تعذر إكمال البحث الجغرافي الحي");
+      expect(answer).not.toContain("Shubra Palace");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+});
 
 describe("live weather source", () => {
   it("uses a live Open-Meteo response for current Trabzon weather", async () => {
