@@ -4,6 +4,7 @@
  * asymmetric content columns, concise operational statuses, and calm motion.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { upload as uploadBlob } from "@vercel/blob/client";
 import { trpc } from "@/lib/trpc";
 import { ChatComposer } from "@/components/ChatComposer";
 import { AssistantReply, type VoiceGender } from "@/components/AssistantReply";
@@ -841,7 +842,7 @@ export default function Home() {
   const controlMutation = trpc.control.submit.useMutation();
   const controlRequestsQuery = trpc.control.list.useQuery(undefined, { staleTime: 10_000, enabled: modal === "control" && Boolean(auth.user) });
   const controlUpdateMutation = trpc.control.update.useMutation({ onSuccess: () => void controlRequestsQuery.refetch() });
-  const mediaUploadMutation = trpc.media.upload.useMutation();
+  const mediaRegisterMutation = trpc.media.registerUploaded.useMutation();
   const mediaItemsQuery = trpc.media.list.useQuery(undefined, { staleTime: 30_000 });
   const mediaUpdateMutation = trpc.media.update.useMutation();
   const mediaDeleteMutation = trpc.media.delete.useMutation();
@@ -1222,15 +1223,6 @@ export default function Home() {
     }
   }
 
-  function readFileAsBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-      reader.onerror = () => reject(reader.error ?? new Error("تعذر قراءة الملف"));
-      reader.readAsDataURL(file);
-    });
-  }
-
   async function prepareDiscoveryImage(file: File): Promise<{ name: string; mimeType: string; dataBase64: string }> {
     const source = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -1367,20 +1359,57 @@ export default function Home() {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (!files.length || entertainmentMode === "game") return;
-    setMediaUploadMessage(`جارٍ رفع ${files.length} ملف…`);
+
+    const maxBytes = 50 * 1024 * 1024;
+    const invalid = files.find((file) => file.size > maxBytes ||
+      !(file.type.startsWith("video/") || file.type.startsWith("audio/")));
+    if (invalid) {
+      const reason = invalid.size > maxBytes
+        ? `حجم «${invalid.name}» أكبر من 50 ميغابايت.`
+        : `نوع «${invalid.name}» غير مدعوم؛ اختر فيديو أو ملفاً صوتياً.`;
+      setMediaUploadMessage(reason);
+      notify("تعذر رفع الوسائط", reason, "error");
+      return;
+    }
+
+    setMediaUploadMessage(`جارٍ رفع ${files.length} ملف مباشرة إلى مكتبة المنصة…`);
+    const uploaded: Array<{ id: number; name: string; url: string; kind: "video" | "audio" }> = [];
     try {
-      const uploaded = await Promise.all(files.map(async (file) => {
-        const result = await mediaUploadMutation.mutateAsync({ name: file.name, mimeType: file.type || "application/octet-stream", dataBase64: await readFileAsBase64(file) });
+      for (const file of files) {
+        const mimeType = file.type || (entertainmentMode === "video" ? "video/mp4" : "audio/mpeg");
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-120) || "media-file";
+        const blob = await uploadBlob(`media/${Date.now()}-${safeName}`, file, {
+          access: "public",
+          handleUploadUrl: "/api/media/upload",
+          multipart: true,
+          clientPayload: JSON.stringify({ name: file.name, mimeType }),
+        });
+        const result = await mediaRegisterMutation.mutateAsync({
+          name: file.name,
+          mimeType,
+          url: blob.url,
+        });
         const item = result.item;
-        const savedId = item && "id" in item ? item.id : undefined;
-        return { id: savedId ?? -(Date.now() + Math.round(Math.random() * 100000)), name: item?.name ?? file.name, url: item?.url ?? URL.createObjectURL(file), kind: (item?.mimeType ?? file.type).startsWith("video/") ? "video" as const : (item?.mimeType ?? file.type).startsWith("audio/") ? "audio" as const : "image" as const };
-      }));
+        uploaded.push({
+          id: item.id,
+          name: item.name,
+          url: item.url,
+          kind: item.mimeType.startsWith("video/") ? "video" : "audio",
+        });
+        setMediaUploadMessage(`تم رفع ${uploaded.length} من ${files.length} ملف…`);
+      }
+
       setMediaLibrary((current) => [...uploaded, ...current]);
-      setMediaUploadMessage(`تم حفظ ${files.length} ملف في مكتبة المنصة.`);
-      notify("تم رفع الوسائط", `${files.length} ملف محفوظ في قسم ${entertainmentMode === "video" ? "الفيديو" : "الصوتيات"}.`, "success");
-    } catch {
-      setMediaUploadMessage("تعذر رفع ملف واحد أو أكثر. الحد الأقصى للملف 50MB.");
-      notify("تعذر رفع الوسائط", "تحقق من الاتصال أو اختر ملفاً أصغر من 50MB.", "error");
+      setMediaUploadMessage(`تم حفظ ${uploaded.length} ملف في مكتبة المنصة.`);
+      notify("تم رفع الوسائط", `${uploaded.length} ملف محفوظ في قسم ${entertainmentMode === "video" ? "الفيديو" : "الصوتيات"}.`, "success");
+    } catch (error) {
+      if (uploaded.length) setMediaLibrary((current) => [...uploaded, ...current]);
+      const detail = error instanceof Error ? error.message : "تحقق من الاتصال وحاول مرة أخرى.";
+      const message = uploaded.length
+        ? `تم حفظ ${uploaded.length} ملف، وتعذر رفع البقية: ${detail}`
+        : `تعذر رفع الملف: ${detail}`;
+      setMediaUploadMessage(message);
+      notify("تعذر رفع الوسائط", message, "error");
     }
   }
 
