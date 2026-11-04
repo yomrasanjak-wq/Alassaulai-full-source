@@ -154,7 +154,7 @@ describe("City card imagery", () => {
     expect(document.querySelector(".discovery-viewer")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /افتح صفحة المدينة/ }));
     fireEvent.click(screen.getByRole("button", { name: "عرض أوزنجول على خريطة ALASSAUL" }));
-    await waitFor(() => expect(screen.getByText("Uzungöl")).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
     expect(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
     expect(screen.getByRole("button", { name: /افتح صفحة المدينة/ })).toBeTruthy();
