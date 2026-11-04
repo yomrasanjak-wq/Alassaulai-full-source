@@ -100,6 +100,69 @@ export function compactChatHistory(messages: Array<{ role: "user" | "assistant";
 }
 
 
+/** Search named places for trip-planning requests using OpenStreetMap-backed Photon.
+ * Search results are candidates, not proof of opening hours, prices or suitability. */
+export function extractTripDestination(message: string): string | undefined {
+  if (!/(رتب لي|برنامج|خطة|خطط|رحلة|جدول سياحي|itinerary|trip plan|travel plan)/i.test(message)) return undefined;
+  const normalized = message.normalize("NFKC").replace(/[؟?!،,؛;]+/g, " ").trim();
+  const match = normalized.match(/(?:في|إلى|الى|بمدينة|بمدينه|in|to)\\s+(.+?)(?=\\s+(?:لمدة|مدتها|خلال|لمده|لمدة|مدة|مده|لـ)?\\s*[0-9٠-٩]+|$)/i);
+  const destination = match?.[1]?.trim().replace(/\\s+/g, " ");
+  if (!destination || destination.length < 2) return undefined;
+  return destination.slice(0, 80);
+}
+
+type PhotonFeature = {
+  properties?: Record<string, unknown>;
+  geometry?: { coordinates?: unknown[] };
+};
+
+export async function getLiveTripPlacesAnswer(message: string): Promise<string | undefined> {
+  const destination = extractTripDestination(message);
+  if (!destination) return undefined;
+
+  const endpoint = "https://photon.komoot.io/api/";
+  const searches = [destination, `tourist attractions ${destination}`];
+  const candidates: Array<{ name: string; detail: string; lat: number; lon: number; osmId: string }> = [];
+  try {
+    for (const query of searches) {
+      const url = new URL(endpoint);
+      url.search = new URLSearchParams({ q: query, limit: query === destination ? "5" : "10", lang: "en" }).toString();
+      const response = await fetch(url, {
+        headers: { Accept: "application/json", "User-Agent": "ALASSAUL-AI/1.0 (travel place discovery)" },
+        signal: AbortSignal.timeout(7000),
+      });
+      if (!response.ok) throw new Error(`Photon HTTP ${response.status}`);
+      const payload = await response.json() as { features?: PhotonFeature[] };
+      for (const feature of payload.features ?? []) {
+        const properties = feature.properties ?? {};
+        const coordinates = feature.geometry?.coordinates;
+        const name = typeof properties.name === "string" ? properties.name.trim() : "";
+        const lon = Number(coordinates?.[0]);
+        const lat = Number(coordinates?.[1]);
+        if (!name || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+        const osmType = typeof properties.osm_type === "string" ? properties.osm_type : "";
+        const osmId = String(properties.osm_id ?? "");
+        const key = `${osmType}/${osmId}`;
+        if (candidates.some((item) => item.osmId === key || (item.name.toLocaleLowerCase() === name.toLocaleLowerCase() && Math.abs(item.lat - lat) < 0.001 && Math.abs(item.lon - lon) < 0.001))) continue;
+        const locality = [properties.city, properties.state, properties.country].filter((part): part is string => typeof part === "string" && Boolean(part)).join("، ");
+        candidates.push({ name, detail: locality, lat, lon, osmId: key });
+      }
+    }
+    if (!candidates.length) {
+      return `لم يعثر البحث الجغرافي المفتوح على أماكن مسماة كافية في ${destination}. لا أريد اختلاق وجهات؛ يمكننا تضييق البحث إلى حي أو نوع نشاط محدد. المصدر: OpenStreetMap عبر Photon.`;
+    }
+    const list = candidates.slice(0, 8).map((place, index) => {
+      const map = new URL("https://www.openstreetmap.org/");
+      map.search = new URLSearchParams({ mlat: String(place.lat), mlon: String(place.lon) }).toString();
+      return `${index + 1}. ${place.name}${place.detail ? ` — ${place.detail}` : ""} | ${map.toString()}`;
+    }).join("\\n");
+    return `نتائج بحث أماكن مبدئية لوجهة ${destination} من OpenStreetMap عبر Photon (وقت البحث: ${new Date().toISOString()}):\\n${list}\\nهذه أسماء ومواضع مرشحة وليست تأكيداً لساعات العمل أو الأسعار أو جودة المكان. تحقّق من ملاءمة كل نتيجة قبل إدراجها كزيارة مؤكدة، ولا تفترض أن جميع النتائج معالم سياحية.`;
+  } catch (error) {
+    console.warn("[ALASSAUL places] live place search unavailable", error);
+    return `تعذر إكمال البحث الجغرافي الحي عن ${destination} الآن. لا تخترع أسماء أماكن أو مواقع؛ قدّم اقتراحات عامة بوضوح أو اطلب إعادة المحاولة. المصدر المستخدم عند التوفر: OpenStreetMap عبر Photon.`;
+  }
+}
+
 function weatherDescription(code: number) {
   if (code === 0) return "الجو صافٍ";
   if ([1, 2].includes(code)) return "الجو غائم جزئياً";
