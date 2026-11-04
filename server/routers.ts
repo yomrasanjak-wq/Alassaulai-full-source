@@ -745,6 +745,10 @@ export const appRouter = router({
           if (weatherContext) liveContext.push(`سياق من مصدر الطقس الحي:
 ${weatherContext}`);
 
+          const tripPlacesContext = await getLiveTripPlacesAnswer(latestText);
+          if (tripPlacesContext) liveContext.push(`نتائج البحث الجغرافي للأماكن والوجهات:
+${tripPlacesContext}`);
+
           let grounded = false;
           if (isGoogleMapsQuestion(latestText) && process.env.GEMINI_API_KEY?.trim() && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true") {
             try {
