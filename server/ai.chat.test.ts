@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTripDestination, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveTripPlacesAnswer, getLiveWeatherAnswer } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, buildTripGroupDirectionsUrl, extractTripDestination, getAdaptiveTaskInstruction, groupTripPlaces, haversineKm, getDistinctBackupModel, getLiveTripPlacesAnswer, getLiveWeatherAnswer } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -54,6 +54,40 @@ describe("brain governance", () => {
       title: "طلب اختبار",
       requesterType: "visitor",
     }));
+  });
+});
+
+describe("trip geography grouping", () => {
+  it("calculates approximate great-circle distance and groups nearby mapped places", () => {
+    const a = { name: "A", lat: 21.2703, lon: 40.4158 };
+    const b = { name: "B", lat: 21.28, lon: 40.42 };
+    const c = { name: "C", lat: 21.5, lon: 40.8 };
+    expect(haversineKm(a, b)).toBeGreaterThan(0);
+    expect(haversineKm(a, b)).toBeLessThan(2);
+    expect(groupTripPlaces([a, b, c], 4)).toHaveLength(2);
+    expect(groupTripPlaces([a, b, c], 4)[0]).toHaveLength(2);
+  });
+
+  it("excludes places with invalid coordinates from route groups", () => {
+    const valid = { name: "Valid", lat: 21.27, lon: 40.41 };
+    const invalid = { name: "Invalid", lat: Number.NaN, lon: 40.4 };
+    expect(groupTripPlaces([valid, invalid])).toEqual([[valid]]);
+  });
+
+  it("creates an encoded directions URL with ordered waypoints and no driving-time claim", () => {
+    const url = buildTripGroupDirectionsUrl([
+      { name: "A & B", lat: 21.1, lon: 40.1 },
+      { name: "Middle", lat: 21.2, lon: 40.2 },
+      { name: "Last", lat: 21.3, lon: 40.3 },
+    ]);
+    expect(url).toContain("google.com/maps/dir/");
+    expect(url).toContain("waypoints=");
+    expect(decodeURIComponent(url ?? "")).toContain("21.2,40.2");
+    expect(url).not.toMatch(/\b(?:minutes?|hours?|km)\b/i);
+  });
+
+  it("returns no route URL for an empty group", () => {
+    expect(buildTripGroupDirectionsUrl([])).toBeUndefined();
   });
 });
 
