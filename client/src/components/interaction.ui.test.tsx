@@ -148,12 +148,24 @@ describe("City card imagery", () => {
     }
   });
 
-  it("opens a precise Google Maps link for a named destination", () => {
+  it("opens a selected destination on the in-app map and offers a return to the directory", async () => {
     render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
+    expect(document.querySelector(".discovery-viewer")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /افتح صفحة المدينة/ }));
-    const uzungolLink = screen.getByRole("link", { name: "فتح موقع أوزنجول على الخريطة" }) as HTMLAnchorElement;
-    expect(uzungolLink.href).toContain("Uzungol%20Trabzon%20Turkey");
-    expect(uzungolLink.target).toBe("_blank");
+    fireEvent.click(screen.getByRole("button", { name: "عرض أوزنجول على خريطة ALASSAUL" }));
+    await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
+    expect(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
+    expect(screen.getByRole("button", { name: "عرض شاطئ قانيتا على خريطة ALASSAUL" })).toBeTruthy();
+  });
+
+  it("opens the map when the visitor taps a photo-book image", async () => {
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: "افتح دفتر صور الشمال التركي" }));
+    fireEvent.click(screen.getByRole("button", { name: "أوزنجول والمرتفعات" }));
+    fireEvent.click(screen.getByRole("button", { name: "اعرض أوزنجول على خريطة ALASSAUL" }));
+    await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
   });
 
   it("shows named camera previews with separate Uzungol scenes and official links", () => {
@@ -200,13 +212,13 @@ describe("City card imagery", () => {
     for (const category of ["قرى ومرتفعات", "تاريخ وثقافة", "تسوق وأسواق", "مقاهٍ ومطاعم", "حدائق وشواطئ", "تلفريك وثلج", "أنشطة ومغامرات"]) {
       expect(screen.getByRole("heading", { name: category, level: 4 })).toBeTruthy();
     }
-    expect(screen.getAllByRole("link", { name: "فتح موقع همشِكوي على الخريطة" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("link", { name: "فتح موقع حاجي مصطفى فوق همشِكوي على الخريطة" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("link", { name: "فتح موقع أكبر وأحدث زحليقة في يومرا على الخريطة" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("link", { name: "فتح موقع ركوب الخيل في طرابزون على الخريطة" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("link", { name: "فتح موقع كارتينغ طرابزون على الخريطة" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "عرض همشِكوي على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "عرض حاجي مصطفى فوق همشِكوي على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "عرض أكبر وأحدث زحليقة في يومرا على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "عرض ركوب الخيل في طرابزون على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "عرض كارتينغ طرابزون على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
     for (const placeName of ["مغارة تشال", "كاياباشا", "بحيرة سيراجول", "أطول زحليقة سيراجول", "الطيران الشراعي في سيراجول", "شاطئ قانيتا", "شاطئ يلنجك", "شارع العرب في بليتلي", "همشِكوي وممشى القرية", "سانتا خراباط", "سلطان مراد", "مول جواهر طرابزون", "ممشى كاشستوس", "مرسى القوارب في يومرا", "حديقة يومرا", "أكبر وأحدث زحليقة في يومرا", "ممشى أكشابات", "تاريخ أكشابات ومعالمها", "حاجي مصطفى فوق همشِكوي", "سوق موللوز", "مسجد غلبهار خاتون (خانتون)", "أكواريوم طرابزون", "سوق القلعة القديم / بدستان", "الحديقة النباتية", "حديقة الفورم", "حديقة الفورميرجي"]) {
-      expect(screen.getAllByRole("link", { name: `فتح موقع ${placeName} على الخريطة` }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("button", { name: `عرض ${placeName} على خريطة ALASSAUL` }).length).toBeGreaterThan(0);
     }
   });
 });
@@ -500,7 +512,7 @@ describe("Account, live modal, and place details", () => {
     expect(placeButton).toBeTruthy();
     fireEvent.click(placeButton);
     expect(screen.getByText("ما الذي ستجده هنا؟")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /خطط الطريق/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /اعرض المكان على الخريطة/ })).toBeTruthy();
   });
 
   it("opens the selected live channel inside the broadcast box without the old modal", () => {
@@ -590,7 +602,7 @@ describe("City and place detail actions", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /أوزنجول/ })[0]!);
     expect(screen.getByRole("heading", { name: "أوزنجول" })).toBeTruthy();
     expect(screen.getByAltText(/طرابزون — أوزنجول/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: /خطط الطريق/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /اعرض المكان على الخريطة/ })).toBeTruthy();
   });
 });
 
