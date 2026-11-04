@@ -160,6 +160,14 @@ describe("City card imagery", () => {
     expect(screen.getByRole("button", { name: "عرض شاطئ قانيتا على خريطة ALASSAUL" })).toBeTruthy();
   });
 
+  it("opens the map when the visitor taps a photo-book image", async () => {
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: "افتح دفتر صور الشمال التركي" }));
+    fireEvent.click(screen.getByRole("button", { name: "أوزنجول والمرتفعات" }));
+    fireEvent.click(screen.getByRole("button", { name: "اعرض أوزنجول على خريطة ALASSAUL" }));
+    await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
+  });
+
   it("shows named camera previews with separate Uzungol scenes and official links", () => {
     render(<Home />);
 
