@@ -268,7 +268,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
               <span><strong>{destination.name}</strong><small>{destination.latin} · {destination.label}</small></span>
               <MapPin size={15} />
             </button>)}</div>) : <p className="north-map-empty">اختر مدينة من الأعلى لتظهر وجهاتها هنا.</p>}
-            {!visible.length && selectedCity && <div className="north-map-empty"><p>لم نعثر على نقطة موثقة لهذا الاسم داخل دليل الخريطة حتى الآن، لذلك لن نضع دبوسًا تخمينيًا.</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`} target="_blank" rel="noreferrer">ابحث عن الموقع على Google Maps <ExternalLink size={14} /></a></div>}
+            {!visible.length && selectedCity && <div className="north-map-empty"><p>لم نعثر على نقطة موثقة لهذا الاسم داخل دليل الخريطة حتى الآن، لذلك لن نضع دبوسًا تخمينيًا.</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`} target="_blank" rel="noreferrer">ابحث عن الموقع على Google Maps <ExternalLink size={14} /></a><button type="button" className="north-map-back" onClick={onBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button></div>}
           </div>
         </aside>
 
