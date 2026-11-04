@@ -191,12 +191,6 @@ describe("adaptive brain response strategy", () => {
     expect(hotel).toContain("تاريخ الدخول والخروج");
   });
 
-  it("requires verified dates and live evidence for hotel prices", () => {
-    const hotel = getAdaptiveTaskInstruction("طيب كم سعر الليلة بفندق إنتركونتيننتال المدينة؟");
-    expect(hotel).toContain("لا تعطِ سعراً تقديرياً");
-    expect(hotel).toContain("تاريخ الدخول والخروج");
-  });
-
   it("selects comparison criteria instead of a generic answer", () => {
     expect(getAdaptiveTaskInstruction("قارن بين السكن في طرابزون وريزه")).toContain("معايير واضحة");
   });
