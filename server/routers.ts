@@ -458,6 +458,9 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    capabilities: publicProcedure.query(({ ctx }) => ({
+      canManageMedia: Boolean(ctx.user && (ctx.user.role === "admin" || (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId))),
+    })),
     visitorCount: publicProcedure.query(() => countRegisteredVisitors()),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -534,6 +537,26 @@ export const appRouter = router({
   }),
   media: router({
     list: publicProcedure.query(() => listMediaItems()),
+    registerUploaded: adminProcedure
+      .input(z.object({
+        name: z.string().trim().min(1).max(255),
+        mimeType: z.string().trim().min(3).max(120).refine((value) => value.startsWith("video/") || value.startsWith("audio/")),
+        url: z.string().url(),
+      }))
+      .mutation(async ({ input }) => {
+        const parsedUrl = new URL(input.url);
+        if (!parsedUrl.hostname.endsWith(".blob.vercel-storage.com") || !parsedUrl.pathname.includes("/media/")) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "رابط الملف المرفوع غير صالح." });
+        }
+        const item = await createMediaItem({
+          name: input.name,
+          url: input.url,
+          mimeType: input.mimeType,
+          category: "entertainment",
+        });
+        if (!item) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "تعذر حفظ بيانات الملف في المكتبة." });
+        return { success: true as const, item };
+      }),
     update: adminProcedure
       .input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(1).max(255) }))
       .mutation(({ input }) => updateMediaItem(input.id, input.name)),

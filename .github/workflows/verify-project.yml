@@ -1,6 +1,9 @@
 name: Verify ALASSAUL-AI project
 
 on:
+  push:
+    branches:
+      - fix/entertainment-large-media-upload
   pull_request:
     branches:
       - main

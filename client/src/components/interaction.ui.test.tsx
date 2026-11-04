@@ -3,12 +3,14 @@ import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mutateAsyncMock, auxiliaryMutationMock } = vi.hoisted(() => ({ mutateAsyncMock: vi.fn(), auxiliaryMutationMock: vi.fn() }));
+const { mutateAsyncMock, auxiliaryMutationMock, uploadBlobMock, mediaCanManageMock } = vi.hoisted(() => ({ mutateAsyncMock: vi.fn(), auxiliaryMutationMock: vi.fn(), uploadBlobMock: vi.fn(), mediaCanManageMock: vi.fn(() => true) }));
+vi.mock("@vercel/blob/client", () => ({ upload: uploadBlobMock }));
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     auth: {
       me: { useQuery: () => ({ data: { id: 1, openId: "owner", role: "admin", name: "Owner" }, isLoading: false, refetch: vi.fn() }) },
       visitorCount: { useQuery: () => ({ data: 0, isLoading: false, refetch: vi.fn() }) },
+      capabilities: { useQuery: () => ({ data: { canManageMedia: mediaCanManageMock() }, isLoading: false }) },
       logout: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock }) },
     },
     ai: {
@@ -21,7 +23,7 @@ vi.mock("@/lib/trpc", () => ({
       list: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) },
       update: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
     },
-    media: { list: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) }, upload: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, update: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, delete: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) } },
+    media: { list: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) }, upload: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, registerUploaded: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, update: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, delete: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) } },
     discovery: { list: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) }, upload: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, update: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, delete: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) } },
     guestbook: { list: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) }, save: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, delete: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) } },
   },
@@ -29,7 +31,7 @@ vi.mock("@/lib/trpc", () => ({
 vi.mock("@/components/Map", () => ({ MapView: ({ className }: { className?: string }) => <div data-testid={className === "north-map-canvas" ? "north-map-view" : "route-map-view"} /> }));
 
 afterEach(() => cleanup());
-beforeEach(() => { mutateAsyncMock.mockReset(); auxiliaryMutationMock.mockReset(); auxiliaryMutationMock.mockResolvedValue({ success: true, id: 1, item: { name: "file", url: "https://example.com/file", mimeType: "image/jpeg" } }); });
+beforeEach(() => { mutateAsyncMock.mockReset(); auxiliaryMutationMock.mockReset(); uploadBlobMock.mockReset(); mediaCanManageMock.mockReturnValue(true); uploadBlobMock.mockResolvedValue({ url: "https://example.public.blob.vercel-storage.com/media/clip.mp4" }); auxiliaryMutationMock.mockResolvedValue({ success: true, id: 1, item: { id: 1, name: "file", url: "https://example.com/file", mimeType: "video/mp4" } }); });
 Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
 import { ChatComposer } from "./ChatComposer";
 import { AssistantReply } from "./AssistantReply";
@@ -128,6 +130,44 @@ describe("Home voice-to-chat flow", () => {
     await waitFor(() => expect(screen.getByText("تعذر الحصول على إجابة من النموذج")).toBeTruthy());
     expect(screen.queryByText("وصل رد المساعد")).toBeNull();
     expect(screen.getAllByText(failureMessage).length).toBeGreaterThan(0);
+  });
+});
+
+describe("Entertainment media uploads", () => {
+  it("keeps the entertainment library browse-only and places upload controls in the owner control room", async () => {
+    auxiliaryMutationMock.mockResolvedValueOnce({
+      success: true,
+      item: { id: 55, name: "clip.mp4", url: "https://example.public.blob.vercel-storage.com/media/clip.mp4", mimeType: "video/mp4" },
+    });
+    mediaCanManageMock.mockReturnValue(false);
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: /مقاطع قصيرة/ }));
+    expect(screen.queryByRole("button", { name: "إضافة فيديو" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /دخول غرفة التحكم/ }));
+    expect(screen.queryByRole("button", { name: "إضافة فيديو" })).toBeNull();
+    expect(uploadBlobMock).not.toHaveBeenCalled();
+  });
+
+  it("uploads video bytes directly to Blob from the owner control room", async () => {
+    auxiliaryMutationMock.mockResolvedValueOnce({
+      success: true,
+      item: { id: 55, name: "clip.mp4", url: "https://example.public.blob.vercel-storage.com/media/clip.mp4", mimeType: "video/mp4" },
+    });
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: /دخول غرفة التحكم/ }));
+    fireEvent.click(screen.getByRole("button", { name: "إضافة فيديو" }));
+    const input = document.querySelector('input[type="file"][accept="video/*"]') as HTMLInputElement;
+    const video = new File(["video bytes"], "clip.mp4", { type: "video/mp4" });
+    fireEvent.change(input, { target: { files: [video] } });
+
+    await waitFor(() => expect(uploadBlobMock).toHaveBeenCalledOnce());
+    expect(uploadBlobMock.mock.calls[0][2]).toMatchObject({ handleUploadUrl: "/api/media/upload", multipart: true });
+    await waitFor(() => expect(auxiliaryMutationMock).toHaveBeenCalledWith({
+      name: "clip.mp4",
+      mimeType: "video/mp4",
+      url: "https://example.public.blob.vercel-storage.com/media/clip.mp4",
+    }));
+    await waitFor(() => expect(screen.getByText("clip.mp4")).toBeTruthy());
   });
 });
 
