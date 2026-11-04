@@ -2,7 +2,6 @@ import "dotenv/config";
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { createMediaItem } from "../db";
 import { ENV } from "./env";
 import { createContext } from "./context";
 import { registerOAuthRoutes } from "./oauth";
@@ -55,16 +54,9 @@ export function createApp() {
             tokenPayload: JSON.stringify({ name, mimeType }),
           };
         },
-        onUploadCompleted: async ({ blob, tokenPayload }) => {
-          const metadata = JSON.parse(tokenPayload || "{}") as { name?: string; mimeType?: string };
-          if (!metadata.name || !metadata.mimeType) throw new Error("بيانات الملف المحفوظ غير مكتملة.");
-          await createMediaItem({
-            name: metadata.name,
-            url: blob.url,
-            mimeType: metadata.mimeType,
-            category: "entertainment",
-          });
-        },
+        // The browser registers the returned URL through the authenticated
+        // media.registerUploaded mutation after the direct transfer succeeds.
+        onUploadCompleted: async () => undefined,
       });
       res.status(200).json(response);
     } catch (error) {
