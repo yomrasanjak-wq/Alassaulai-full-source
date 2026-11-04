@@ -527,6 +527,39 @@ img { display: block; max-width: 100%; }
   --season-ridge: rgb(99 133 162 / 19%);
   --season-orb: rgb(238 247 255 / 55%);
 }
+
+/* Live weather gently tunes the seasonal atmosphere without replacing the season palette. */
+.weather-clear {
+  --season-glow-a: rgb(245 218 151 / 48%);
+  --season-glow-b: rgb(180 220 210 / 34%);
+  --season-orb: rgb(255 229 163 / 42%);
+}
+.weather-cloudy {
+  --season-glow-a: rgb(190 205 203 / 42%);
+  --season-glow-b: rgb(180 195 202 / 32%);
+  --season-orb: rgb(225 235 235 / 38%);
+}
+.weather-fog {
+  --season-glow-a: rgb(215 224 224 / 58%);
+  --season-glow-b: rgb(202 214 218 / 44%);
+  --season-orb: rgb(237 242 241 / 48%);
+}
+.weather-rain {
+  --season-glow-a: rgb(145 181 199 / 43%);
+  --season-glow-b: rgb(120 158 174 / 34%);
+  --season-orb: rgb(190 213 223 / 38%);
+}
+.weather-snow {
+  --season-glow-a: rgb(218 235 247 / 64%);
+  --season-glow-b: rgb(193 218 236 / 48%);
+  --season-orb: rgb(246 251 255 / 62%);
+}
+.weather-storm {
+  --season-glow-a: rgb(112 139 153 / 38%);
+  --season-glow-b: rgb(91 118 133 / 32%);
+  --season-orb: rgb(160 183 192 / 30%);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .site-shell::after { animation: seasonal-orb-drift 18s ease-in-out infinite alternate; }
 }
