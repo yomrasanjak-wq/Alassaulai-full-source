@@ -217,8 +217,29 @@ describe("real-brain regression scenarios", () => {
     });
     expect(result.text).toContain("https://www.google.com/maps/dir/");
     expect(result.text).toContain("افتح الطريق في خرائط Google");
-    expect(result.text).toContain("origin=%D9%8A%D9%86%D8%A8%D8%B9");
-    expect(result.text).toContain("destination=");
+    const urlStart = result.text.indexOf("https://www.google.com/maps/dir/");
+    expect(urlStart).toBeGreaterThanOrEqual(0);
+    const urlEnd = result.text.indexOf(")", urlStart);
+    const routeUrl = new URL(result.text.slice(urlStart, urlEnd));
+    expect(routeUrl.searchParams.get("origin")).toBe("Yanbu");
+    expect(routeUrl.searchParams.get("destination")).toBe("Madinah");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("opens a route from a conversational, repeated Arabic voice transcript", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{
+        role: "user",
+        content: "انا في طرابزون واريد الذهاب الى انا في طرابزون واريد الذهاب الى همسه كوي ممكن ترسلني على الطريق",
+      }],
+    });
+    const urlStart = result.text.indexOf("https://www.google.com/maps/dir/");
+    expect(urlStart).toBeGreaterThanOrEqual(0);
+    const urlEnd = result.text.indexOf(")", urlStart);
+    const routeUrl = new URL(result.text.slice(urlStart, urlEnd));
+    expect(routeUrl.searchParams.get("origin")).toBe("Trabzon");
+    expect(routeUrl.searchParams.get("destination")).toBe("Hamsiköy");
     expect(invokeLLM).not.toHaveBeenCalled();
   });
 
