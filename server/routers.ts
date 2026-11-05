@@ -738,9 +738,9 @@ export const appRouter = router({
 
         const liveContext: string[] = [];
 
-        if (isSaudiLeagueScheduleQuestion(contextualLiveQuery)) {
+        if (isSaudiLeagueQuestion(contextualLiveQuery)) {
           const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, contextualLiveQuery);
-          if (scheduleContext) liveContext.push(`نتائج بحث رياضية حديثة (تقارير وليست جدولاً رسمياً):\n${scheduleContext}`);
+          if (scheduleContext) liveContext.push(`نتائج بحث حديثة عن دوري روشن (تقارير وليست جدولاً رسمياً):\n${scheduleContext}`);
         }
 
         // Live tools enrich the model prompt; they never replace the LLM answer.
