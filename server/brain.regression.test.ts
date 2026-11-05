@@ -222,6 +222,22 @@ describe("real-brain regression scenarios", () => {
     expect(invokeLLM).not.toHaveBeenCalled();
   });
 
+  it("opens a route from a conversational, repeated Arabic voice transcript", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{
+        role: "user",
+        content: "انا في طرابزون واريد الذهاب الى انا في طرابزون واريد الذهاب الى همسه كوي ممكن ترسلني على الطريق",
+      }],
+    });
+    const urlMatch = result.text.match(/\\((https:\\/\\/www\\.google\\.com\\/maps\\/dir\\/\\?[^)]+)\\)/);
+    expect(urlMatch?.[1]).toBeTruthy();
+    const routeUrl = new URL(urlMatch![1]);
+    expect(routeUrl.searchParams.get("origin")).toBe("Trabzon");
+    expect(routeUrl.searchParams.get("destination")).toBe("Hamsiköy");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
   it("offers a grounded Google Maps search instead of guessing a supermarket address", async () => {
     const result = await caller().ai.chat({
       language: "AR",
