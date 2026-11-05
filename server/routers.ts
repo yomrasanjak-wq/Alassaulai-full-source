@@ -192,7 +192,7 @@ export const isElectionResultsQuestion = (message: string) =>
 
 const isUSElectionQuestion = (message: string) =>
   /(?:انتخابات|الانتخابات|الانتخابية|election|midterm)/i.test(message)
-  && /(?:أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|Republican|Democrat|United States|\\bUS\\b|midterm)/i.test(message);
+  && /(?:أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|Republican|Democrat|United States|\bUS\b|midterm)/i.test(message);
 
 export const isWorldNewsQuestion = (message: string) =>
   /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,35}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا|انتخابات|الانتخابات|انتخابية|election)|(?:انتخابات|الانتخابات|الانتخابية|election).{0,65}(?:اليوم|الآن|الان|آخر|اخر|نتائج|نتيجة|النصفية|جمهوري|ديمقراطي|Republican|Democrat|midterm|results|latest|today|who won)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
