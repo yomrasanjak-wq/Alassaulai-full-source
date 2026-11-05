@@ -728,9 +728,7 @@ export const appRouter = router({
             if (localSearch) return { text: localSearch };
           }
 
-          if (isSaudiLeagueQuestion(latestText)) {
-            return { text: await getSaudiLeagueScheduleAnswer(input.language, contextualLiveQuery) };
-          }
+
 
           if (isWorldNewsQuestion(contextualLiveQuery) && !isElectionResultsQuestion(contextualLiveQuery)) {
             const directNews = await getWorldNewsAnswer(contextualLiveQuery, input.language);
@@ -739,6 +737,11 @@ export const appRouter = router({
         }
 
         const liveContext: string[] = [];
+
+        if (isSaudiLeagueScheduleQuestion(contextualLiveQuery)) {
+          const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, contextualLiveQuery);
+          if (scheduleContext) liveContext.push(`نتائج بحث رياضية حديثة (تقارير وليست جدولاً رسمياً):\\n${scheduleContext}`);
+        }
 
         // Live tools enrich the model prompt; they never replace the LLM answer.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
@@ -780,10 +783,7 @@ ${searchContext}`);
               if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
             }
-            if (isSaudiLeagueScheduleQuestion(contextualLiveQuery)) {
-              const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, contextualLiveQuery);
-              if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\n${scheduleContext}`);
-            }
+
           } else if (isWorldNewsQuestion(contextualLiveQuery)) {
             const newsContext = await getWorldNewsAnswer(contextualLiveQuery, input.language);
             if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
