@@ -3,7 +3,7 @@ export type RouteRequest = {
   destinations: string[];
 };
 
-const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|مسافة|المسافة|كم\\s+تبعد|وصلني|توصلني|يؤدي|اوصل|اسلك|أسلك|route|directions|way|distance|yol|rota|götür)/i;
+const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|مسافة|المسافة|كم تبعد|وصلني|توصلني|يؤدي|اوصل|اسلك|أسلك|route|directions|way|distance|yol|rota|götür)/i;
 const DESTINATION_PATTERN = /(?:إلى|الى|لـ|لِ|ل|نحو|جهة|إتجاه|to|towards|for|için|üzerinden)\s+([^،,.!?؟؛;]+)/ig;
 const ORIGIN_PATTERN = /(?:من|ابتداءً من|بدءًا من|from|starting from|başlangıç)\s+([^،,.!?؟؛;]+?)\s+(?:إلى|الى|لـ|نحو|to|towards|için)\s+/i;
 
@@ -36,7 +36,8 @@ function collapseRepeatedSequences(text: string): string {
 }
 
 const destinationAliases: Array<{ pattern: RegExp; canonical: string }> = [
-  { pattern: /(?:الحناكية|الحناكيه|حناكية|حناكيه|al[ -]?hanakiyah|al[ -]?henakiyah|hanakiyah)/i, canonical: "Al Hanakiyah" },\n  { pattern: /(?:ينبع|yanbu)/i, canonical: "Yanbu" },
+  { pattern: /(?:الحناكية|الحناكيه|حناكية|حناكيه|al[ -]?hanakiyah|al[ -]?henakiyah|hanakiyah)/i, canonical: "Al Hanakiyah" },
+  { pattern: /(?:ينبع|yanbu)/i, canonical: "Yanbu" },
   { pattern: /(?:الرياض|رياض|riyadh)/i, canonical: "Riyadh" },
   { pattern: /(?:جدة|جده|jeddah)/i, canonical: "Jeddah" },
   { pattern: /(?:مكة|مكه|مكة المكرمة|mecca|makkah)/i, canonical: "Makkah" },
