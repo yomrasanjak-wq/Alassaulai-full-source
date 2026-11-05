@@ -10,6 +10,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
 
 const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -620,15 +621,15 @@ export const appRouter = router({
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
           && /(افتح|فتح|ورني|ورّني|اعرض|الخريطة|الخريطه|المسار|الطريق|اتجاهات|directions|open map|route)/i.test(latestText)) {
-          const routeMatch = latestText.normalize("NFKC").match(/من\s+(.+?)\s+(?:إلى|الى|لـ)\s+(.+?)(?:[؟?!.،,]|$)/i);
-          if (routeMatch) {
-            const origin = routeMatch[1].trim().slice(0, 100);
-            const destination = routeMatch[2].trim().slice(0, 100);
-            if (origin && destination) {
-              const mapUrl = new URL("https://www.google.com/maps/dir/");
-              mapUrl.search = new URLSearchParams({ api: "1", origin, destination, travelmode: "driving" }).toString();
-              return { text: `تفضل، هذا مسار القيادة من **${origin}** إلى **${destination}**:\n\n[افتح الطريق في خرائط Google](${mapUrl.toString()})\n\nقد تختلف المسافة ومدة الرحلة بحسب الطريق وحالة المرور.` };
-            }
+          // Reuse the shared voice-aware parser for repeated speech fragments
+          // and conversational phrasing such as "أنا في ... وأريد الذهاب إلى ...".
+          const routeRequest = parseRouteRequest(latestText);
+          const origin = routeRequest?.origin;
+          const destination = routeRequest?.destinations[0];
+          if (destination) {
+            const routeUrl = buildDirectionsUrl(origin, destination);
+            const routeLabel = origin ? `من **${origin}** إلى **${destination}**` : `إلى **${destination}**`;
+            return { text: `تفضل، هذا مسار القيادة ${routeLabel}:\\n\\n[افتح الطريق في خرائط Google](${routeUrl})\\n\\nقد تختلف المسافة ومدة الرحلة بحسب الطريق وحالة المرور.` };
           }
         }
 
