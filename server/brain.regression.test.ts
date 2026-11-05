@@ -129,6 +129,33 @@ describe("real-brain regression scenarios", () => {
     }
   });
 
+  it("passes live US election reports into the model for a sourced result summary", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "");
+    const published = new Date().toUTCString();
+    const electionFeed = `<rss><channel><item><title>US midterm election results update</title><source>Example News</source><link>https://example.com/election-results</link><pubDate>${published}</pubDate></item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(electionFeed, { status: 200, headers: { "content-type": "application/rss+xml" } }),
+    );
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "بحسب التقارير الحديثة، يجب فصل نتائج مجلس النواب عن مجلس الشيوخ والتحقق من إعلان كل ولاية." } }],
+    } as never);
+    try {
+      const result = await caller().ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "مين اللي فاز اليوم في الانتخابات الجمهوريين ولا الديمقراطيين؟" }],
+      });
+      expect(result.text).toContain("بحسب التقارير الحديثة");
+      expect(invokeLLM).toHaveBeenCalledOnce();
+      const systemMessage = String(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content ?? "");
+      expect(systemMessage).toContain("https://example.com/election-results");
+      expect(systemMessage).toContain("نتيجة أو حالة موجز الأخبار الحي");
+    } finally {
+      fetchSpy.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("does not present old RSS articles as today's world news", async () => {
     const staleFeed = `<?xml version="1.0"?><rss><channel><item><title>Old world headline</title><source>Example News</source><link>https://example.com/old</link><pubDate>Tue, 01 Jan 2019 10:00:00 GMT</pubDate></item></channel></rss>`;
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
