@@ -106,7 +106,7 @@ export function getContextualLiveQuery(messages: Array<{ role: "user" | "assista
   if (!previousUser) return current;
   const previous = previousUser.content.trim();
   const isUSPoliticalContext = /(?:انتخابات|الانتخابات|أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|election|midterm|republican|democrat)/i.test(previous);
-  const isShortFollowUp = current.length <= 120 && /(?:مين|من|هل|وش|ما|ماذا|كم|فاز|فازت|النتيجة|النتائج|اليوم|الآن|الان|who|which|won|results|today)/i.test(current);
+  const isShortFollowUp = current.length <= 120 && (isElectionResultsQuestion(current) || /^(?:مين|من|who|which)\\b.{0,45}(?:\\?|؟|$)|^(?:طيب|والآن|والان|وماذا عن|what about)\\b/i.test(current));
   return isUSPoliticalContext && isShortFollowUp ? `${previous.slice(0, 240)}\nمتابعة المستخدم: ${current}` : current;
 }
 
@@ -205,7 +205,7 @@ async function getJeddahWeatherAnswer(content: string) {
 export const isElectionResultsQuestion = (message: string) =>
   /(?:(?:مين|من).{0,30}(?:فاز|فازت|كسب|انتصر)|(?:who|which party).{0,35}(?:won|wins)|(?:نتائج|نتيجة).{0,35}(?:انتخابات|الانتخابات|انتخابية|election|midterm)|(?:فاز|فازت|كسب).{0,35}(?:جمهوري|ديمقراطي|Republican|Democrat)|(?:الجمهوريين|الديمقراطيين|Republicans|Democrats).{0,35}(?:فاز|فازوا|النتائج|won|results))/i.test(message);
 
-const isUSElectionQuestion = (message: string) =>
+export const isUSElectionQuestion = (message: string) =>
   /(?:انتخابات|الانتخابات|الانتخابية|election|midterm)/i.test(message)
   && /(?:أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|Republican|Democrat|United States|\bUS\b|midterm)/i.test(message);
 
