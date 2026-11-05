@@ -629,7 +629,7 @@ export const appRouter = router({
           if (destination) {
             const routeUrl = buildDirectionsUrl(origin, destination);
             const routeLabel = origin ? `من **${origin}** إلى **${destination}**` : `إلى **${destination}**`;
-            return { text: `تفضل، هذا مسار القيادة ${routeLabel}:\\n\\n[افتح الطريق في خرائط Google](${routeUrl})\\n\\nقد تختلف المسافة ومدة الرحلة بحسب الطريق وحالة المرور.` };
+            return { text: `تفضل، هذا مسار القيادة ${routeLabel}:\n\n[افتح الطريق في خرائط Google](${routeUrl})\n\nقد تختلف المسافة ومدة الرحلة بحسب الطريق وحالة المرور.` };
           }
         }
 
