@@ -3,8 +3,8 @@ export type RouteRequest = {
   destinations: string[];
 };
 
-const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|وصلني|توصلني|يؤدي|اوصل|اسلك|أسلك|route|directions|way|yol|rota|götür)/i;
-const DESTINATION_PATTERN = /(?:إلى|الى|لـ|لِ|ل|نحو|جهة|إتجاه|to|towards|for|için|üzerinden)\s+([^،,.!?؟؛;]+)/ig;
+const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|افتح.{0,12}(?:موقع|خرائط|خريطه|الخريطة)|ابغى.{0,12}(?:اروح|أروح)|أبغى.{0,12}(?:اروح|أروح)|وصلني|توصلني|ترسلني|يؤدي|اوصل|اسلك|أسلك|route|directions|way|yol|rota|götür)/i;
+const DESTINATION_PATTERN = /(?:إلى|الى|لـ|لِ|ل|نحو|جهة|إتجاه|(?:أروح|اروح|أذهب|اذهب)\s+(?:إلى|الى|ل)|to|towards|for|için|üzerinden)\s*([^،,.!?؟؛;]+)/ig;
 const ORIGIN_PATTERN = /(?:من|ابتداءً من|بدءًا من|from|starting from|başlangıç)\s+([^،,.!?؟؛;]+?)\s+(?:إلى|الى|لـ|نحو|to|towards|için)\s+/i;
 
 // Voice recognition can append overlapping partial transcripts. Remove only
