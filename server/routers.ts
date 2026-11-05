@@ -697,6 +697,11 @@ export const appRouter = router({
           // Without verified Google Maps grounding, route local business lookups
           // to an actual map search instead of allowing the model to guess branches,
           // addresses, ratings, or opening status.
+          if (/(?:ارسل|أرسل|ورني|ورّني|اعرض|أبغى أشوف|ابغى اشوف).{0,20}(?:صور|صورة|image|photo)|(?:صور|صورة).{0,24}(?:الأهرامات|الاهرامات|مصر|egypt|pyramids)/i.test(latestText)) {
+            const imageSearch = getContextualFallback(input.messages, input.language);
+            if (imageSearch) return { text: imageSearch };
+          }
+
           const mapsGroundingAvailable = Boolean(process.env.GEMINI_API_KEY?.trim())
             && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true";
           if (isLocalBusinessSearchQuestion(latestText) && !mapsGroundingAvailable) {
