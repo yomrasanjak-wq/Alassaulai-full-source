@@ -85,6 +85,18 @@ describe("context-aware live follow-ups", () => {
     expect(getAdaptiveTaskInstruction(query)).toContain("النتائج الأولية");
   });
 
+  it("carries Saudi Pro League context into a short fixture follow-up", () => {
+    const messages = [
+      { role: "user" as const, content: "أريد متابعة جدول مباريات دوري روشن السعودي" },
+      { role: "assistant" as const, content: "حاضر، سأبحث عن أحدث الجدول." },
+      { role: "user" as const, content: "مين يلعب الخميس؟" },
+    ];
+    const query = getContextualLiveQuery(messages);
+    expect(query).toContain("دوري روشن السعودي");
+    expect(query).toContain("مين يلعب الخميس؟");
+    expect(isSaudiLeagueScheduleQuestion(query)).toBe(true);
+  });
+
   it("recognizes US shorthand and keeps a genuinely short who-won follow-up", () => {
     const messages = [
       { role: "user" as const, content: "US midterm election coverage" },
