@@ -106,7 +106,7 @@ export function getContextualLiveQuery(messages: Array<{ role: "user" | "assista
   if (!previousUser) return current;
   const previous = previousUser.content.trim();
   const isUSPoliticalContext = /(?:انتخابات|الانتخابات|أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|election|midterm|republican|democrat)/i.test(previous);
-  const isShortFollowUp = current.length <= 120 && (isElectionResultsQuestion(current) || /^(?:مين|من|who|which)\b.{0,45}(?:\\?|؟|$)|^(?:طيب|والآن|والان|وماذا عن|what about)\b/i.test(current));
+  const isShortFollowUp = current.length <= 120 && (isElectionResultsQuestion(current) || /^(?:مين|من|who|which)\b.{0,45}(?:\?|؟|$)|^(?:طيب|والآن|والان|وماذا عن|what about)\b/i.test(current));
   return isUSPoliticalContext && isShortFollowUp ? `${previous.slice(0, 240)}\nمتابعة المستخدم: ${current}` : current;
 }
 
