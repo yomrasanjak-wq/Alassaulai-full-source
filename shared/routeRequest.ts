@@ -67,7 +67,14 @@ export function parseRouteRequest(text: string): RouteRequest | null {
   const normalized = collapseRepeatedSequences(text).replace(/\s+/g, " ").trim();
   if (!normalized || !ROUTE_INTENT.test(normalized)) return null;
 
-  const betweenMatch = normalized.match(/(?:المسافة\\s+)?بين\\s+(.+?)\\s+و\\s+(.+?)(?:[؟?!.،,]|$)/i);\n  if (betweenMatch) {\n    const origin = canonicalizeDestination(betweenMatch[1]);\n    const destination = canonicalizeDestination(betweenMatch[2]);\n    if (origin && destination) return { origin, destinations: [destination] };\n  }\n\n  const originMatch = normalized.match(ORIGIN_PATTERN);
+  const betweenMatch = normalized.match(/(?:المسافة\s+)?بين\s+(.+?)\s+و\s+(.+?)(?:[؟?!.،,]|$)/i);
+  if (betweenMatch) {
+    const origin = canonicalizeDestination(betweenMatch[1]);
+    const destination = canonicalizeDestination(betweenMatch[2]);
+    if (origin && destination) return { origin, destinations: [destination] };
+  }
+
+  const originMatch = normalized.match(ORIGIN_PATTERN);
   const destinationMatches = Array.from(normalized.matchAll(DESTINATION_PATTERN));
   const lastDestinationMatch = destinationMatches.at(-1);
   const originRaw = originMatch?.[1]?.trim();
