@@ -3,7 +3,7 @@ export type RouteRequest = {
   destinations: string[];
 };
 
-const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|وصلني|توصلني|يؤدي|اوصل|اسلك|أسلك|route|directions|way|yol|rota|götür)/i;
+const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|مسافة|المسافة|كم\\s+تبعد|وصلني|توصلني|يؤدي|اوصل|اسلك|أسلك|route|directions|way|distance|yol|rota|götür)/i;
 const DESTINATION_PATTERN = /(?:إلى|الى|لـ|لِ|ل|نحو|جهة|إتجاه|to|towards|for|için|üzerinden)\s+([^،,.!?؟؛;]+)/ig;
 const ORIGIN_PATTERN = /(?:من|ابتداءً من|بدءًا من|from|starting from|başlangıç)\s+([^،,.!?؟؛;]+?)\s+(?:إلى|الى|لـ|نحو|to|towards|için)\s+/i;
 
