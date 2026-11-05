@@ -106,8 +106,9 @@ export function getContextualLiveQuery(messages: Array<{ role: "user" | "assista
   if (!previousUser) return current;
   const previous = previousUser.content.trim();
   const isUSPoliticalContext = /(?:انتخابات|الانتخابات|أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|election|midterm|republican|democrat)/i.test(previous);
+  const isSaudiLeagueContext = isSaudiLeagueQuestion(previous);
   const isShortFollowUp = current.length <= 120 && (isElectionResultsQuestion(current) || /^(?:مين|من|who|which)\b.{0,45}(?:\?|؟|$)|^(?:طيب|والآن|والان|وماذا عن|what about)\b/i.test(current));
-  return isUSPoliticalContext && isShortFollowUp ? `${previous.slice(0, 240)}\nمتابعة المستخدم: ${current}` : current;
+  return (isUSPoliticalContext || isSaudiLeagueContext) && isShortFollowUp ? `${previous.slice(0, 240)}\nمتابعة المستخدم: ${current}` : current;
 }
 
 export function compactChatHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
@@ -725,7 +726,7 @@ export const appRouter = router({
           }
 
           if (isSaudiLeagueQuestion(latestText)) {
-            return { text: await getSaudiLeagueScheduleAnswer(input.language, latestText) };
+            return { text: await getSaudiLeagueScheduleAnswer(input.language, contextualLiveQuery) };
           }
 
           if (isWorldNewsQuestion(contextualLiveQuery) && !isElectionResultsQuestion(contextualLiveQuery)) {
@@ -776,8 +777,8 @@ ${searchContext}`);
               if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
             }
-            if (isSaudiLeagueScheduleQuestion(latestText)) {
-              const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, latestText);
+            if (isSaudiLeagueScheduleQuestion(contextualLiveQuery)) {
+              const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, contextualLiveQuery);
               if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\n${scheduleContext}`);
             }
           } else if (isWorldNewsQuestion(contextualLiveQuery)) {
