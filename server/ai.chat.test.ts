@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer, getWorldNewsAnswer, isElectionResultsQuestion, isWorldNewsQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getContextualLiveQuery, getDistinctBackupModel, getLiveWeatherAnswer, getWorldNewsAnswer, isElectionResultsQuestion, isWorldNewsQuestion } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -68,6 +68,29 @@ describe("model fallback selection", () => {
 
   it("does not invent a backup when the setting is missing", () => {
     expect(getDistinctBackupModel("primary-model", undefined)).toBeUndefined();
+  });
+});
+
+describe("context-aware live follow-ups", () => {
+  it("restores the recent US election topic for a short who-won follow-up", () => {
+    const messages = [
+      { role: "user" as const, content: "أريد أخبار الانتخابات الأمريكية النصفية" },
+      { role: "assistant" as const, content: "إليك آخر المستجدات المنشورة عن الانتخابات النصفية الأمريكية." },
+      { role: "user" as const, content: "مين اللي فاز اليوم الجمهوريين ولا الديمقراطيين؟" },
+    ];
+    const query = getContextualLiveQuery(messages);
+    expect(query).toContain("الانتخابات الأمريكية النصفية");
+    expect(isElectionResultsQuestion(query)).toBe(true);
+    expect(getAdaptiveTaskInstruction(query)).toContain("النتائج الأولية");
+  });
+
+  it("does not attach an unrelated old topic to an ordinary new question", () => {
+    const messages = [
+      { role: "user" as const, content: "أريد أخبار الانتخابات الأمريكية النصفية" },
+      { role: "assistant" as const, content: "إليك آخر المستجدات." },
+      { role: "user" as const, content: "كم درجة يغلي الماء؟" },
+    ];
+    expect(getContextualLiveQuery(messages)).toBe("كم درجة يغلي الماء؟");
   });
 });
 
