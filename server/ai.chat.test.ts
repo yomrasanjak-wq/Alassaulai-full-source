@@ -85,6 +85,18 @@ describe("context-aware live follow-ups", () => {
     expect(getAdaptiveTaskInstruction(query)).toContain("النتائج الأولية");
   });
 
+  it("recognizes US shorthand and keeps a genuinely short who-won follow-up", () => {
+    const messages = [
+      { role: "user" as const, content: "US midterm election coverage" },
+      { role: "assistant" as const, content: "Recent reports are available." },
+      { role: "user" as const, content: "Who won?" },
+    ];
+    const query = getContextualLiveQuery(messages);
+    expect(query).toContain("US midterm election coverage");
+    expect(isUSElectionQuestion(query)).toBe(true);
+    expect(isElectionResultsQuestion(query)).toBe(true);
+  });
+
   it("does not attach an unrelated old topic to an ordinary new question", () => {
     const messages = [
       { role: "user" as const, content: "أريد أخبار الانتخابات الأمريكية النصفية" },
