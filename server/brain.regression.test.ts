@@ -93,6 +93,18 @@ describe("real-brain regression scenarios", () => {
     expect(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.at(-1)?.content).toBe(question);
   });
 
+  it("answers Yanbu to Al Hanakiyah road distance with a grounded estimate", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "كم المسافة بالسيارة بين ينبع والحناكية؟" }],
+    });
+    expect(result.text).toContain("356–357 كم");
+    expect(result.text).toContain("360 كم");
+    expect(result.text).not.toContain("240 كم");
+    expect(result.text).toContain("distancesfrom.com");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
   it("returns a clear RSS outage without relying on the model or inventing current news", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
     vi.mocked(invokeLLM).mockResolvedValue({
