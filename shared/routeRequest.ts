@@ -36,7 +36,7 @@ function collapseRepeatedSequences(text: string): string {
 }
 
 const destinationAliases: Array<{ pattern: RegExp; canonical: string }> = [
-  { pattern: /(?:ينبع|yanbu)/i, canonical: "Yanbu" },
+  { pattern: /(?:الحناكية|الحناكيه|حناكية|حناكيه|al[ -]?hanakiyah|al[ -]?henakiyah|hanakiyah)/i, canonical: "Al Hanakiyah" },\n  { pattern: /(?:ينبع|yanbu)/i, canonical: "Yanbu" },
   { pattern: /(?:الرياض|رياض|riyadh)/i, canonical: "Riyadh" },
   { pattern: /(?:جدة|جده|jeddah)/i, canonical: "Jeddah" },
   { pattern: /(?:مكة|مكه|مكة المكرمة|mecca|makkah)/i, canonical: "Makkah" },
@@ -67,7 +67,7 @@ export function parseRouteRequest(text: string): RouteRequest | null {
   const normalized = collapseRepeatedSequences(text).replace(/\s+/g, " ").trim();
   if (!normalized || !ROUTE_INTENT.test(normalized)) return null;
 
-  const originMatch = normalized.match(ORIGIN_PATTERN);
+  const betweenMatch = normalized.match(/(?:المسافة\\s+)?بين\\s+(.+?)\\s+و\\s+(.+?)(?:[؟?!.،,]|$)/i);\n  if (betweenMatch) {\n    const origin = canonicalizeDestination(betweenMatch[1]);\n    const destination = canonicalizeDestination(betweenMatch[2]);\n    if (origin && destination) return { origin, destinations: [destination] };\n  }\n\n  const originMatch = normalized.match(ORIGIN_PATTERN);
   const destinationMatches = Array.from(normalized.matchAll(DESTINATION_PATTERN));
   const lastDestinationMatch = destinationMatches.at(-1);
   const originRaw = originMatch?.[1]?.trim();
