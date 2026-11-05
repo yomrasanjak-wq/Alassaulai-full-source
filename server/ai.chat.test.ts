@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer, getWorldNewsAnswer, isElectionResultsQuestion, isWorldNewsQuestion } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -93,6 +93,39 @@ describe("adaptive brain response strategy", () => {
   });
 });
 
+
+describe("live election and news retrieval", () => {
+  it("recognizes US midterm election coverage as time-sensitive news", () => {
+    expect(isWorldNewsQuestion("أريد أخبار الانتخابات الأمريكية النصفية")).toBe(true);
+    expect(isWorldNewsQuestion("ما أبرز أخبار العالم اليوم؟")).toBe(true);
+  });
+
+  it("recognizes a short Arabic follow-up asking which US party won", () => {
+    const question = "مين اللي فاز اليوم في الانتخابات الجمهوريين ولا الديمقراطيين";
+    expect(isElectionResultsQuestion(question)).toBe(true);
+    expect(getAdaptiveTaskInstruction(question)).toContain("النتائج الأولية");
+  });
+
+  it("falls back from Google News RSS to Bing News RSS for election results", async () => {
+    const published = new Date().toUTCString();
+    const xml = `<rss><channel><item><title>US midterm results update</title><source>Example News</source><link>https://example.com/election-results</link><pubDate>${published}</pubDate></item></channel></rss>`;
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error("Google News temporarily unavailable"))
+      .mockResolvedValueOnce(new Response(xml, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const result = await getWorldNewsAnswer("مين اللي فاز اليوم في الانتخابات الجمهوريين ولا الديمقراطيين", "AR");
+      expect(result).toContain("US midterm results update");
+      expect(result).toContain("https://example.com/election-results");
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const fallbackUrl = new URL(String(fetchMock.mock.calls[1]?.[0]));
+      expect(fallbackUrl.hostname).toBe("www.bing.com");
+      expect(fallbackUrl.searchParams.get("q")).toMatch(/US midterm election results Democrats Republicans House Senate/i);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
 
 describe("live weather source", () => {
   it("uses a live Open-Meteo response for current Trabzon weather", async () => {
