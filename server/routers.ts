@@ -281,7 +281,7 @@ function getContextualFallback(
   }
 
   const asksHospital = /(?:مستشفى|مستشفيات|مركز طبي|عيادة|hospital|clinic)/i.test(latest)
-    && /(?:موقع|وين|أين|اين|عنوان|أقرب|اقرب|دلني|location|where|address|directions)/i.test(latest);
+    && /(?:موقع|وين|أين|اين|عنوان|أقرب|اقرب|في|دلني|location|where|address|directions)/i.test(latest);
   if (asksHospital) {
     const context = `${latest} ${recentUserText}`;
     const facility = /(?:الحبيب|سليمان الحبيب|sulaiman al habib)/i.test(context) ? "مستشفى الدكتور سليمان الحبيب"
@@ -304,7 +304,7 @@ function getContextualFallback(
 
   const asksImages = /(?:ارسل|أرسل|ورني|ورّني|اعرض|أبغى أشوف|ابغى اشوف).{0,20}(?:صور|صورة|image|photo)|(?:صور|صورة).{0,24}(?:الأهرامات|الاهرامات|مصر|egypt|pyramids)/i.test(latest);
   if (asksImages) {
-    const query = latest.replace(/(?:ارسل|أرسل|بالله|لو سمحت|ورني|ورّني|اعرض)/g, "").trim() || "صور الأهرامات المصرية";
+    const query = /(?:الأهرامات|الاهرامات|pyramids)/i.test(latest) ? "الأهرامات المصرية" : latest.replace(/(?:ارسل|أرسل|لي|صور|صورة|بالله|لو سمحت|ورني|ورّني|اعرض)/g, "").trim() || "صور عامة";
     const url = new URL("https://www.google.com/search");
     url.search = new URLSearchParams({ tbm: "isch", q: query }).toString();
     return language === "AR"
