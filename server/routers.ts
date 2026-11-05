@@ -101,7 +101,7 @@ export function getContextualLiveQuery(messages: Array<{ role: "user" | "assista
   const latest = messages[messages.length - 1];
   if (!latest || latest.role !== "user") return latest?.content ?? "";
   const current = latest.content.trim();
-  if (current.length > 120 || /(?:انتخابات|الانتخابات|أمريكا|امريكا|الولايات المتحدة|الكونغرس|جمهوري|ديمقراطي|election|midterm|republican|democrat)/i.test(current)) return current;
+  if (current.length > 120 || /(?:أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|United States|\\bUS\\b|midterm)/i.test(current)) return current;
   const previousUser = [...messages.slice(0, -1)].reverse().find((message) => message.role === "user");
   if (!previousUser) return current;
   const previous = previousUser.content.trim();
