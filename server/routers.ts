@@ -95,6 +95,21 @@ export function getAdaptiveTaskInstruction(message: string): string {
   return "نمط الإجابة العامة: حدّد المطلوب بدقة، أجب مباشرة، واذكر أهم معلومة أو خطوات عملية. إذا كانت الإجابة تعتمد على بيانات حديثة غير متاحة في هذه المحادثة فقل ذلك بوضوح ولا تخترع مصدراً أو نتيجة.";
 }
 
+/** Restore a narrowly-scoped topic for short follow-ups (e.g. “who won?”)
+ * without rewriting normal chat messages or carrying unrelated old topics. */
+export function getContextualLiveQuery(messages: Array<{ role: "user" | "assistant"; content: string }>): string {
+  const latest = messages[messages.length - 1];
+  if (!latest || latest.role !== "user") return latest?.content ?? "";
+  const current = latest.content.trim();
+  if (current.length > 120 || /(?:انتخابات|الانتخابات|أمريكا|امريكا|الولايات المتحدة|الكونغرس|جمهوري|ديمقراطي|election|midterm|republican|democrat)/i.test(current)) return current;
+  const previousUser = [...messages.slice(0, -1)].reverse().find((message) => message.role === "user");
+  if (!previousUser) return current;
+  const previous = previousUser.content.trim();
+  const isUSPoliticalContext = /(?:انتخابات|الانتخابات|أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|election|midterm|republican|democrat)/i.test(previous);
+  const isShortFollowUp = current.length <= 120 && /(?:مين|من|هل|وش|ما|ماذا|كم|فاز|فازت|النتيجة|النتائج|اليوم|الآن|الان|who|which|won|results|today)/i.test(current);
+  return isUSPoliticalContext && isShortFollowUp ? `${previous.slice(0, 240)}\nمتابعة المستخدم: ${current}` : current;
+}
+
 export function compactChatHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
   return messages.slice(-MAX_CHAT_HISTORY).map((message) => ({
     role: message.role,
@@ -662,6 +677,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
+        const contextualLiveQuery = getContextualLiveQuery(input.messages);
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
@@ -712,8 +728,8 @@ export const appRouter = router({
             return { text: await getSaudiLeagueScheduleAnswer(input.language, latestText) };
           }
 
-          if (isWorldNewsQuestion(latestText) && !isElectionResultsQuestion(latestText)) {
-            const directNews = await getWorldNewsAnswer(latestText, input.language);
+          if (isWorldNewsQuestion(contextualLiveQuery) && !isElectionResultsQuestion(contextualLiveQuery)) {
+            const directNews = await getWorldNewsAnswer(contextualLiveQuery, input.language);
             if (directNews) return { text: directNews };
           }
         }
@@ -755,8 +771,8 @@ ${searchContext}`);
                 console.warn("[ALASSAUL grounding] Google Search source failed", safeProviderDiagnostic(error));
               }
             }
-            if (!grounded && isWorldNewsQuestion(latestText)) {
-              const newsContext = await getWorldNewsAnswer(latestText, input.language);
+            if (!grounded && isWorldNewsQuestion(contextualLiveQuery)) {
+              const newsContext = await getWorldNewsAnswer(contextualLiveQuery, input.language);
               if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
             }
@@ -764,8 +780,8 @@ ${newsContext}`);
               const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, latestText);
               if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\n${scheduleContext}`);
             }
-          } else if (isWorldNewsQuestion(latestText)) {
-            const newsContext = await getWorldNewsAnswer(latestText, input.language);
+          } else if (isWorldNewsQuestion(contextualLiveQuery)) {
+            const newsContext = await getWorldNewsAnswer(contextualLiveQuery, input.language);
             if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
           }
@@ -784,7 +800,7 @@ ${newsContext}`);
             : "Answer in clear, concise English.";
         const taskInstruction = latestMessage?.imageDataUrl
           ? "نمط تحليل صورة: صف العناصر الواضحة أولاً، ثم اشرح ما يمكن استنتاجه وما لا يمكن الجزم به. إذا طلب المستخدم التعرف على شيء، اذكر الاحتمالات وعلامات التمييز، ولا تخترع تفاصيل غير ظاهرة."
-          : getAdaptiveTaskInstruction(latestText);
+          : getAdaptiveTaskInstruction(contextualLiveQuery);
         const sourceInstruction = liveContext.length
           ? `\n\nبيانات داعمة من الأدوات الحية (ليست جواباً بديلاً عنك):\n${liveContext.join("\n\n")}\nاستخدم هذه البيانات عند صلتها بالسؤال، وانسب المصدر ووقت القراءة إن وُجدا، ولا تضف حقائق آنية غير موجودة فيها.`
           : "\n\nأجب بصفتك نموذجاً لغوياً عن السؤال الجديد مباشرة. لا تستبدل الإجابة بترحيب عام أو نص محفوظ أو رد مبني على مطابقة كلمات. في المعلومات الآنية لا تخترع؛ اذكر بوضوح إن لم يتوفر مصدر حي.";
