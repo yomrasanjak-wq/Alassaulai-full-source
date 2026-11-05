@@ -28,6 +28,11 @@ describe("parseRouteRequest", () => {
     });
   });
 
+  it("parses a repeated voice command to open the route from Yanbu to Jeddah", () => {
+    const text = "افتح لي الموقع انا في ينبع وابغى اروح لجده افتح لي الموقع انا في ينبع وابغى اروح لجده افتح لي الموقع الى جدة";
+    expect(parseRouteRequest(text)).toEqual({ origin: "Yanbu", destinations: ["Jeddah"] });
+  });
+
   it("does not treat ordinary chat as a route request", () => {
     expect(parseRouteRequest("السلام عليكم كيف حالك")).toBeNull();
   });

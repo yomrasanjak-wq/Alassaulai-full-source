@@ -185,6 +185,57 @@ describe("real-brain regression scenarios", () => {
   });
 
 
+
+  it("routes hospital branch searches to a city-qualified map search instead of guessing Riyadh", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [
+        { role: "user", content: "موقع الدكتور سليمان الحبيب المستشفى اللي في المحمديه" },
+        { role: "assistant", content: "يقع في الرياض." },
+        { role: "user", content: "مستشفى الدكتور سليمان الحبيب في المحمديه في جده وليس في الرياض" },
+      ],
+    });
+    expect(result.text).toContain("مستشفى الدكتور سليمان الحبيب");
+    expect(result.text).toContain("المحمدية");
+    expect(result.text).toContain("جدة");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).not.toContain("الرياض");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("provides an honest image-search link instead of claiming images cannot be shown", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "ارسل لي صور الاهرامات المصرية بالله" }] });
+    expect(result.text).toContain("tbm=isch");
+    expect(result.text).toContain("الأهرامات");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("provides a five-day Egypt plan when the AI provider returns a failure placeholder", async () => {
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "لم أتمكن من تجهيز إجابة الآن. أعد إرسال السؤال بصياغة قصيرة." } }],
+    } as never);
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "رتب لي رحلة الى مصر لمده خمس ايام" }] });
+    expect(result.text).toContain("اليوم الخامس");
+    expect(result.text).toContain("الأهرامات");
+    expect(result.text).toContain("الإسكندرية");
+    expect(result.text).not.toContain("لم أتمكن من تجهيز إجابة الآن");
+  });
+
+  it("uses the official Saudi Pro League fixture page for match-time questions, not RSS headlines", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "متى يبدا دوري روشن مباراه الدوري السعودي" }] });
+    expect(result.text).toContain("spl.com.sa/en/fixtures-results");
+    expect(result.text).toContain("الرابطة الرسمية");
+    expect(result.text).not.toContain("news.google.com/rss");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("directs AFC Elite results to the official AFC competition source", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "نتائج مباريات النخبه الاسيويه" }] });
+    expect(result.text).toContain("the-afc.com/en/club/afc_champions_league_elite");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
   it("offers a useful Trabzon itinerary if both AI providers fail", async () => {
     const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "رتب لي برنامجاً في طرابزون" }] });
     expect(result.text).toContain("قصر أتاتورك");
