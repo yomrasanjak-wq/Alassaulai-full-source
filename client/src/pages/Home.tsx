@@ -1094,7 +1094,10 @@ export default function Home() {
     const trimmed = value.trim();
     if ((!trimmed && !attachedImage) || chatMutation.isPending || chatImageBusy) return;
     const userText = trimmed || "حلّل الصورة المرفقة واشرح لي ما يظهر فيها.";
-    const parsedRouteRequest = parseRouteRequest(trimmed);\n    const isMapFollowUp = /(?:افتح|فتح|ورني|ورّني|اعرض|الخريطة|الخريطه|المسار|الطريق|اتجاهات|directions|open map|route)/i.test(trimmed);\n    const previousRoute = [...chatMessages].reverse().find((message) => message.route)?.route;\n    const routeRequest = parsedRouteRequest ?? (isMapFollowUp ? previousRoute : undefined);
+    const parsedRouteRequest = parseRouteRequest(trimmed);
+    const isMapFollowUp = /(?:افتح|فتح|ورني|ورّني|اعرض|الخريطة|الخريطه|المسار|الطريق|اتجاهات|directions|open map|route)/i.test(trimmed);
+    const previousRoute = [...chatMessages].reverse().find((message) => message.route)?.route;
+    const routeRequest = parsedRouteRequest ?? (isMapFollowUp ? previousRoute : undefined);
     const nextMessages: ChatMessage[] = [...chatMessages, { from: "user", text: userText, imageDataUrl: attachedImage }];
     setChatMessages(nextMessages);
     setChatInput("");
