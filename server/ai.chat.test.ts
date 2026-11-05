@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getContextualLiveQuery, getDistinctBackupModel, getLiveWeatherAnswer, getWorldNewsAnswer, isElectionResultsQuestion, isWorldNewsQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getContextualLiveQuery, getDistinctBackupModel, getLiveWeatherAnswer, getWorldNewsAnswer, isElectionResultsQuestion, isUSElectionQuestion, isWorldNewsQuestion } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -81,6 +81,7 @@ describe("context-aware live follow-ups", () => {
     const query = getContextualLiveQuery(messages);
     expect(query).toContain("الانتخابات الأمريكية النصفية");
     expect(isElectionResultsQuestion(query)).toBe(true);
+    expect(isUSElectionQuestion(query)).toBe(true);
     expect(getAdaptiveTaskInstruction(query)).toContain("النتائج الأولية");
   });
 
