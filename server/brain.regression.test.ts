@@ -230,9 +230,10 @@ describe("real-brain regression scenarios", () => {
         content: "انا في طرابزون واريد الذهاب الى انا في طرابزون واريد الذهاب الى همسه كوي ممكن ترسلني على الطريق",
       }],
     });
-    const urlMatch = result.text.match(/\\((https:\\/\\/www\\.google\\.com\\/maps\\/dir\\/\\?[^)]+)\\)/);
-    expect(urlMatch?.[1]).toBeTruthy();
-    const routeUrl = new URL(urlMatch![1]);
+    const urlStart = result.text.indexOf("https://www.google.com/maps/dir/");
+    expect(urlStart).toBeGreaterThanOrEqual(0);
+    const urlEnd = result.text.indexOf(")", urlStart);
+    const routeUrl = new URL(result.text.slice(urlStart, urlEnd));
     expect(routeUrl.searchParams.get("origin")).toBe("Trabzon");
     expect(routeUrl.searchParams.get("destination")).toBe("Hamsiköy");
     expect(invokeLLM).not.toHaveBeenCalled();
