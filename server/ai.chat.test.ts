@@ -154,7 +154,8 @@ describe("Saudi league schedule grounding", () => {
       choices: [{ message: { content: "سأفصل بين التقارير والجدول الرسمي وأتحقق من أي تأجيل." } }],
     } as never);
     try {
-      const result = await caller().ai.chat({
+      const testCaller = appRouter.createCaller(createPublicContext());
+      const result = await testCaller.ai.chat({
         language: "AR",
         messages: [{ role: "user", content: "ما مباريات دوري روشن الخميس؟" }],
       });
