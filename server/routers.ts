@@ -110,7 +110,7 @@ export function getContextualLiveQuery(messages: Array<{ role: "user" | "assista
   const previous = previousUser.content.trim();
   const isUSPoliticalContext = /(?:انتخابات|الانتخابات|أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|election|midterm|republican|democrat)/i.test(previous);
   const isSaudiLeagueContext = isSaudiLeagueQuestion(previous);
-  const isShortFollowUp = current.length <= 120 && (isElectionResultsQuestion(current) || /^(?:مين|من|who|which)\b.{0,45}(?:\?|؟|$)|^(?:طيب|والآن|والان|وماذا عن|what about)\b/i.test(current));
+  const isShortFollowUp = current.length <= 120 && (isElectionResultsQuestion(current) || /^(?:مين|من|who|which)(?:\s|$).{0,45}(?:\?|؟|$)|^(?:طيب|والآن|والان|وماذا عن|what about)(?:\s|$)/i.test(current));
   return (isUSPoliticalContext || isSaudiLeagueContext) && isShortFollowUp ? `${previous.slice(0, 240)}\nمتابعة المستخدم: ${current}` : current;
 }
 
@@ -227,7 +227,7 @@ function isSaudiLeagueQuestion(message: string) {
 }
 
 export function isSaudiLeagueScheduleQuestion(message: string) {
-  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
+  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الخميس|الجمعة|السبت|الأحد|الاحد|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|thursday|friday|saturday|sunday|this week)/i.test(message);
 }
 
 /** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
