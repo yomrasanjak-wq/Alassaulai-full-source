@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getContextualLiveQuery, getDistinctBackupModel, getLiveWeatherAnswer, getWorldNewsAnswer, isElectionResultsQuestion, isUSElectionQuestion, isWorldNewsQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getContextualLiveQuery, getDistinctBackupModel, getLiveWeatherAnswer, getWorldNewsAnswer, isElectionResultsQuestion, isUSElectionQuestion, isWorldNewsQuestion, isSaudiLeagueScheduleQuestion } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -95,6 +95,8 @@ describe("context-aware live follow-ups", () => {
     expect(query).toContain("دوري روشن السعودي");
     expect(query).toContain("مين يلعب الخميس؟");
     expect(isSaudiLeagueScheduleQuestion(query)).toBe(true);
+    expect(getAdaptiveTaskInstruction(query)).toContain("Asia/Riyadh");
+    expect(getAdaptiveTaskInstruction(query)).toContain("التأجيل");
   });
 
   it("recognizes US shorthand and keeps a genuinely short who-won follow-up", () => {
