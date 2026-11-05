@@ -68,7 +68,7 @@ export function parseRouteRequest(text: string): RouteRequest | null {
   const normalized = collapseRepeatedSequences(text).replace(/\s+/g, " ").trim();
   if (!normalized || !ROUTE_INTENT.test(normalized)) return null;
 
-  const betweenMatch = normalized.match(/(?:المسافة\s+)?بين\s+(.+?)\s+و\s+(.+?)(?:[؟?!.،,]|$)/i);
+  const betweenMatch = normalized.match(/(?:المسافة\s+)?بين\s+(.+?)\s*و\s*(.+?)(?:[؟?!.،,]|$)/i);
   if (betweenMatch) {
     const origin = canonicalizeDestination(betweenMatch[1]);
     const destination = canonicalizeDestination(betweenMatch[2]);
