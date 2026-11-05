@@ -28,6 +28,13 @@ describe("parseRouteRequest", () => {
     });
   });
 
+  it("parses a distance question between Yanbu and Al Hanakiyah as a route", () => {
+    expect(parseRouteRequest("كم المسافة بين ينبع والحناكية؟")).toEqual({
+      origin: "Yanbu",
+      destinations: ["Al Hanakiyah"],
+    });
+  });
+
   it("does not treat ordinary chat as a route request", () => {
     expect(parseRouteRequest("السلام عليكم كيف حالك")).toBeNull();
   });
