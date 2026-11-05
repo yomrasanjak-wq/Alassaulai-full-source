@@ -198,15 +198,21 @@ describe("real-brain regression scenarios", () => {
     const rss = `<rss><channel><item><title>أخبار دوري روشن السعودي اليوم</title><source>وكالة اختبار</source><link>https://example.com/saudi-league</link><pubDate>${new Date(Date.now() - 60 * 60 * 1000).toUTCString()}</pubDate></item></channel></rss>`;
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
-      expect(new URL(url).searchParams.get("q")).toContain("دوري روشن السعودي");
+      expect(new URL(url).searchParams.get("q")).toContain("أخبار دوري روشن السعودي اليوم");
       return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
     });
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "ملخص أخبار دوري روشن السعودي اعتماداً على المصدر المرفق." } }],
+    } as never);
     try {
       const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "أريد أخبار الدوري روشن" }] });
-      expect(result.text).toContain("أحدث أخبار دوري روشن السعودي");
-      expect(result.text).toContain("أخبار دوري روشن السعودي اليوم");
+      expect(result.text).toContain("ملخص أخبار دوري روشن السعودي");
+      expect(invokeLLM).toHaveBeenCalledOnce();
+      const systemMessage = String(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content ?? "");
+      expect(systemMessage).toContain("https://example.com/saudi-league");
+      expect(systemMessage).toContain("أحدث أخبار دوري روشن السعودي");
       expect(result.text).not.toMatch(/الدوري التركي|غلطة سراي|فنربخشة/i);
-      expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
     }
