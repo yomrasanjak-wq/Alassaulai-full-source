@@ -52,7 +52,10 @@ export function getDistinctBackupModel(primaryModel: string | undefined, backupM
  * not grant tools or authority to perform external actions. */
 export function getAdaptiveTaskInstruction(message: string): string {
   const text = message.normalize("NFKC").toLowerCase();
-  if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|latest news|world news|breaking news)/i.test(text)) {
+  if (isElectionResultsQuestion(text)) {
+    return "نمط نتائج الانتخابات: استخدم نتائج البحث الحية فقط، واذكر تاريخ ووقت التحديث والمصدر. افصل بين النتائج الأولية والتوقعات الإعلامية والنتائج المعتمدة رسمياً. في انتخابات الولايات المتحدة، افصل مجلس النواب عن مجلس الشيوخ ولا تعلن فوز حزب بالسيطرة على الكونغرس اعتماداً على عناوين جزئية؛ إذا لم تثبت المصادر ذلك فقل إن الحسم غير مؤكد حتى الآن. حافظ على الحياد السياسي ولا ترجّح حزباً أو مرشحاً.";
+  }
+  if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|انتخابات|الانتخابات|انتخابية|election|latest news|world news|breaking news)/i.test(text)) {
     return "نمط الأخبار: الأخبار تتغير بسرعة؛ لا تعرض معلومة على أنها حدث اليوم ما لم تتوفر نتيجة بحث حديثة موثوقة. افصل بين الخبر المؤكد والخلفية والتحليل، واذكر تاريخ الخبر ومصدره إذا كانا متاحين. إذا لم تتوفر لديك أداة بحث حي في هذه الجلسة، صرّح بذلك بوضوح واطلب من المستخدم رابط الخبر أو حدّد ما يمكنك شرحه من الخلفية دون اختلاق عناوين أو أرقام.";
   }
   if (/(كيف أصلح|كيف اصلح|متعطل|عطل|لا يعمل|ما يشتغل|ما يفتح|خطأ|مشكلة|حل المشكلة|تشخيص)/i.test(text)) {
@@ -184,7 +187,15 @@ async function getJeddahWeatherAnswer(content: string) {
   }
 }
 
-const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
+export const isElectionResultsQuestion = (message: string) =>
+  /(?:(?:مين|من).{0,30}(?:فاز|فازت|كسب|انتصر)|(?:who|which party).{0,35}(?:won|wins)|(?:نتائج|نتيجة).{0,35}(?:انتخابات|الانتخابات|انتخابية|election|midterm)|(?:فاز|فازت|كسب).{0,35}(?:جمهوري|ديمقراطي|Republican|Democrat)|(?:الجمهوريين|الديمقراطيين|Republicans|Democrats).{0,35}(?:فاز|فازوا|النتائج|won|results))/i.test(message);
+
+const isUSElectionQuestion = (message: string) =>
+  /(?:انتخابات|الانتخابات|الانتخابية|election|midterm)/i.test(message)
+  && /(?:أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|Republican|Democrat|United States|\\bUS\\b|midterm)/i.test(message);
+
+export const isWorldNewsQuestion = (message: string) =>
+  /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,35}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا|انتخابات|الانتخابات|انتخابية|election)|(?:انتخابات|الانتخابات|الانتخابية|election).{0,65}(?:اليوم|الآن|الان|آخر|اخر|نتائج|نتيجة|النصفية|جمهوري|ديمقراطي|Republican|Democrat|midterm|results|latest|today|who won)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
 function isLocalBusinessSearchQuestion(message: string) {
   const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast)/i.test(message);
@@ -335,46 +346,81 @@ function decodeNewsXml(value: string) {
     .trim();
 }
 
-/** Fetch a small set of current headlines from Google News RSS. If the feed is
- * unreachable, return a clear status instead of letting the model invent news. */
-async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN") {
+/** Fetch recent headlines from two free RSS search feeds. Search results are
+ * supporting evidence, not certified election results or a substitute for source checks. */
+export async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN") {
   if (!isWorldNewsQuestion(message)) return undefined;
-  const params = new URLSearchParams({ q: message.slice(0, 160), hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US", gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US", ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en" });
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4500);
-  try {
-    const response = await fetch(`https://news.google.com/rss/search?${params.toString()}`, {
-      headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`News RSS returned ${response.status}`);
-    const xml = await response.text();
-    const items = (xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) ?? []).slice(0, 5).map((itemMarkup) => {
+  const usElection = isUSElectionQuestion(message);
+  const electionResults = isElectionResultsQuestion(message);
+  const year = new Date().getUTCFullYear();
+  const query = usElection
+    ? `${year} US midterm election ${electionResults ? "results" : "latest news"} Democrats Republicans House Senate`
+    : message.slice(0, 160);
+  const locale = usElection
+    ? { hl: "en-US", gl: "US", ceid: "US:en" }
+    : { hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US", gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US", ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en" };
+  const googleUrl = `https://news.google.com/rss/search?${new URLSearchParams({ q: query, ...locale }).toString()}`;
+  const bingUrl = `https://www.bing.com/news/search?${new URLSearchParams({ q: query, format: "rss" }).toString()}`;
+  const fetchFeed = async (url: string, name: string) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4500);
+    try {
+      const response = await fetch(url, {
+        headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`${name} RSS returned ${response.status}`);
+      return await response.text();
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  const parseItems = (xml: string, fallbackSource: string) =>
+    (xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) ?? []).slice(0, 8).map((itemMarkup) => {
       const body = itemMarkup.replace(/^<item\b[^>]*>/i, "").replace(/<\/item>$/i, "");
       const title = decodeNewsXml(body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
-      const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? "Google News");
+      const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? fallbackSource);
       const url = decodeNewsXml(body.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? "");
       const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
       const date = published ? new Date(published) : null;
-      const dateText = date && !Number.isNaN(date.getTime()) ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date) : "";
-      return { title, source, dateText, publishedAt: date && !Number.isNaN(date.getTime()) ? date.getTime() : 0, url: /^https?:\/\//i.test(url) ? url : "" };
-    }).filter((item) => item.title.length > 5 && item.publishedAt > Date.now() - 48 * 60 * 60 * 1000);
-    if (!items.length) throw new Error("News RSS returned no headlines published in the last 48 hours");
-    const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
-    const footer = language === "AR" ? "المصدر: Google News RSS. هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS. Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS. These are headlines; check the publisher for details and updates.";
-    return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
+      const validDate = date && !Number.isNaN(date.getTime()) ? date : null;
+      const dateText = validDate ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(validDate) : "";
+      return { title, source, dateText, publishedAt: validDate?.getTime() ?? 0, url: /^https?:\/\//i.test(url) ? url : "" };
+    }).filter((item) => item.title.length > 5 && item.publishedAt > Date.now() - 48 * 60 * 60 * 1000 && item.url);
+  try {
+    let feedName = "Google News";
+    let xml: string;
+    try {
+      xml = await fetchFeed(googleUrl, feedName);
+    } catch (googleError) {
+      console.warn("[ALASSAUL news] Google News feed unavailable; trying Bing News", safeProviderDiagnostic(googleError));
+      feedName = "Bing News";
+      xml = await fetchFeed(bingUrl, feedName);
+    }
+    let items = parseItems(xml, feedName);
+    if (!items.length && feedName === "Google News") {
+      feedName = "Bing News";
+      xml = await fetchFeed(bingUrl, feedName);
+      items = parseItems(xml, feedName);
+    }
+    if (!items.length) throw new Error("News feeds returned no recent linked headlines");
+    const heading = language === "AR"
+      ? electionResults ? "آخر المستجدات المنشورة عن نتائج الانتخابات الأمريكية" : usElection ? "آخر أخبار الانتخابات النصفية الأمريكية" : "أبرز عناوين الأخبار الحديثة"
+      : language === "TR" ? (usElection ? "ABD ara seçimleri hakkında güncel haberler" : "Güncel öne çıkan haber başlıkları")
+      : (usElection ? "Latest US midterm election coverage" : "Recent top headlines");
+    const footer = language === "AR"
+      ? electionResults ? "هذه عناوين وتقارير حديثة وليست إعلاناً رسمياً لنتيجة نهائية؛ يجب التمييز بين الفرز الأولي والتوقعات والنتائج المعتمدة." : `المصدر: ${feedName} RSS. افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات.`
+      : language === "TR" ? `Kaynak: ${feedName} RSS. Ayrıntıları yayıncıdan doğrulayın.` : `Source: ${feedName} RSS. Verify details and updates with the publisher.`;
+    return `${heading} (بحث عبر ${feedName})\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}\n   ${item.url}`).join("\n")}\n\n${footer}`;
   } catch (error) {
-    console.warn("[ALASSAUL news] live feed unavailable", error);
+    console.warn("[ALASSAUL news] all live feeds unavailable", safeProviderDiagnostic(error));
     return language === "AR"
-      ? "تعذر جلب عناوين الأخبار الحية الآن، لذلك لن أخمّن أخبار اليوم. جرّب بعد قليل، أو أرسل رابط الخبر لألخصه وأشرح خلفيته."
+      ? "تعذر الوصول إلى موجزَي الأخبار الحيين الآن، لذلك لن أخمّن أخبار اليوم أو نتائج الانتخابات. أعد المحاولة بعد قليل أو أرسل رابط الخبر لأتحقق من مضمونه."
       : language === "TR"
-        ? "Canlı haber akışına şu anda ulaşılamıyor; güncel haberleri tahmin etmeyeceğim. Biraz sonra tekrar deneyin veya haber bağlantısını gönderin."
-        : "The live news feed is unavailable right now, so I won't guess today's headlines. Try again shortly or send a news link for a summary.";
-  } finally {
-    clearTimeout(timer);
+        ? "Canlı haber akışlarına şu anda ulaşılamıyor; güncel haberleri veya seçim sonuçlarını tahmin etmeyeceğim. Daha sonra tekrar deneyin veya haber bağlantısını gönderin."
+        : "Live news feeds are unavailable right now, so I won't guess today's headlines or election results. Try again shortly or send a news link for verification.";
   }
 }
-
 
 
 export function classifyModelProviderFailure(error: unknown): "configuration" | "credentials" | "rate_limit" | "timeout" | "unavailable" | "empty_response" {
@@ -666,7 +712,7 @@ export const appRouter = router({
             return { text: await getSaudiLeagueScheduleAnswer(input.language, latestText) };
           }
 
-          if (isWorldNewsQuestion(latestText)) {
+          if (isWorldNewsQuestion(latestText) && !isElectionResultsQuestion(latestText)) {
             const directNews = await getWorldNewsAnswer(latestText, input.language);
             if (directNews) return { text: directNews };
           }
