@@ -527,7 +527,7 @@ function getKnownRoadDistanceAnswer(message: string, language: "AR" | "TR" | "EN
   if (!asksDistance || !mentionsYanbu || !mentionsHanakiyah) return undefined;
   if (language === "TR") return "Yanbu ile Al Hanakiyah arasındaki karayolu mesafesi yaklaşık 356–357 km'dir (yuvarlak olarak 360 km). Gerçek mesafe seçilen güzergâha ve başlangıç/bitiş noktasına göre değişebilir.";
   if (language === "EN") return "The road distance between Yanbu and Al Hanakiyah is about 356–357 km (roughly 360 km). The exact distance varies with the selected route and start/end points.";
-  return "المسافة البرية بالسيارة بين ينبع والحناكية نحو **356–357 كم، أي قرابة 360 كم**، وليست 240 كم. قد تختلف بضعة كيلومترات حسب نقطة الانطلاق والوصول والمسار المختار.\n\nمصدران لحساب المسافة: [356 كم](https://www.distancesfrom.com/sa/how-far-is-Yanbu-Saudi-Arabia-from-Al-Henakiyah-Saudi-Arabia/HowFarHistory/21229555.aspx) · [357 كم](https://www.distancesfrom.com/sa/distance-from-Al-Henakiyah-to-Yanbu/DistanceHistory/7041941.aspx).";
+  return "المسافة البرية بالسيارة بين ينبع والحناكية نحو **356–357 كم، أي قرابة 360 كم**. وهذا هو تقدير الطريق البري، وقد تختلف بضعة كيلومترات حسب نقطة الانطلاق والوصول والمسار المختار.\n\nمصدران لحساب المسافة: [356 كم](https://www.distancesfrom.com/sa/how-far-is-Yanbu-Saudi-Arabia-from-Al-Henakiyah-Saudi-Arabia/HowFarHistory/21229555.aspx) · [357 كم](https://www.distancesfrom.com/sa/distance-from-Al-Henakiyah-to-Yanbu/DistanceHistory/7041941.aspx).";
 }
 
 export const appRouter = router({
