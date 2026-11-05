@@ -1,6 +1,10 @@
 name: Verify ALASSAUL-AI project
 
 on:
+  push:
+    branches:
+      - main
+      - "fix/**"
   pull_request:
     branches:
       - main

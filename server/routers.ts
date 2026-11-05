@@ -31,7 +31,7 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - إذا كان السؤال غامضاً، قدم أفضل تفسير معقول أولاً ثم اسأل سؤال توضيح واحداً فقط.
 - في الأخبار والسياسة والأحداث المتغيرة، نبّه إلى الحاجة للتحقق الحديث ولا تخترع أرقاماً أو مصادر. إذا لم تتوفر أداة بحث حي في الطلب الحالي، قل بوضوح إنك لا تستطيع تأكيد آخر الأخبار الآن، واذكر التاريخ المرجعي عند اللزوم.
 - إذا أرفق المستخدم صورة، حلّل العناصر الظاهرة بدقة، وميّز بين ما تراه فعلاً وما تستنتجه. لا تجزم بهوية شخص أو مكان من صورة وحدها، ولا تستنتج صفات حساسة. إذا كانت الصورة غير واضحة فاطلب لقطة أوضح.
-- في الدين ميّز بين المعلومة العامة والفتوى المتخصصة، وفي الطب والقانون والمال قدّم معلومات عامة فقط مع تنبيه لمختص.
+- في الدين ميّز بين المعلومة العامة والفتوى المتخصصة، وفي الطب والقانون والمال قدّم معلومات عامة فقط مع تنبيه لمختص. في المسافات بين المدن، ميّز دائماً بين المسافة الجوية ومسافة القيادة على الطرق. لا تستخدم خطاً مستقيماً أو ذاكرة تقريبية لإجابة سؤال «كم بالسيارة؟». اعتمد على مصدر مسارات طرق موثوق، واذكر أن الرقم تقريبي ويتغير حسب نقطتي البداية والنهاية والطريق. إذا تعذّر التحقق، لا تخمّن رقماً ولا مدة قيادة. إذا كان السؤال متابعة مثل «افتح الخريطة» أو «ورّني الطريق»، استعد مدينتي الانطلاق والوصول من آخر سؤال طريق في المحادثة بدلاً من طلب إعادة كتابته.
 - ارفض الطلب الضار أو غير القانوني بلطف، ولا تدّعي تنفيذ حجز أو معاملة لم تُنفّذ.
 `;
 
@@ -52,7 +52,13 @@ export function getDistinctBackupModel(primaryModel: string | undefined, backupM
  * not grant tools or authority to perform external actions. */
 export function getAdaptiveTaskInstruction(message: string): string {
   const text = message.normalize("NFKC").toLowerCase();
-  if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|latest news|world news|breaking news)/i.test(text)) {
+  if (isElectionResultsQuestion(text)) {
+    return "نمط نتائج الانتخابات: استخدم نتائج البحث الحية فقط، واذكر تاريخ ووقت التحديث والمصدر. افصل بين النتائج الأولية والتوقعات الإعلامية والنتائج المعتمدة رسمياً. في انتخابات الولايات المتحدة، افصل مجلس النواب عن مجلس الشيوخ ولا تعلن فوز حزب بالسيطرة على الكونغرس اعتماداً على عناوين جزئية؛ إذا لم تثبت المصادر ذلك فقل إن الحسم غير مؤكد حتى الآن. حافظ على الحياد السياسي ولا ترجّح حزباً أو مرشحاً.";
+  }
+  if (isSaudiLeagueScheduleQuestion(text)) {
+    return "نمط جدول دوري روشن: فسّر اليوم المقصود مثل الخميس وفق تاريخ السعودية (Asia/Riyadh)، واذكر التاريخ الكامل والمنطقة الزمنية. ابحث عن جدول المباريات وآخر إشعارات التأجيل أو التغيير، ولا تعتمد على جدول قديم إذا ظهر تحديث أحدث. اعرض الفريقين ووقت البداية والملعب فقط إذا ثبتت من مصدر حديث، وميّز بوضوح بين خبر صحفي وجدول رسمي مؤكد. اذكر المصدر ووقت آخر تحقق، وإذا تعارضت المصادر أو غابت التفاصيل فقل ذلك ولا تخمّن.";
+  }
+  if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|انتخابات|الانتخابات|انتخابية|election|latest news|world news|breaking news)/i.test(text)) {
     return "نمط الأخبار: الأخبار تتغير بسرعة؛ لا تعرض معلومة على أنها حدث اليوم ما لم تتوفر نتيجة بحث حديثة موثوقة. افصل بين الخبر المؤكد والخلفية والتحليل، واذكر تاريخ الخبر ومصدره إذا كانا متاحين. إذا لم تتوفر لديك أداة بحث حي في هذه الجلسة، صرّح بذلك بوضوح واطلب من المستخدم رابط الخبر أو حدّد ما يمكنك شرحه من الخلفية دون اختلاق عناوين أو أرقام.";
   }
   if (/(كيف أصلح|كيف اصلح|متعطل|عطل|لا يعمل|ما يشتغل|ما يفتح|خطأ|مشكلة|حل المشكلة|تشخيص)/i.test(text)) {
@@ -90,6 +96,22 @@ export function getAdaptiveTaskInstruction(message: string): string {
     return "نمط دليل شمال تركيا: قدّم اقتراحات عملية تراعي الموقع والمسافة والموسم، وميّز بين المعلومات العامة والطقس أو الأسعار أو المواعيد التي تتطلب تحققاً حياً. لا تحصر التوصية في طرابزون وحدها إذا كان نطاق السؤال أوسع.";
   }
   return "نمط الإجابة العامة: حدّد المطلوب بدقة، أجب مباشرة، واذكر أهم معلومة أو خطوات عملية. إذا كانت الإجابة تعتمد على بيانات حديثة غير متاحة في هذه المحادثة فقل ذلك بوضوح ولا تخترع مصدراً أو نتيجة.";
+}
+
+/** Restore a narrowly-scoped topic for short follow-ups (e.g. “who won?”)
+ * without rewriting normal chat messages or carrying unrelated old topics. */
+export function getContextualLiveQuery(messages: Array<{ role: "user" | "assistant"; content: string }>): string {
+  const latest = messages[messages.length - 1];
+  if (!latest || latest.role !== "user") return latest?.content ?? "";
+  const current = latest.content.trim();
+  if (current.length > 120 || /(?:أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|United States|\bUS\b|midterm)/i.test(current)) return current;
+  const previousUser = [...messages.slice(0, -1)].reverse().find((message) => message.role === "user");
+  if (!previousUser) return current;
+  const previous = previousUser.content.trim();
+  const isUSPoliticalContext = /(?:انتخابات|الانتخابات|أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|election|midterm|republican|democrat)/i.test(previous);
+  const isSaudiLeagueContext = isSaudiLeagueQuestion(previous);
+  const isShortFollowUp = current.length <= 120 && (isElectionResultsQuestion(current) || /^(?:مين|من|who|which)(?:\s|$).{0,45}(?:\?|؟|$)|^(?:طيب|والآن|والان|وماذا عن|what about)(?:\s|$)/i.test(current));
+  return (isUSPoliticalContext || isSaudiLeagueContext) && isShortFollowUp ? `${previous.slice(0, 240)}\nمتابعة المستخدم: ${current}` : current;
 }
 
 export function compactChatHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
@@ -184,7 +206,15 @@ async function getJeddahWeatherAnswer(content: string) {
   }
 }
 
-const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
+export const isElectionResultsQuestion = (message: string) =>
+  /(?:(?:مين|من).{0,30}(?:فاز|فازت|كسب|انتصر)|(?:who|which party).{0,35}(?:won|wins)|(?:نتائج|نتيجة).{0,35}(?:انتخابات|الانتخابات|انتخابية|election|midterm)|(?:فاز|فازت|كسب).{0,35}(?:جمهوري|ديمقراطي|Republican|Democrat)|(?:الجمهوريين|الديمقراطيين|Republicans|Democrats).{0,35}(?:فاز|فازوا|النتائج|won|results))/i.test(message);
+
+export const isUSElectionQuestion = (message: string) =>
+  /(?:انتخابات|الانتخابات|الانتخابية|election|midterm)/i.test(message)
+  && /(?:أمريكا|امريكا|الأمريكية|الامريكية|الولايات المتحدة|الكونغرس|مجلس النواب|الشيوخ|جمهوري|ديمقراطي|Republican|Democrat|United States|\bUS\b|midterm)/i.test(message);
+
+export const isWorldNewsQuestion = (message: string) =>
+  /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,35}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا|انتخابات|الانتخابات|انتخابية|election)|(?:انتخابات|الانتخابات|الانتخابية|election).{0,65}(?:اليوم|الآن|الان|آخر|اخر|نتائج|نتيجة|النصفية|جمهوري|ديمقراطي|Republican|Democrat|midterm|results|latest|today|who won)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
 function isLocalBusinessSearchQuestion(message: string) {
   const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast)/i.test(message);
@@ -196,8 +226,8 @@ function isSaudiLeagueQuestion(message: string) {
   return /(?:روشن|الدوري السعودي|دوري روشن|السوبر السعودي|الدوري السعودي للمحترفين|Saudi Pro League)/i.test(message);
 }
 
-function isSaudiLeagueScheduleQuestion(message: string) {
-  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
+export function isSaudiLeagueScheduleQuestion(message: string) {
+  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الخميس|الجمعة|السبت|الأحد|الاحد|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|thursday|friday|saturday|sunday|this week)/i.test(message);
 }
 
 /** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
@@ -335,46 +365,81 @@ function decodeNewsXml(value: string) {
     .trim();
 }
 
-/** Fetch a small set of current headlines from Google News RSS. If the feed is
- * unreachable, return a clear status instead of letting the model invent news. */
-async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN") {
+/** Fetch recent headlines from two free RSS search feeds. Search results are
+ * supporting evidence, not certified election results or a substitute for source checks. */
+export async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN") {
   if (!isWorldNewsQuestion(message)) return undefined;
-  const params = new URLSearchParams({ q: message.slice(0, 160), hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US", gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US", ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en" });
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4500);
-  try {
-    const response = await fetch(`https://news.google.com/rss/search?${params.toString()}`, {
-      headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`News RSS returned ${response.status}`);
-    const xml = await response.text();
-    const items = (xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) ?? []).slice(0, 5).map((itemMarkup) => {
+  const usElection = isUSElectionQuestion(message);
+  const electionResults = isElectionResultsQuestion(message);
+  const year = new Date().getUTCFullYear();
+  const query = usElection
+    ? `${year} US midterm election ${electionResults ? "results" : "latest news"} Democrats Republicans House Senate`
+    : message.slice(0, 160);
+  const locale = usElection
+    ? { hl: "en-US", gl: "US", ceid: "US:en" }
+    : { hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US", gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US", ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en" };
+  const googleUrl = `https://news.google.com/rss/search?${new URLSearchParams({ q: query, ...locale }).toString()}`;
+  const bingUrl = `https://www.bing.com/news/search?${new URLSearchParams({ q: query, format: "rss" }).toString()}`;
+  const fetchFeed = async (url: string, name: string) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4500);
+    try {
+      const response = await fetch(url, {
+        headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`${name} RSS returned ${response.status}`);
+      return await response.text();
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  const parseItems = (xml: string, fallbackSource: string) =>
+    (xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) ?? []).slice(0, 8).map((itemMarkup) => {
       const body = itemMarkup.replace(/^<item\b[^>]*>/i, "").replace(/<\/item>$/i, "");
       const title = decodeNewsXml(body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
-      const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? "Google News");
+      const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? fallbackSource);
       const url = decodeNewsXml(body.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? "");
       const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
       const date = published ? new Date(published) : null;
-      const dateText = date && !Number.isNaN(date.getTime()) ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date) : "";
-      return { title, source, dateText, publishedAt: date && !Number.isNaN(date.getTime()) ? date.getTime() : 0, url: /^https?:\/\//i.test(url) ? url : "" };
-    }).filter((item) => item.title.length > 5 && item.publishedAt > Date.now() - 48 * 60 * 60 * 1000);
-    if (!items.length) throw new Error("News RSS returned no headlines published in the last 48 hours");
-    const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
-    const footer = language === "AR" ? "المصدر: Google News RSS. هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS. Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS. These are headlines; check the publisher for details and updates.";
-    return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
+      const validDate = date && !Number.isNaN(date.getTime()) ? date : null;
+      const dateText = validDate ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(validDate) : "";
+      return { title, source, dateText, publishedAt: validDate?.getTime() ?? 0, url: /^https?:\/\//i.test(url) ? url : "" };
+    }).filter((item) => item.title.length > 5 && item.publishedAt > Date.now() - 48 * 60 * 60 * 1000 && item.url);
+  try {
+    let feedName = "Google News";
+    let xml: string;
+    try {
+      xml = await fetchFeed(googleUrl, feedName);
+    } catch (googleError) {
+      console.warn("[ALASSAUL news] Google News feed unavailable; trying Bing News", safeProviderDiagnostic(googleError));
+      feedName = "Bing News";
+      xml = await fetchFeed(bingUrl, feedName);
+    }
+    let items = parseItems(xml, feedName);
+    if (!items.length && feedName === "Google News") {
+      feedName = "Bing News";
+      xml = await fetchFeed(bingUrl, feedName);
+      items = parseItems(xml, feedName);
+    }
+    if (!items.length) throw new Error("News feeds returned no recent linked headlines");
+    const heading = language === "AR"
+      ? electionResults ? "آخر المستجدات المنشورة عن نتائج الانتخابات الأمريكية" : usElection ? "آخر أخبار الانتخابات النصفية الأمريكية" : "أبرز عناوين الأخبار الحديثة"
+      : language === "TR" ? (usElection ? "ABD ara seçimleri hakkında güncel haberler" : "Güncel öne çıkan haber başlıkları")
+      : (usElection ? "Latest US midterm election coverage" : "Recent top headlines");
+    const footer = language === "AR"
+      ? electionResults ? "هذه عناوين وتقارير حديثة وليست إعلاناً رسمياً لنتيجة نهائية؛ يجب التمييز بين الفرز الأولي والتوقعات والنتائج المعتمدة." : `المصدر: ${feedName} RSS. افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات.`
+      : language === "TR" ? `Kaynak: ${feedName} RSS. Ayrıntıları yayıncıdan doğrulayın.` : `Source: ${feedName} RSS. Verify details and updates with the publisher.`;
+    return `${heading} (بحث عبر ${feedName})\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}\n   ${item.url}`).join("\n")}\n\n${footer}`;
   } catch (error) {
-    console.warn("[ALASSAUL news] live feed unavailable", error);
+    console.warn("[ALASSAUL news] all live feeds unavailable", safeProviderDiagnostic(error));
     return language === "AR"
-      ? "تعذر جلب عناوين الأخبار الحية الآن، لذلك لن أخمّن أخبار اليوم. جرّب بعد قليل، أو أرسل رابط الخبر لألخصه وأشرح خلفيته."
+      ? "تعذر الوصول إلى موجزَي الأخبار الحيين الآن، لذلك لن أخمّن أخبار اليوم أو نتائج الانتخابات. أعد المحاولة بعد قليل أو أرسل رابط الخبر لأتحقق من مضمونه."
       : language === "TR"
-        ? "Canlı haber akışına şu anda ulaşılamıyor; güncel haberleri tahmin etmeyeceğim. Biraz sonra tekrar deneyin veya haber bağlantısını gönderin."
-        : "The live news feed is unavailable right now, so I won't guess today's headlines. Try again shortly or send a news link for a summary.";
-  } finally {
-    clearTimeout(timer);
+        ? "Canlı haber akışlarına şu anda ulaşılamıyor; güncel haberleri veya seçim sonuçlarını tahmin etmeyeceğim. Daha sonra tekrar deneyin veya haber bağlantısını gönderin."
+        : "Live news feeds are unavailable right now, so I won't guess today's headlines or election results. Try again shortly or send a news link for verification.";
   }
 }
-
 
 
 export function classifyModelProviderFailure(error: unknown): "configuration" | "credentials" | "rate_limit" | "timeout" | "unavailable" | "empty_response" {
@@ -452,6 +517,17 @@ function extractChatText(content: unknown): string {
     if (part.content !== undefined) return extractChatText(part.content);
   }
   return "";
+}
+
+function getKnownRoadDistanceAnswer(message: string, language: "AR" | "TR" | "EN"): string | undefined {
+  const normalized = message.normalize("NFKC").toLocaleLowerCase("ar").replace(/[\\u064B-\\u065F\\u0670\\u0640]/g, "").replace(/[أإآ]/g, "ا");
+  const asksDistance = /(?:كم\\s*(?:المسافه|المسافة|تبعد)|المسافه|المسافة|مسافه|مسافة|distance|how far)/i.test(normalized);
+  const mentionsYanbu = /(?:ينبع|yanbu)/i.test(normalized);
+  const mentionsHanakiyah = /(?:الحناكيه|الحناكية|حناكيه|حناكية|hanakiyah|henakiyah)/i.test(normalized);
+  if (!asksDistance || !mentionsYanbu || !mentionsHanakiyah) return undefined;
+  if (language === "TR") return "Yanbu ile Al Hanakiyah arasındaki karayolu mesafesi yaklaşık 356–357 km'dir (yuvarlak olarak 360 km). Gerçek mesafe seçilen güzergâha ve başlangıç/bitiş noktasına göre değişebilir.";
+  if (language === "EN") return "The road distance between Yanbu and Al Hanakiyah is about 356–357 km (roughly 360 km). The exact distance varies with the selected route and start/end points.";
+  return "المسافة البرية بالسيارة بين ينبع والحناكية نحو **356–357 كم، أي قرابة 360 كم**. وهذا هو تقدير الطريق البري، وقد تختلف بضعة كيلومترات حسب نقطة الانطلاق والوصول والمسار المختار.\n\nمصدران لحساب المسافة: [356 كم](https://www.distancesfrom.com/sa/how-far-is-Yanbu-Saudi-Arabia-from-Al-Henakiyah-Saudi-Arabia/HowFarHistory/21229555.aspx) · [357 كم](https://www.distancesfrom.com/sa/distance-from-Al-Henakiyah-to-Yanbu/DistanceHistory/7041941.aspx).";
 }
 
 export const appRouter = router({
@@ -616,6 +692,11 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
+        const contextualLiveQuery = getContextualLiveQuery(input.messages);
+        const knownRoadDistance = latestMessage?.role === "user" && !latestMessage.imageDataUrl
+          ? getKnownRoadDistanceAnswer(latestText, input.language)
+          : undefined;
+        if (knownRoadDistance) return { text: knownRoadDistance };
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
@@ -662,17 +743,20 @@ export const appRouter = router({
             if (localSearch) return { text: localSearch };
           }
 
-          if (isSaudiLeagueQuestion(latestText)) {
-            return { text: await getSaudiLeagueScheduleAnswer(input.language, latestText) };
-          }
 
-          if (isWorldNewsQuestion(latestText)) {
-            const directNews = await getWorldNewsAnswer(latestText, input.language);
+
+          if (isWorldNewsQuestion(contextualLiveQuery) && !isElectionResultsQuestion(contextualLiveQuery)) {
+            const directNews = await getWorldNewsAnswer(contextualLiveQuery, input.language);
             if (directNews) return { text: directNews };
           }
         }
 
         const liveContext: string[] = [];
+
+        if (isSaudiLeagueQuestion(contextualLiveQuery)) {
+          const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, contextualLiveQuery);
+          if (scheduleContext) liveContext.push(`نتائج بحث حديثة عن دوري روشن (تقارير وليست جدولاً رسمياً):\n${scheduleContext}`);
+        }
 
         // Live tools enrich the model prompt; they never replace the LLM answer.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
@@ -709,17 +793,14 @@ ${searchContext}`);
                 console.warn("[ALASSAUL grounding] Google Search source failed", safeProviderDiagnostic(error));
               }
             }
-            if (!grounded && isWorldNewsQuestion(latestText)) {
-              const newsContext = await getWorldNewsAnswer(latestText, input.language);
+            if (!grounded && isWorldNewsQuestion(contextualLiveQuery)) {
+              const newsContext = await getWorldNewsAnswer(contextualLiveQuery, input.language);
               if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
             }
-            if (isSaudiLeagueScheduleQuestion(latestText)) {
-              const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, latestText);
-              if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\n${scheduleContext}`);
-            }
-          } else if (isWorldNewsQuestion(latestText)) {
-            const newsContext = await getWorldNewsAnswer(latestText, input.language);
+
+          } else if (isWorldNewsQuestion(contextualLiveQuery)) {
+            const newsContext = await getWorldNewsAnswer(contextualLiveQuery, input.language);
             if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
           }
@@ -738,7 +819,7 @@ ${newsContext}`);
             : "Answer in clear, concise English.";
         const taskInstruction = latestMessage?.imageDataUrl
           ? "نمط تحليل صورة: صف العناصر الواضحة أولاً، ثم اشرح ما يمكن استنتاجه وما لا يمكن الجزم به. إذا طلب المستخدم التعرف على شيء، اذكر الاحتمالات وعلامات التمييز، ولا تخترع تفاصيل غير ظاهرة."
-          : getAdaptiveTaskInstruction(latestText);
+          : getAdaptiveTaskInstruction(contextualLiveQuery);
         const sourceInstruction = liveContext.length
           ? `\n\nبيانات داعمة من الأدوات الحية (ليست جواباً بديلاً عنك):\n${liveContext.join("\n\n")}\nاستخدم هذه البيانات عند صلتها بالسؤال، وانسب المصدر ووقت القراءة إن وُجدا، ولا تضف حقائق آنية غير موجودة فيها.`
           : "\n\nأجب بصفتك نموذجاً لغوياً عن السؤال الجديد مباشرة. لا تستبدل الإجابة بترحيب عام أو نص محفوظ أو رد مبني على مطابقة كلمات. في المعلومات الآنية لا تخترع؛ اذكر بوضوح إن لم يتوفر مصدر حي.";

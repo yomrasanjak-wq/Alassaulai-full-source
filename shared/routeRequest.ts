@@ -3,7 +3,7 @@ export type RouteRequest = {
   destinations: string[];
 };
 
-const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|وصلني|توصلني|يؤدي|اوصل|اسلك|أسلك|route|directions|way|yol|rota|götür)/i;
+const ROUTE_INTENT = /(?:طريق|الطريق|مسار|اتجاه|خريطة|مسافة|المسافة|كم تبعد|وصلني|توصلني|يؤدي|اوصل|اسلك|أسلك|route|directions|way|distance|yol|rota|götür)/i;
 const DESTINATION_PATTERN = /(?:إلى|الى|لـ|لِ|ل|نحو|جهة|إتجاه|to|towards|for|için|üzerinden)\s+([^،,.!?؟؛;]+)/ig;
 const ORIGIN_PATTERN = /(?:من|ابتداءً من|بدءًا من|from|starting from|başlangıç)\s+([^،,.!?؟؛;]+?)\s+(?:إلى|الى|لـ|نحو|to|towards|için)\s+/i;
 
@@ -36,6 +36,7 @@ function collapseRepeatedSequences(text: string): string {
 }
 
 const destinationAliases: Array<{ pattern: RegExp; canonical: string }> = [
+  { pattern: /(?:الحناكية|الحناكيه|حناكية|حناكيه|al[ -]?hanakiyah|al[ -]?henakiyah|hanakiyah)/i, canonical: "Al Hanakiyah" },
   { pattern: /(?:ينبع|yanbu)/i, canonical: "Yanbu" },
   { pattern: /(?:الرياض|رياض|riyadh)/i, canonical: "Riyadh" },
   { pattern: /(?:جدة|جده|jeddah)/i, canonical: "Jeddah" },
@@ -66,6 +67,13 @@ function canonicalizeDestination(value: string): string {
 export function parseRouteRequest(text: string): RouteRequest | null {
   const normalized = collapseRepeatedSequences(text).replace(/\s+/g, " ").trim();
   if (!normalized || !ROUTE_INTENT.test(normalized)) return null;
+
+  const betweenMatch = normalized.match(/(?:المسافة\s+)?بين\s+(.+?)\s*و\s*(.+?)(?:[؟?!.،,]|$)/i);
+  if (betweenMatch) {
+    const origin = canonicalizeDestination(betweenMatch[1]);
+    const destination = canonicalizeDestination(betweenMatch[2]);
+    if (origin && destination) return { origin, destinations: [destination] };
+  }
 
   const originMatch = normalized.match(ORIGIN_PATTERN);
   const destinationMatches = Array.from(normalized.matchAll(DESTINATION_PATTERN));

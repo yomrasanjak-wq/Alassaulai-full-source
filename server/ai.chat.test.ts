@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getContextualLiveQuery, getDistinctBackupModel, getLiveWeatherAnswer, getWorldNewsAnswer, isElectionResultsQuestion, isUSElectionQuestion, isWorldNewsQuestion, isSaudiLeagueScheduleQuestion } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -71,6 +71,56 @@ describe("model fallback selection", () => {
   });
 });
 
+describe("context-aware live follow-ups", () => {
+  it("restores the recent US election topic for a short who-won follow-up", () => {
+    const messages = [
+      { role: "user" as const, content: "أريد أخبار الانتخابات الأمريكية النصفية" },
+      { role: "assistant" as const, content: "إليك آخر المستجدات المنشورة عن الانتخابات النصفية الأمريكية." },
+      { role: "user" as const, content: "مين اللي فاز اليوم الجمهوريين ولا الديمقراطيين؟" },
+    ];
+    const query = getContextualLiveQuery(messages);
+    expect(query).toContain("الانتخابات الأمريكية النصفية");
+    expect(isElectionResultsQuestion(query)).toBe(true);
+    expect(isUSElectionQuestion(query)).toBe(true);
+    expect(getAdaptiveTaskInstruction(query)).toContain("النتائج الأولية");
+  });
+
+  it("carries Saudi Pro League context into a short fixture follow-up", () => {
+    const messages = [
+      { role: "user" as const, content: "أريد متابعة جدول مباريات دوري روشن السعودي" },
+      { role: "assistant" as const, content: "حاضر، سأبحث عن أحدث الجدول." },
+      { role: "user" as const, content: "مين يلعب الخميس؟" },
+    ];
+    const query = getContextualLiveQuery(messages);
+    expect(query).toContain("دوري روشن السعودي");
+    expect(query).toContain("مين يلعب الخميس؟");
+    expect(isSaudiLeagueScheduleQuestion(query)).toBe(true);
+    expect(getAdaptiveTaskInstruction(query)).toContain("Asia/Riyadh");
+    expect(getAdaptiveTaskInstruction(query)).toContain("التأجيل");
+  });
+
+  it("recognizes US shorthand and keeps a genuinely short who-won follow-up", () => {
+    const messages = [
+      { role: "user" as const, content: "US midterm election coverage" },
+      { role: "assistant" as const, content: "Recent reports are available." },
+      { role: "user" as const, content: "Who won?" },
+    ];
+    const query = getContextualLiveQuery(messages);
+    expect(query).toContain("US midterm election coverage");
+    expect(isUSElectionQuestion(query)).toBe(true);
+    expect(isElectionResultsQuestion(query)).toBe(true);
+  });
+
+  it("does not attach an unrelated old topic to an ordinary new question", () => {
+    const messages = [
+      { role: "user" as const, content: "أريد أخبار الانتخابات الأمريكية النصفية" },
+      { role: "assistant" as const, content: "إليك آخر المستجدات." },
+      { role: "user" as const, content: "كم درجة يغلي الماء؟" },
+    ];
+    expect(getContextualLiveQuery(messages)).toBe("كم درجة يغلي الماء؟");
+  });
+});
+
 describe("adaptive brain response strategy", () => {
   it("selects safe step-by-step guidance for troubleshooting requests", () => {
     expect(getAdaptiveTaskInstruction("السيارة متعطلة وما تشتغل")).toContain("خطوات تشخيص مرتبة");
@@ -93,6 +143,66 @@ describe("adaptive brain response strategy", () => {
   });
 });
 
+
+describe("Saudi league schedule grounding", () => {
+  it("passes recent fixture reports and Riyadh-time caution into the model", async () => {
+    const published = new Date().toUTCString();
+    const xml = `<rss><channel><item><title>دوري روشن السعودي: مباريات الخميس وتحديثات الجدول</title><source>Example Sports</source><link>https://example.com/saudi-fixtures</link><pubDate>${published}</pubDate></item></channel></rss>`;
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(xml, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "سأفصل بين التقارير والجدول الرسمي وأتحقق من أي تأجيل." } }],
+    } as never);
+    try {
+      const testCaller = appRouter.createCaller(createPublicContext());
+      const result = await testCaller.ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "ما مباريات دوري روشن الخميس؟" }],
+      });
+      expect(result.text).toContain("أتحقق من أي تأجيل");
+      expect(invokeLLM).toHaveBeenCalledOnce();
+      const systemMessage = String(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content ?? "");
+      expect(systemMessage).toContain("https://example.com/saudi-fixtures");
+      expect(systemMessage).toContain("Asia/Riyadh");
+      expect(systemMessage).toContain("تقارير وليست جدولاً رسمياً");
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+});
+
+describe("live election and news retrieval", () => {
+  it("recognizes US midterm election coverage as time-sensitive news", () => {
+    expect(isWorldNewsQuestion("أريد أخبار الانتخابات الأمريكية النصفية")).toBe(true);
+    expect(isWorldNewsQuestion("ما أبرز أخبار العالم اليوم؟")).toBe(true);
+  });
+
+  it("recognizes a short Arabic follow-up asking which US party won", () => {
+    const question = "مين اللي فاز اليوم في الانتخابات الجمهوريين ولا الديمقراطيين";
+    expect(isElectionResultsQuestion(question)).toBe(true);
+    expect(getAdaptiveTaskInstruction(question)).toContain("النتائج الأولية");
+  });
+
+  it("falls back from Google News RSS to Bing News RSS for election results", async () => {
+    const published = new Date().toUTCString();
+    const xml = `<rss><channel><item><title>US midterm results update</title><source>Example News</source><link>https://example.com/election-results</link><pubDate>${published}</pubDate></item></channel></rss>`;
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error("Google News temporarily unavailable"))
+      .mockResolvedValueOnce(new Response(xml, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const result = await getWorldNewsAnswer("مين اللي فاز اليوم في الانتخابات الجمهوريين ولا الديمقراطيين", "AR");
+      expect(result).toContain("US midterm results update");
+      expect(result).toContain("https://example.com/election-results");
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const fallbackUrl = new URL(String(fetchMock.mock.calls[1]?.[0]));
+      expect(fallbackUrl.hostname).toBe("www.bing.com");
+      expect(fallbackUrl.searchParams.get("q")).toMatch(/US midterm election results Democrats Republicans House Senate/i);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
 
 describe("live weather source", () => {
   it("uses a live Open-Meteo response for current Trabzon weather", async () => {

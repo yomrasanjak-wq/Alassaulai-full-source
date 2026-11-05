@@ -93,16 +93,29 @@ describe("real-brain regression scenarios", () => {
     expect(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.at(-1)?.content).toBe(question);
   });
 
+  it("answers Yanbu to Al Hanakiyah road distance with a grounded estimate", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "كم المسافة بالسيارة بين ينبع والحناكية؟" }],
+    });
+    expect(result.text).toContain("356–357 كم");
+    expect(result.text).toContain("360 كم");
+    expect(result.text).not.toContain("240 كم");
+    expect(result.text).toContain("distancesfrom.com");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
   it("returns a clear RSS outage without relying on the model or inventing current news", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
     vi.mocked(invokeLLM).mockResolvedValue({
       model: ENV.primaryModel,
       choices: [{ message: { content: "لا أستطيع تأكيد عناوين اليوم لأن مصدر الأخبار الحي غير متاح." } }],
     } as never);
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network unavailable"));
     try {
       const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "ما آخر أخبار كرة القدم اليوم؟" }] });
-      expect(result.text).toContain("تعذر جلب عناوين الأخبار الحية");
+      expect(result.text).toContain("تعذر الوصول إلى موجزَي الأخبار الحيين");
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
       expect(result.text).not.toMatch(/فاز|خسر|نتيجة\s+\d/i);
       expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
@@ -128,9 +141,36 @@ describe("real-brain regression scenarios", () => {
     }
   });
 
+  it("passes live US election reports into the model for a sourced result summary", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "");
+    const published = new Date().toUTCString();
+    const electionFeed = `<rss><channel><item><title>US midterm election results update</title><source>Example News</source><link>https://example.com/election-results</link><pubDate>${published}</pubDate></item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(electionFeed, { status: 200, headers: { "content-type": "application/rss+xml" } }),
+    );
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "بحسب التقارير الحديثة، يجب فصل نتائج مجلس النواب عن مجلس الشيوخ والتحقق من إعلان كل ولاية." } }],
+    } as never);
+    try {
+      const result = await caller().ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "مين اللي فاز اليوم في الانتخابات الجمهوريين ولا الديمقراطيين؟" }],
+      });
+      expect(result.text).toContain("بحسب التقارير الحديثة");
+      expect(invokeLLM).toHaveBeenCalledOnce();
+      const systemMessage = String(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content ?? "");
+      expect(systemMessage).toContain("https://example.com/election-results");
+      expect(systemMessage).toContain("نتيجة أو حالة موجز الأخبار الحي");
+    } finally {
+      fetchSpy.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("does not present old RSS articles as today's world news", async () => {
     const staleFeed = `<?xml version="1.0"?><rss><channel><item><title>Old world headline</title><source>Example News</source><link>https://example.com/old</link><pubDate>Tue, 01 Jan 2019 10:00:00 GMT</pubDate></item></channel></rss>`;
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
       new Response(staleFeed, { status: 200, headers: { "content-type": "application/rss+xml" } }),
     );
     try {
@@ -170,15 +210,21 @@ describe("real-brain regression scenarios", () => {
     const rss = `<rss><channel><item><title>أخبار دوري روشن السعودي اليوم</title><source>وكالة اختبار</source><link>https://example.com/saudi-league</link><pubDate>${new Date(Date.now() - 60 * 60 * 1000).toUTCString()}</pubDate></item></channel></rss>`;
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
-      expect(new URL(url).searchParams.get("q")).toContain("دوري روشن السعودي");
+      expect(new URL(url).searchParams.get("q")).toContain("أخبار دوري روشن السعودي اليوم");
       return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
     });
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "ملخص أخبار دوري روشن السعودي اعتماداً على المصدر المرفق." } }],
+    } as never);
     try {
       const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "أريد أخبار الدوري روشن" }] });
-      expect(result.text).toContain("أحدث أخبار دوري روشن السعودي");
-      expect(result.text).toContain("أخبار دوري روشن السعودي اليوم");
+      expect(result.text).toContain("ملخص أخبار دوري روشن السعودي");
+      expect(invokeLLM).toHaveBeenCalledOnce();
+      const systemMessage = String(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content ?? "");
+      expect(systemMessage).toContain("https://example.com/saudi-league");
+      expect(systemMessage).toContain("أحدث أخبار دوري روشن السعودي");
       expect(result.text).not.toMatch(/الدوري التركي|غلطة سراي|فنربخشة/i);
-      expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
     }
