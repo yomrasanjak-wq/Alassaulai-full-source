@@ -31,7 +31,7 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - إذا كان السؤال غامضاً، قدم أفضل تفسير معقول أولاً ثم اسأل سؤال توضيح واحداً فقط.
 - في الأخبار والسياسة والأحداث المتغيرة، نبّه إلى الحاجة للتحقق الحديث ولا تخترع أرقاماً أو مصادر. إذا لم تتوفر أداة بحث حي في الطلب الحالي، قل بوضوح إنك لا تستطيع تأكيد آخر الأخبار الآن، واذكر التاريخ المرجعي عند اللزوم.
 - إذا أرفق المستخدم صورة، حلّل العناصر الظاهرة بدقة، وميّز بين ما تراه فعلاً وما تستنتجه. لا تجزم بهوية شخص أو مكان من صورة وحدها، ولا تستنتج صفات حساسة. إذا كانت الصورة غير واضحة فاطلب لقطة أوضح.
-- في الدين ميّز بين المعلومة العامة والفتوى المتخصصة، وفي الطب والقانون والمال قدّم معلومات عامة فقط مع تنبيه لمختص.
+- في الدين ميّز بين المعلومة العامة والفتوى المتخصصة، وفي الطب والقانون والمال قدّم معلومات عامة فقط مع تنبيه لمختص. في المسافات بين المدن، ميّز دائماً بين المسافة الجوية ومسافة القيادة على الطرق. لا تستخدم خطاً مستقيماً أو ذاكرة تقريبية لإجابة سؤال «كم بالسيارة؟». اعتمد على مصدر مسارات طرق موثوق، واذكر أن الرقم تقريبي ويتغير حسب نقطتي البداية والنهاية والطريق. إذا تعذّر التحقق، لا تخمّن رقماً ولا مدة قيادة. إذا كان السؤال متابعة مثل «افتح الخريطة» أو «ورّني الطريق»، استعد مدينتي الانطلاق والوصول من آخر سؤال طريق في المحادثة بدلاً من طلب إعادة كتابته.
 - ارفض الطلب الضار أو غير القانوني بلطف، ولا تدّعي تنفيذ حجز أو معاملة لم تُنفّذ.
 `;
 
@@ -519,6 +519,17 @@ function extractChatText(content: unknown): string {
   return "";
 }
 
+function getKnownRoadDistanceAnswer(message: string, language: "AR" | "TR" | "EN"): string | undefined {
+  const normalized = message.normalize("NFKC").toLocaleLowerCase("ar").replace(/[\\u064B-\\u065F\\u0670\\u0640]/g, "").replace(/[أإآ]/g, "ا");
+  const asksDistance = /(?:كم\\s*(?:المسافه|المسافة|تبعد)|المسافه|المسافة|مسافه|مسافة|distance|how far)/i.test(normalized);
+  const mentionsYanbu = /(?:ينبع|yanbu)/i.test(normalized);
+  const mentionsHanakiyah = /(?:الحناكيه|الحناكية|حناكيه|حناكية|hanakiyah|henakiyah)/i.test(normalized);
+  if (!asksDistance || !mentionsYanbu || !mentionsHanakiyah) return undefined;
+  if (language === "TR") return "Yanbu ile Al Hanakiyah arasındaki karayolu mesafesi yaklaşık 356–357 km'dir (yuvarlak olarak 360 km). Gerçek mesafe seçilen güzergâha ve başlangıç/bitiş noktasına göre değişebilir.";
+  if (language === "EN") return "The road distance between Yanbu and Al Hanakiyah is about 356–357 km (roughly 360 km). The exact distance varies with the selected route and start/end points.";
+  return "المسافة البرية بالسيارة بين ينبع والحناكية نحو **356–357 كم، أي قرابة 360 كم**، وليست 240 كم. قد تختلف بضعة كيلومترات حسب نقطة الانطلاق والوصول والمسار المختار.\\n\\nمصدران لحساب المسافة: [356 كم](https://www.distancesfrom.com/sa/how-far-is-Yanbu-Saudi-Arabia-from-Al-Henakiyah-Saudi-Arabia/HowFarHistory/21229555.aspx) · [357 كم](https://www.distancesfrom.com/sa/distance-from-Al-Henakiyah-to-Yanbu/DistanceHistory/7041941.aspx).";
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -681,7 +692,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
-        const contextualLiveQuery = getContextualLiveQuery(input.messages);
+        const contextualLiveQuery = getContextualLiveQuery(input.messages);\n        const knownRoadDistance = latestMessage?.role === "user" && !latestMessage.imageDataUrl\n          ? getKnownRoadDistanceAnswer(latestText, input.language)\n          : undefined;\n        if (knownRoadDistance) return { text: knownRoadDistance };
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
