@@ -144,6 +144,32 @@ describe("adaptive brain response strategy", () => {
 });
 
 
+describe("Saudi league schedule grounding", () => {
+  it("passes recent fixture reports and Riyadh-time caution into the model", async () => {
+    const published = new Date().toUTCString();
+    const xml = `<rss><channel><item><title>دوري روشن السعودي: مباريات الخميس وتحديثات الجدول</title><source>Example Sports</source><link>https://example.com/saudi-fixtures</link><pubDate>${published}</pubDate></item></channel></rss>`;
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(xml, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "سأفصل بين التقارير والجدول الرسمي وأتحقق من أي تأجيل." } }],
+    } as never);
+    try {
+      const result = await caller().ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "ما مباريات دوري روشن الخميس؟" }],
+      });
+      expect(result.text).toContain("أتحقق من أي تأجيل");
+      expect(invokeLLM).toHaveBeenCalledOnce();
+      const systemMessage = String(vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content ?? "");
+      expect(systemMessage).toContain("https://example.com/saudi-fixtures");
+      expect(systemMessage).toContain("Asia/Riyadh");
+      expect(systemMessage).toContain("تقارير وليست جدولاً رسمياً");
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+});
+
 describe("live election and news retrieval", () => {
   it("recognizes US midterm election coverage as time-sensitive news", () => {
     expect(isWorldNewsQuestion("أريد أخبار الانتخابات الأمريكية النصفية")).toBe(true);
