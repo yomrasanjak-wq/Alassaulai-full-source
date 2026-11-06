@@ -2925,3 +2925,101 @@ img { display: block; max-width: 100%; }
   .photo-book-controls button { font-size: 10px !important; }
   .camera-group-grid { grid-template-columns: minmax(0, 1fr) !important; }
 }
+
+
+/* ALASSAUL mobile UX — phase 3: unify discovery sections and resident services. */
+@media (max-width: 640px) {
+  .site-shell .section-pad { padding: 42px 0 !important; }
+  .site-shell .section-heading { margin-bottom: 20px !important; padding-inline: 2px; }
+  .site-shell .section-heading h2 {
+    font-size: clamp(22px, 6.2vw, 29px) !important;
+    line-height: 1.45 !important;
+    color: #17483e;
+    text-wrap: balance;
+  }
+  .site-shell .section-heading p {
+    font-size: 13px !important;
+    line-height: 1.85 !important;
+    color: #66766b;
+  }
+  .site-shell .section-heading .eyebrow,
+  .site-shell .section-heading > span:first-child {
+    letter-spacing: .09em;
+    font-size: 9px !important;
+  }
+  #cities .cities-layout { gap: 14px !important; }
+  #cities .city-rail {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    margin-inline: -2px;
+    padding: 4px 2px 10px !important;
+    gap: 8px !important;
+    border: 0 !important;
+    scrollbar-width: thin;
+    scroll-snap-type: x mandatory;
+  }
+  #cities .city-tab {
+    flex: 0 0 112px !important;
+    min-width: 112px !important;
+    min-height: 68px !important;
+    padding: 9px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    text-align: start !important;
+    border: 1px solid #e1d8c7 !important;
+    border-radius: 13px !important;
+    background: #fffdf8 !important;
+    box-shadow: 0 3px 10px rgb(23 61 54 / 5%);
+    scroll-snap-align: start;
+  }
+  #cities .city-tab-active {
+    border-color: #b99a5b !important;
+    background: #f4efe2 !important;
+    box-shadow: inset 0 0 0 1px rgb(185 154 91 / 20%), 0 5px 13px rgb(23 61 54 / 8%) !important;
+  }
+  #cities .city-number { font-size: 18px !important; flex: 0 0 auto; }
+  #cities .city-tab strong { display: block; font-size: 12px !important; line-height: 1.5; }
+  #cities .city-tab small { display: block; font-size: 9px !important; line-height: 1.4; }
+  #cities .city-feature {
+    border: 1px solid #e4dac8;
+    border-radius: 17px !important;
+    background: #fffdf8;
+    box-shadow: 0 8px 24px rgb(23 61 54 / 7%);
+    overflow: hidden;
+  }
+  #cities .city-feature-image,
+  #cities .city-feature-image img,
+  #cities .city-gradient-art { min-height: 220px !important; }
+  #resident-services .resident-services-launcher {
+    min-height: 90px !important;
+    padding: 14px !important;
+    gap: 11px !important;
+    border-radius: 16px !important;
+    background: linear-gradient(135deg, #f7f2e7, #eef2e9) !important;
+    box-shadow: 0 7px 20px rgb(23 61 54 / 6%);
+  }
+  #resident-services .resident-services-launcher-copy strong { font-size: 16px !important; }
+  #resident-services .resident-services-launcher-copy small { font-size: 11px !important; line-height: 1.7 !important; }
+  #resident-services .resident-services-launcher-copy em { font-size: 10px !important; }
+  #resident-services .resident-services-content { padding-top: 20px !important; }
+  #resident-services .resident-services-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 9px !important; }
+  #resident-services .resident-service-card {
+    min-height: 76px !important;
+    padding: 12px !important;
+    border-radius: 13px !important;
+  }
+  #cameras .camera-card { border-radius: 14px !important; overflow: hidden !important; }
+  #cameras .camera-thumb { min-height: 132px !important; }
+  #cameras .camera-preview-image { object-position: center !important; }
+  #cameras .camera-info { min-height: 74px !important; }
+  .site-shell footer { padding-bottom: calc(94px + env(safe-area-inset-bottom)) !important; }
+}
+@media (max-width: 380px) {
+  #cities .city-tab { flex-basis: 104px !important; min-width: 104px !important; }
+  #cities .city-feature-image,
+  #cities .city-feature-image img,
+  #cities .city-gradient-art { min-height: 190px !important; }
+  #cameras .camera-thumb { min-height: 112px !important; }
+}
