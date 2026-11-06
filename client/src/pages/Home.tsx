@@ -951,15 +951,17 @@ export default function Home() {
     const query = normalize(rawQuery);
     const matches: { city: City; place: string }[] = [];
     const seen = new Set<string>();
-    const addMatch = (city: City, place: string) => {
+    const addMatch = (city: City, place: string, searchableText = place) => {
       const key = `${city.name}:${place}`;
-      if (!seen.has(key) && normalize(place).includes(query)) {
+      if (!seen.has(key) && normalize(searchableText).includes(query)) {
         seen.add(key);
         matches.push({ city, place });
       }
     };
     cities.forEach((city) => {
-      if (normalize(city.name).includes(query) || normalize(city.latin).includes(query)) addMatch(city, city.name);
+      if (normalize(city.name).includes(query) || normalize(city.latin).includes(query)) {
+        addMatch(city, city.name, `${city.name} ${city.latin}`);
+      }
       city.places.forEach((place) => addMatch(city, place));
       city.destinations.forEach((place) => addMatch(city, place.name));
     });
