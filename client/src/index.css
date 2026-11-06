@@ -254,6 +254,15 @@ img { display: block; max-width: 100%; }
 .camera-art::after { transform: rotate(17deg); width: 135%; }
 .camera-art-1 { background: linear-gradient(135deg, #24544b, #6f8f75); }.camera-art-2 { background: linear-gradient(135deg, #668b82, #1d4b47); }.camera-art-3 { background: linear-gradient(135deg, #a0b89b, #416a60); }.camera-art-4 { background: linear-gradient(135deg, #4d6e78, #193f49); }
 .camera-art svg, .camera-art span { position: relative; z-index: 1; }.camera-art span { font-size: 8px; letter-spacing: .16em; }
+/* Verified camera-cover photos sit behind a restrained title overlay. */
+.camera-direct-art { overflow: hidden; isolation: isolate; }
+.camera-direct-art .camera-preview-image { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.camera-direct-art .camera-art-overlay { z-index: 1; background: linear-gradient(180deg, rgb(12 35 31 / 12%), rgb(12 35 31 / 58%)); color: #fff; }
+.camera-direct-art .camera-art-overlay::before,
+.camera-direct-art .camera-art-overlay::after { display: none; }
+.camera-direct-art .camera-art-overlay svg { filter: drop-shadow(0 1px 4px rgb(0 0 0 / 45%)); }
+.camera-direct-art .camera-art-overlay span { font-size: 11px; letter-spacing: 0; font-weight: 700; text-shadow: 0 1px 4px rgb(0 0 0 / 75%); }
+
 .camera-thumb .status-pill { position: relative; z-index: 2; background: rgb(14 59 53 / 65%); color: #d7e6ca; border-color: rgb(217 238 208 / 30%); }
 .camera-info { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 15px; }
 .camera-info strong, .camera-info small { display: block; }.camera-info strong { font-family: "Noto Kufi Arabic"; font-size: 11px; margin-top: 4px; }.camera-info small { font-size: 9px; color: #91a197; margin-top: 3px; direction: ltr; text-align: start; }.camera-info .camera-label { color: #b58a49; font-size: 7px; letter-spacing: .13em; margin-top: 0; }.camera-info > svg { color: #557269; }
