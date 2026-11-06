@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { buildGlobalSearchUrl, buildNearbySearchUrl } from "@/lib/globalSearch";
 import { ChatComposer } from "@/components/ChatComposer";
 import { AssistantReply, type VoiceGender } from "@/components/AssistantReply";
 import { RouteMapCard } from "@/components/RouteMapCard";
@@ -1037,9 +1038,7 @@ export default function Home() {
       notify("اكتب ما تريد البحث عنه", "ابحث عن مدينة أو مكان أو خدمة في أي دولة.", "warning");
       return;
     }
-    const url = provider === "maps"
-      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
-      : `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    const url = buildGlobalSearchUrl(query, provider);
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
@@ -1052,9 +1051,7 @@ export default function Home() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const query = search.trim() || "أماكن وخدمات";
-        const nearbyQuery = `${query} near ${latitude.toFixed(5)},${longitude.toFixed(5)}`;
-        const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nearbyQuery)}`;
+        const url = buildNearbySearchUrl(search, latitude, longitude);
         window.location.assign(url);
       },
       (error) => {
