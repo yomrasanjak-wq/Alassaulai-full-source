@@ -174,7 +174,7 @@ describe("City card imagery", () => {
     const expectedGroups = [
       ["مجموعة أوردو", "altinordu.bel.tr/sehir-kameralari"],
       ["مجموعة طرابزون", "trabzon.bel.tr/Web/SehirKameralari"],
-      ["مجموعة يومرا", "yomra.bel.tr/Sayfa/13/canli-yayin"],
+      ["كاميرا يومرا – منظر عام", "trabzon.bel.tr/Web/SehirKameralari#camera-3073"],
       ["كاميرا أوزنجول", "trabzon.bel.tr/Web/SehirKameralari#camera-3049"],
       ["كاميرا ميدان طرابزون", "trabzon.bel.tr/Web/SehirKameralari#camera-3055"],
       ["كاميرا ديغيرمندره", "trabzon.bel.tr/Web/SehirKameralari#camera-3047"],
@@ -204,6 +204,7 @@ describe("City card imagery", () => {
     expect(document.querySelectorAll(".camera-card .status-pill")).toHaveLength(15);
     expect(Array.from(document.querySelectorAll("a")).filter((anchor) => anchor.href.includes("trabzon.bel.tr/Web/SehirKameralari#camera-3049")).length).toBe(1);
     expect((screen.getByRole("link", { name: "فتح المصدر الرسمي لـ كاميرا ميدان طرابزون" }).querySelector("img") as HTMLImageElement).src).toContain("/img/kameralar/3055.webp");
+    expect((screen.getByRole("link", { name: "فتح المصدر الرسمي لـ كاميرا يومرا – منظر عام" }).querySelector("img") as HTMLImageElement).src).toContain("/img/kameralar/3073.webp");
     expect((screen.getByRole("link", { name: "فتح المصدر الرسمي لـ كاميرا ديغيرمندره" }).querySelector("img") as HTMLImageElement).src).toContain("/img/kameralar/3047.webp");
     expect(screen.getByText(/صور واضحة لكل كمرة/)).toBeTruthy();
   });
