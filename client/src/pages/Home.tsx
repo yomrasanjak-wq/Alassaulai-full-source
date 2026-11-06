@@ -105,7 +105,7 @@ const DESTINATION_GALLERY = [
   { name: "هامسي كوي وزيقانا", region: "ماتشكا", category: "أوزنجول والمرتفعات", image: null, alt: "لم تتوفر بعد صورة موثقة لهامسي كوي وزيقانا؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Hamsiköy Zigana Trabzon" },
   { name: "بحيرة مافي غول", region: "قيرسون", category: "أوردو وقيرسون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Giresun_Mavi_G%C3%B6l.jpg/960px-Giresun_Mavi_G%C3%B6l.jpg", alt: "المياه الفيروزية والشلالات في بحيرة مافي غول بقيرسون", credit: "Thrdynr", sourceUrl: "https://commons.wikimedia.org/wiki/File:Giresun_Mavi_G%C3%B6l.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Mavi Göl Kuzalan Giresun" },
   { name: "واجهة أوردو البحرية", region: "أوردو", category: "أوردو وقيرسون", image: null, alt: "الغلاف المتاح يُظهر تلفريك بوزتبه وليس الواجهة البحرية؛ ننتظر صورة مطابقة للواجهة", query: "Ordu sahil" },
-  { name: "بيرشمبه وياسون بورنو", region: "أوردو", category: "أوردو وقيرسون", image: null, alt: "لا تتوفر صورة موثقة مستقلة لرأس ياسون بورنو؛ أُخفي الغلاف العام لحين توفير صورة مطابقة", query: "Yason Burnu Perşembe Ordu" },
+{ name: "بيرشمبه وياسون بورنو", region: "أوردو", category: "أوردو وقيرسون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Cape_Jason_-_Yason_Burnu%2C_Per%C5%9Fembe_-_Ordu_01.jpg/1024px-Cape_Jason_-_Yason_Burnu%2C_Per%C5%9Fembe_-_Ordu_01.jpg", alt: "رأس ياسون وكنيسة جيسون على ساحل بيرشمبه في أوردو", credit: "Zeynel Cebeci", sourceUrl: "https://commons.wikimedia.org/wiki/File:Cape_Jason_-_Yason_Burnu,_Per%C5%9Fembe_-_Ordu_01.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Yason Burnu Perşembe Ordu" },
   { name: "ساحل غيرسون", region: "قيرسون", category: "أوردو وقيرسون", image: "/images/modern-giresun.webp", alt: "مشهد ساحلي من غيرسون", query: "Giresun Sahil" },
   { name: "قلعة ريزا وحدائق الشاي", region: "ريزا", category: "ريزا وآيدر", image: "/images/modern-rize.webp", alt: "الطبيعة ومزارع الشاي في ريزا", query: "Rize Kalesi çay bahçeleri" },
   { name: "وادي فيرتينا وزيل قلعة", region: "ريزا", category: "ريزا وآيدر", image: "/images/firtina-river.webp", alt: "نهر فيرتينا بين الجبال الخضراء", query: "Fırtına Vadisi Zilkale Rize" },
@@ -124,7 +124,7 @@ const DESTINATION_GALLERY = [
   { name: "ممشى وحديقة إيوف", region: "قرب فوروم طرابزون", category: "طرابزون", image: null, alt: "لا تتوفر صورة مستقلة موثقة لحديقة إيوف؛ أُخفي الغلاف الحضري العام لتجنب تكراره مع الميدان", query: "EYOF Park Trabzon" },
   { name: "منزلق الجبل في كاشوستو", region: "يومرا، كاشوستو", category: "يومرا وكاشوستو", image: null, alt: "لا تتوفر صورة مؤكدة لمنزلق الجبل؛ أُخفي الغلاف المكرر مع ممشى كاشوستو", query: "Kaşüstü Yomra mountain luge" },
   { name: "شلال آغاران", region: "تشايلي، ريزا", category: "ريزا وآيدر", image: "https://upload.wikimedia.org/wikipedia/commons/0/09/A%C4%9Faran_%C5%9Eelalesi.JPG", alt: "شلال آغاران في ولاية ريزا", credit: "Karduelis", sourceUrl: "https://commons.wikimedia.org/wiki/File:A%C4%9Faran_%C5%9Eelalesi.JPG", licenseLabel: "ملكية عامة", query: "Ağaran Şelalesi Çayeli Rize" },
-  { name: "قرية ياسون بورنو الساحلية", region: "بيرشمبه، أوردو", category: "أوردو وقيرسون", image: null, alt: "لا تتوفر صورة موثقة مستقلة لقرية ياسون بورنو؛ أُخفي الغلاف العام لحين توفير صورة مطابقة", query: "Yason Burnu Perşembe Ordu" },
+
 ] as const;
 
 const GALLERY_FILTERS = ["الكل", "طرابزون", "يومرا وكاشوستو", "أوزنجول والمرتفعات", "ريزا وآيدر", "أوردو وقيرسون", "الساحل الشرقي", "إسطنبول"] as const;
