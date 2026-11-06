@@ -168,7 +168,7 @@ describe("City card imagery", () => {
     await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
   });
 
-  it("shows named camera previews with separate Uzungol scenes and official links", () => {
+  it("shows individually named camera previews with official links and one Uzungol camera", () => {
     render(<Home />);
 
     const expectedGroups = [
@@ -199,7 +199,6 @@ describe("City card imagery", () => {
     expect(cameraCardText).not.toContain("ألتِن أوردو — أكشاتِبه");
     expect(cameraCardText).not.toContain("ألتِن أوردو — ساحل طاشباشي");
     expect(cameraCardText).not.toContain("أكياظي بارك");
-    expect(cameraCardText).not.toContain("ميدان طرابزون");
     expect(screen.queryByText("بث مؤكد")).toBeNull();
     expect(document.querySelectorAll(".camera-card .status-pill")).toHaveLength(15);
     expect(Array.from(document.querySelectorAll("a")).filter((anchor) => anchor.href.includes("trabzon.bel.tr/Web/SehirKameralari#camera-3049")).length).toBe(1);
@@ -577,17 +576,6 @@ describe("Official live channel actions", () => {
     const iframe = screen.getByTitle("أخبار الشمال التركي") as HTMLIFrameElement;
     expect(iframe.src).toContain("youtube-nocookie.com/embed/live_stream");
     expect(iframe.src).toContain("channel=UCBgTP2LOFVPmq15W-RH-WXA");
-  });
-});
-
-describe("Uzungol municipal camera sources", () => {
-  it("routes the mosque, lake, and village cards to the working municipal camera page", () => {
-    render(<Home />);
-    for (const name of ["كمرة مسجد أوزنجول", "كمرة بحيرة أوزنجول", "كمرة قرية أوزنجول"]) {
-      const card = screen.getByRole("link", { name: new RegExp(name) }) as HTMLAnchorElement;
-      expect(card.href).toBe("https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049");
-      expect(card.textContent).not.toMatch(/تشايكارا/);
-    }
   });
 });
 
