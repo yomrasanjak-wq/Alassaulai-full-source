@@ -112,11 +112,11 @@ const DESTINATION_GALLERY: DestinationGalleryItem[] = [
   { name: "مرتفعات يومرا", region: "يومرا", category: "يومرا وكاشوستو", image: null, alt: "الصورة السابقة لا تثبت أنها من مرتفعات يومرا؛ الغلاف المطابق قيد التوثيق", query: "Yomra Yaylası Trabzon" },
   { name: "أوزنجول", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/modern-uzungol.webp", alt: "بحيرة أوزنجول والجبال المحيطة", query: "Uzungöl Trabzon" },
   { name: "مرتفعات ديمركابي", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Demirkap%C4%B1_Yaylas%C4%B1%2C_Trabzon_2014.jpg/960px-Demirkap%C4%B1_Yaylas%C4%B1%2C_Trabzon_2014.jpg", alt: "مشهد مرتفعات ديمركابي في تشايكارا وقرية الجبل بين المنحدرات الخضراء", credit: "Hamdigumus", sourceUrl: "https://commons.wikimedia.org/wiki/File:Demirkap%C4%B1_Yaylas%C4%B1,_Trabzon_2014.jpg", licenseLabel: "CC0 1.0", licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/", query: "Demirkapı Yaylası Çaykara" },
-  { name: "السلطان مراد", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: null, alt: "لا تتوفر صورة مستقلة مؤكدة لهضبة السلطان مراد؛ أُخفي الغلاف العام حتى لا يُنسب إليها مشهد غير مطابق", query: "Sultan Murat Yaylası Trabzon" },
+  { name: "السلطان مراد", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Trabzon_Sultan_Murat_Yaylas%C4%B1_Yolu.jpg/960px-Trabzon_Sultan_Murat_Yaylas%C4%B1_Yolu.jpg", alt: "طريق ومرتفعات السلطان مراد في طرابزون", credit: "Muhammet Dilmaç", sourceUrl: "https://commons.wikimedia.org/wiki/File:Trabzon_Sultan_Murat_Yaylas%C4%B1_Yolu.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Sultan Murat Yaylası Trabzon" },
   { name: "حيدر نبي", region: "أكشابات", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/c/cf/Hidirnebi.jpg", alt: "هضبة حيدر نبي في طرابزون", credit: "3512495a", sourceUrl: "https://commons.wikimedia.org/wiki/File:Hidirnebi.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Hıdırnebi Yaylası Trabzon" },
   { name: "مغارة تشال", region: "دوزكوي", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/%C3%87al_Magaras%C4%B1.jpg/960px-%C3%87al_Magaras%C4%B1.jpg", alt: "مدخل ومشهد من مغارة تشال في دوزكوي", credit: "Yazar Haber (إذن إعادة استخدام موثق لدى Wikimedia Commons)", sourceUrl: "https://commons.wikimedia.org/wiki/File:%C3%87al_Magaras%C4%B1.jpg", licenseLabel: "إذن إعادة استخدام موثق", query: "Çal Mağarası Trabzon" },
   { name: "دير صوميلا", region: "ماتشكا", category: "طرابزون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/S%C3%BCmela_Manast%C4%B1r%C4%B1.jpg/1280px-S%C3%BCmela_Manast%C4%B1r%C4%B1.jpg", alt: "دير صوميلا التاريخي على سفح الجبل في ماتشكا", credit: "Selçuk Bağrışen", sourceUrl: "https://commons.wikimedia.org/wiki/File:S%C3%BCmela_Manast%C4%B1r%C4%B1.jpg", licenseLabel: "GNU Free Documentation License", licenseUrl: "https://www.gnu.org/licenses/old-licenses/fdl-1.2.html", query: "Sümela Manastırı Trabzon" },
-  { name: "هامسي كوي وزيقانا", region: "ماتشكا", category: "أوزنجول والمرتفعات", image: null, alt: "لم تتوفر بعد صورة موثقة لهامسي كوي وزيقانا؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Hamsiköy Zigana Trabzon" },
+  { name: "هامسي كوي وزيقانا", region: "ماتشكا", category: "أوزنجول والمرتفعات", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Hamsik%C3%B6y_trabzon_-_panoramio.jpg/500px-Hamsik%C3%B6y_trabzon_-_panoramio.jpg", alt: "مشهد طبيعي من منطقة هامسي كوي في ماتشكا، طرابزون", credit: "bynyalcin", sourceUrl: "https://commons.wikimedia.org/wiki/File:Hamsik%C3%B6y_trabzon_-_panoramio.jpg", licenseLabel: "CC BY 3.0", licenseUrl: "https://creativecommons.org/licenses/by/3.0/", query: "Hamsiköy Zigana Trabzon" },
   { name: "بحيرة مافي غول", region: "قيرسون", category: "أوردو وقيرسون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Giresun_Mavi_G%C3%B6l.jpg/960px-Giresun_Mavi_G%C3%B6l.jpg", alt: "المياه الفيروزية والشلالات في بحيرة مافي غول بقيرسون", credit: "Thrdynr", sourceUrl: "https://commons.wikimedia.org/wiki/File:Giresun_Mavi_G%C3%B6l.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Mavi Göl Kuzalan Giresun" },
   { name: "واجهة أوردو البحرية", region: "أوردو", category: "أوردو وقيرسون", image: null, alt: "الغلاف المتاح يُظهر تلفريك بوزتبه وليس الواجهة البحرية؛ ننتظر صورة مطابقة للواجهة", query: "Ordu sahil" },
 { name: "بيرشمبه وياسون بورنو", region: "أوردو", category: "أوردو وقيرسون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Cape_Jason_-_Yason_Burnu%2C_Per%C5%9Fembe_-_Ordu_01.jpg/1024px-Cape_Jason_-_Yason_Burnu%2C_Per%C5%9Fembe_-_Ordu_01.jpg", alt: "رأس ياسون وكنيسة جيسون على ساحل بيرشمبه في أوردو", credit: "Zeynel Cebeci", sourceUrl: "https://commons.wikimedia.org/wiki/File:Cape_Jason_-_Yason_Burnu,_Per%C5%9Fembe_-_Ordu_01.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Yason Burnu Perşembe Ordu" },
@@ -485,12 +485,12 @@ const cameraFeeds: CameraFeed[] = [
   { title: "كمرة قرية أوزنجول", meta: "مشهد القرية · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-village-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Uzung%C3%B6l_g%C3%B6r%C3%BCn%C3%BCm%C3%BC.jpg/960px-Uzung%C3%B6l_g%C3%B6r%C3%BCn%C3%BCm%C3%BC.jpg", imageCredit: "Cobija", imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Uzung%C3%B6l_g%C3%B6r%C3%BCn%C3%BCm%C3%BC.jpg", imageLicenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/", },
   { title: "مجموعة سامسون", meta: "نصب أونور وساعات هانه والأرصفة وأميسوس", cameraId: "samsun-group", playerUrl: "https://mobil.samsun.bel.tr/canliizle.html", sourceType: "official-page", image: "/images/modern-samsun.webp" },
   { title: "مجموعة إسطنبول", meta: "كاميرات بلدية إسطنبول السياحية والمرورية", cameraId: "istanbul-group", playerUrl: "https://ibb.istanbul/tum-hizmetler/e-belediye-hizmetleri/e-bilgi/kameralar/", sourceType: "official-page", image: "/images/modern-istanbul.webp" },
-  { title: "كاميرا ميدان تقسيم", meta: "إطلالة مباشرة على ميدان تقسيم وشارع الاستقلال · بلدية إسطنبول", cameraId: "istanbul-taksim", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/taksim-meydan", sourceType: "official-page", image: null },
-  { title: "كاميرا كاديكوي", meta: "رصيف كاديكوي وحركة العبارات في الجانب الآسيوي · بلدية إسطنبول", cameraId: "istanbul-kadikoy", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/kadikoy", sourceType: "official-page", image: null },
-  { title: "كاميرا إمينونو", meta: "إمينونو ومصر بازار والواجهة البحرية · بلدية إسطنبول", cameraId: "istanbul-eminonu", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/eminonu", sourceType: "official-page", image: null },
-  { title: "كاميرا أناضولو حصاري", meta: "إطلالة على مضيق البوسفور · بلدية إسطنبول", cameraId: "istanbul-anadolu-hisari", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/anadolu-hisari", sourceType: "official-page", image: null },
-  { title: "كاميرا تلة تشامليجا", meta: "مشهد إسطنبول والبوسفور من تلة تشامليجا · بلدية إسطنبول", cameraId: "istanbul-buyuk-camlica", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/buyuk-camlica", sourceType: "official-page", image: null },
-  { title: "كاميرا أوسكودار", meta: "واجهة أوسكودار وبرج الفتاة · بلدية إسطنبول", cameraId: "istanbul-uskudar", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/uskudar", sourceType: "official-page", image: null },
+  { title: "كاميرا ميدان تقسيم", meta: "إطلالة مباشرة على ميدان تقسيم وشارع الاستقلال · بلدية إسطنبول", cameraId: "istanbul-taksim", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/taksim-meydan", sourceType: "official-page", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Taksim_Square_in_2026.jpg/960px-Taksim_Square_in_2026.jpg", imageCredit: "Joseolgon", imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Taksim_Square_in_2026.jpg", imageLicenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { title: "كاميرا كاديكوي", meta: "رصيف كاديكوي وحركة العبارات في الجانب الآسيوي · بلدية إسطنبول", cameraId: "istanbul-kadikoy", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/kadikoy", sourceType: "official-page", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/Kadikoy_from_the_ferry.jpg/960px-Kadikoy_from_the_ferry.jpg", imageCredit: "QuartierLatin1968 (Owen Cook)", imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Kadikoy_from_the_ferry.jpg", imageLicenseUrl: "https://creativecommons.org/licenses/by-sa/2.5/" },
+  { title: "كاميرا إمينونو", meta: "إمينونو ومصر بازار والواجهة البحرية · بلدية إسطنبول", cameraId: "istanbul-eminonu", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/eminonu", sourceType: "official-page", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/Eminonu_waterfront_with_Yeni_Cami_and_Suleymaniye_Mosque_from_Galata_Bridge%2C_Istanbul_-_Tarik_Kaan_Muslu.jpg/960px-Eminonu_waterfront_with_Yeni_Cami_and_Suleymaniye_Mosque_from_Galata_Bridge%2C_Istanbul_-_Tarik_Kaan_Muslu.jpg", imageCredit: "Tarik Kaan Muslu", imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Eminonu_waterfront_with_Yeni_Cami_and_Suleymaniye_Mosque_from_Galata_Bridge,_Istanbul_-_Tarik_Kaan_Muslu.jpg", imageLicenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/" },
+  { title: "كاميرا أناضولو حصاري", meta: "إطلالة على مضيق البوسفور · بلدية إسطنبول", cameraId: "istanbul-anadolu-hisari", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/anadolu-hisari", sourceType: "official-page", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Anadolu_Hisar%C4%B1.jpg/960px-Anadolu_Hisar%C4%B1.jpg", imageCredit: "Joseolgon", imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Anadolu_Hisar%C4%B1.jpg", imageLicenseUrl: "https://creativecommons.org/licenses/by/4.0/" },
+  { title: "كاميرا تلة تشامليجا", meta: "مشهد إسطنبول والبوسفور من تلة تشامليجا · بلدية إسطنبول", cameraId: "istanbul-buyuk-camlica", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/buyuk-camlica", sourceType: "official-page", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/%C3%87aml%C4%B1ca_Hill_public_park.jpg/960px-%C3%87aml%C4%B1ca_Hill_public_park.jpg", imageCredit: "Julia Sumangil", imageSourceUrl: "https://commons.wikimedia.org/wiki/File:%C3%87aml%C4%B1ca_Hill_public_park.jpg", imageLicenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/" },
+  { title: "كاميرا أوسكودار", meta: "واجهة أوسكودار وبرج الفتاة · بلدية إسطنبول", cameraId: "istanbul-uskudar", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/uskudar", sourceType: "official-page", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Maiden%27s_Tower%2C_Istanbul%2C_Turkey.jpg/960px-Maiden%27s_Tower%2C_Istanbul%2C_Turkey.jpg", imageCredit: "Bapenop", imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Maiden%27s_Tower,_Istanbul,_Turkey.jpg", imageLicenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/" },
   { title: "مجموعة ريزا وآيدر", meta: "تشامليهمشين وآيدر · بوابة البلدية الرسمية", cameraId: "rize-ayder-group", playerUrl: "https://camlihemsin.bel.tr/", sourceType: "official-page", image: "/images/modern-rize.webp" },
 ];
 
@@ -1608,24 +1608,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="top" className="hero-section">
-        <div className="container hero-grid">
-          <div className="hero-copy">
-            <div className="hero-kicker"><span className="gold-line" /> {t.eyebrow}</div>
-            <h1>{t.heroTitle}</h1>
-            <p>{t.heroDesc}</p>
-            <div className="hero-cta-row">
-              <button className="button button-primary" onClick={() => scrollTo("cities")}>{t.explore} <ArrowLeft size={17} /></button>
-              <button className="button button-quiet camera-hero-button" onClick={() => scrollTo("cameras")}><span className="camera-cta-thumb"><img src={cameraFeeds[0]?.image ?? undefined} alt="" /></span> {t.viewLive}</button>
-              <button className="button button-assistant" onClick={() => setChatOpen(true)}><span className="assistant-button-avatar"><img src={ASSETS.officialRobot} alt="" /></span> {t.askAssistant}</button>
-            </div>
-            <div className="hero-proof"><span><ShieldCheck size={15} /> 8 مدن موثقة</span><span><Clock3 size={15} /> تحديثات يومية</span><span><Sparkles size={15} /> مساعد ذكي</span></div>
-          </div>
-          <div id="map" className="hero-visual hero-map-replacement" aria-label="الخريطة التفاعلية للشمال التركي">
-            <InteractiveNorthMap destinationRequest={mapDestinationRequest} onBackToDestinations={() => { setMapDestinationRequest(null); setModal("city"); }} />
-          </div>
-        </div>
-        <div className="container search-wrap">
+        <div className="container search-wrap global-search-dock">
           <form className="search-box" role="search" onSubmit={(event) => { event.preventDefault(); submitGlobalSearch("web"); }}>
             <Search size={20} aria-hidden="true" />
             <input
@@ -1658,6 +1641,24 @@ export default function Home() {
             </button>
           </div>}
           <span className="search-hint"><Compass size={13} /> {t.searchHint}</span>
+        </div>
+
+      <section id="top" className="hero-section">
+        <div className="container hero-grid">
+          <div className="hero-copy">
+            <div className="hero-kicker"><span className="gold-line" /> {t.eyebrow}</div>
+            <h1>{t.heroTitle}</h1>
+            <p>{t.heroDesc}</p>
+            <div className="hero-cta-row">
+              <button className="button button-primary" onClick={() => scrollTo("cities")}>{t.explore} <ArrowLeft size={17} /></button>
+              <button className="button button-quiet camera-hero-button" onClick={() => scrollTo("cameras")}><span className="camera-cta-thumb"><img src={cameraFeeds[0]?.image ?? undefined} alt="" /></span> {t.viewLive}</button>
+              <button className="button button-assistant" onClick={() => setChatOpen(true)}><span className="assistant-button-avatar"><img src={ASSETS.officialRobot} alt="" /></span> {t.askAssistant}</button>
+            </div>
+            <div className="hero-proof"><span><ShieldCheck size={15} /> 8 مدن موثقة</span><span><Clock3 size={15} /> تحديثات يومية</span><span><Sparkles size={15} /> مساعد ذكي</span></div>
+          </div>
+          <div id="map" className="hero-visual hero-map-replacement" aria-label="الخريطة التفاعلية للشمال التركي">
+            <InteractiveNorthMap destinationRequest={mapDestinationRequest} onBackToDestinations={() => { setMapDestinationRequest(null); setModal("city"); }} />
+          </div>
         </div>
         <div className="container hero-entry-only" aria-label="مسارات الاستكشاف السريعة">
           <button onClick={() => scrollTo("cities")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>ابدأ من المدينة المناسبة</small></span><ArrowLeft size={13} /></button>
