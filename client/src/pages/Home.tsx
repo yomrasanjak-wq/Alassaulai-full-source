@@ -1043,6 +1043,30 @@ export default function Home() {
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
+  function searchNearMe() {
+    if (!navigator.geolocation) {
+      notify("الموقع غير مدعوم", "يمكنك كتابة اسم المدينة أو الحي ثم فتح الخرائط.", "warning");
+      return;
+    }
+    notify("بانتظار إذن الموقع", "لن نستخدم موقعك إلا إذا وافقت من نافذة المتصفح.", "info");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const query = search.trim() || "أماكن وخدمات";
+        const nearbyQuery = `${query} near ${latitude.toFixed(5)},${longitude.toFixed(5)}`;
+        const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nearbyQuery)}`;
+        window.location.assign(url);
+      },
+      (error) => {
+        const message = error.code === error.PERMISSION_DENIED
+          ? "لم تسمح بالوصول إلى موقعك. يمكنك متابعة البحث بكتابة المدينة أو الحي."
+          : "تعذر تحديد موقعك الآن. حاول مرة أخرى أو ابحث باسم المدينة.";
+        notify("تعذر البحث حول موقعك", message, "warning");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+    );
+  }
+
   function openPlace(placeName: string) {
     const place = selectedCity.destinations.find((item) => item.name === placeName || item.mapQuery.toLowerCase().includes(placeName.toLowerCase()));
     const resolvedPlace = place ?? destination(placeName, "أنشطة ومغامرات", `${placeName} ${selectedCity.name} Turkey`, `موقع مقترح في ${selectedCity.name}. افتح الخريطة للتحقق من الطريق وساعات الزيارة قبل الانطلاق.`);
@@ -1613,6 +1637,7 @@ export default function Home() {
             />
             <button type="submit">بحث عالمي</button>
             <button type="button" onClick={() => submitGlobalSearch("maps")} aria-label="ابحث عن هذا المكان في الخرائط"><MapPin size={18} /><span>الخرائط</span></button>
+            <button type="button" onClick={searchNearMe} aria-label="ابحث عن الأماكن حول موقعي"><Navigation size={18} /><span>قريب مني</span></button>
           </form>
           {search.trim() && <div className="search-results" role="listbox" aria-label="اقتراحات من دليل ALASSAUL">
             {searchResults.map((result, index) => (
