@@ -526,7 +526,7 @@ const copy: Record<Language, Record<string, string>> = {
     controlDesc: "مسارات منفصلة للسكرتير، المعاونين، فريق IT، والـ CEO لمراجعة الطلبات والاحتياجات.",
     enterControl: "دخول غرفة التحكم",
     chatTitle: "مساعد ALASSAUL",
-    chatIntro: "اسألني عن العالم والأخبار والعلوم والرحلات، أو التقط صورة لأساعدك في فهمها.",
+    chatIntro: "طرابزون · خرائط · رحلات · العالم",
     chatPlaceholder: "اكتب سؤالك هنا…",
     send: "إرسال",
     footer: "بوابة الشمال التركي — معرفة محلية، في إيقاع واحد.",
@@ -1829,7 +1829,7 @@ export default function Home() {
         <div className="chat-layout">
           <section className="chat-conversation">
             <div className="chat-body">
-              <div className="chat-welcome"><Sparkles size={16} /> اسألني عن العالم والأخبار والعلوم والرحلات، أو التقط صورة لأساعدك في فهمها.</div>
+              <div className="chat-welcome"><Sparkles size={16} /> أهلاً بك، أنا مساعد ALASSAUL الذكي. كيف أستطيع مساعدتك؟</div>
               <VoiceSelector value={voiceGender} onChange={setVoiceGender} />
               <div className="chat-quick-prompts">{quickPrompts.map((prompt) => <button key={prompt} onClick={() => void askAssistant(prompt)} disabled={chatMutation.isPending}>{prompt}</button>)}</div>
               {chatMessages.map((message, index) => <div key={`${message.from}-${index}`} className={`chat-message chat-${message.from}`}><span>{renderChatText(message.text)}</span>{message.imageDataUrl && <img className="chat-message-image" src={message.imageDataUrl} alt="الصورة التي أرسلها المستخدم" />}{message.from === "assistant" && <AssistantReply text={message.text} language={language} voiceGender={voiceGender} />}</div>)}
