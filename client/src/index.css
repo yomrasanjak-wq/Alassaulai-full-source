@@ -3023,3 +3023,13 @@ img { display: block; max-width: 100%; }
   #cities .city-gradient-art { min-height: 190px !important; }
   #cameras .camera-thumb { min-height: 112px !important; }
 }
+
+
+/* ALASSAUL — global search moved directly beneath the prayer ticker for one-tap access. */
+.global-search-dock { position: relative !important; z-index: 16 !important; margin: 12px auto 18px !important; }
+.global-search-dock .search-box { min-height: 62px; border-radius: 14px; border-color: #d9cfba; box-shadow: 0 8px 22px rgb(23 61 54 / 9%); }
+.global-search-dock .search-hint { margin-inline: 4px; }
+@media (max-width: 640px) {
+  .site-shell .global-search-dock { margin: 9px auto 13px !important; padding-inline: 12px; }
+  .site-shell .global-search-dock .search-box { min-height: 0; border-radius: 13px; }
+}
