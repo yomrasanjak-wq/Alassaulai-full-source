@@ -657,3 +657,23 @@ it("keeps the assistant panel physically centered in RTL layouts", () => {
   expect(getComputedStyle(panel as HTMLElement).right).toBe("12px");
   expect(getComputedStyle(panel as HTMLElement).transform).toBe("none");
 });
+
+describe("Global search guidance", () => {
+  it("explains when a query has no match in the local directory", () => {
+    render(<Home />);
+    fireEvent.change(screen.getByRole("textbox", { name: "بحث عالمي عن الأماكن والخدمات" }), {
+      target: { value: "مستشفى في جدة" },
+    });
+    expect(screen.getByRole("status").textContent).toContain("لا توجد نتيجة مطابقة في دليلنا المحلي بعد");
+    expect(screen.getByText("ابحث عن هذا الطلب في العالم")).toBeTruthy();
+  });
+
+  it("shows local directory matches separately from global continuation", () => {
+    render(<Home />);
+    fireEvent.change(screen.getByRole("textbox", { name: "بحث عالمي عن الأماكن والخدمات" }), {
+      target: { value: "أوزنجول" },
+    });
+    expect(screen.getByText("نتيجة من دليل ALASSAUL")).toBeTruthy();
+    expect(screen.getByText("ابحث عن هذا الطلب في العالم")).toBeTruthy();
+  });
+});
