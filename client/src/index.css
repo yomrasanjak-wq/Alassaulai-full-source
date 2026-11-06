@@ -151,6 +151,10 @@ img { display: block; max-width: 100%; }
 .search-results span { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .search-results strong { font-size: 12px; color: #173d36; }
 .search-results small { font-size: 10px; color: #7b9489; }
+.search-empty { display: flex; align-items: center; padding: 13px 16px; color: #557269; background: #f7f4ec; }
+.search-empty span { display: flex; flex-direction: column; gap: 3px; }
+.search-empty strong { font-size: 12px; color: #173d36; }
+.search-empty small { font-size: 10px; line-height: 1.6; color: #7b9489; }
 
 .section-pad { padding: 92px 0; }
 .section-heading { max-width: 620px; }
