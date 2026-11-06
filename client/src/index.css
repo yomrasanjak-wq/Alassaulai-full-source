@@ -2762,3 +2762,8 @@ img { display: block; max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .mobile-discovery-dock { backdrop-filter: none; }
 }
+
+
+.camera-image-credit { display: block; margin-top: 5px; font-size: 10px !important; line-height: 1.5; color: #6f7c73; }
+.camera-image-credit a { color: #597565; text-decoration: underline; text-underline-offset: 2px; }
+.camera-image-credit a:focus-visible { outline: 2px solid #b68a4a; outline-offset: 2px; border-radius: 2px; }
