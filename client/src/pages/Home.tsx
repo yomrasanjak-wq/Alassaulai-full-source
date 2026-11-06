@@ -1804,6 +1804,21 @@ export default function Home() {
 
       <footer className="site-footer"><div className="container footer-grid"><div className="footer-brand"><img src={ASSETS.mark} alt="" /><strong>ALASSAUL-AI</strong><p>{t.footer}</p></div><div className="footer-links"><span>المنصة</span><button onClick={() => scrollTo("cities")}>المدن</button><button onClick={() => scrollTo("live")}>البث المباشر</button><button onClick={() => scrollTo("map")}>الخريطة</button><button onClick={() => scrollTo("tiktok")}>تيك توك</button></div><div className="footer-links"><span>تواصل</span><button onClick={() => setModal("login")}>السكرتير</button><button onClick={() => setModal("control")}>غرفة التحكم</button><button onClick={() => setChatOpen(true)}>المساعد الذكي</button></div><div className="footer-social"><span>تابع الطريق</span><div><a className="social-link" href="https://www.tiktok.com/@trabzon_yomra" target="_blank" rel="noreferrer" aria-label="تيك توك @trabzon_yomra"><Music2 size={17} /></a><button><Instagram size={17} /></button><button><Facebook size={17} /></button><button><Youtube size={17} /></button></div></div></div><div className="container footer-bottom"><span>© 2026 ALASSAUL-AI</span><span>صنع لرحلة أكثر هدوءاً ووضوحاً</span></div></footer>
 
+      {!chatOpen && <nav className="mobile-discovery-dock" aria-label="التنقل السريع">
+        <button type="button" onClick={() => scrollTo("cities")} aria-label="استكشف المدن">
+          <Compass size={19} /><span>استكشف</span>
+        </button>
+        <button type="button" onClick={() => scrollTo("map")} aria-label="افتح الخريطة">
+          <MapPin size={19} /><span>الخريطة</span>
+        </button>
+        <button type="button" onClick={() => scrollTo("gallery")} aria-label="افتح دفتر الصور">
+          <BookOpen size={19} /><span>الصور</span>
+        </button>
+        <button type="button" onClick={() => scrollTo("resident-services")} aria-label="خدمات المقيمين">
+          <UsersRound size={19} /><span>الخدمات</span>
+        </button>
+      </nav>}
+
       <button className="floating-chat" aria-label="chat" onClick={() => setChatOpen((open) => !open)}><span className="floating-chat-avatar"><img src={ASSETS.officialRobot} alt="" /></span><span>اسأل العسول</span></button>
       {chatOpen && <aside className="chat-panel" style={{ left: "12px", right: "12px", insetInlineStart: "auto", insetInlineEnd: "auto", marginInline: "auto", transform: "none" }} aria-label="محادثة مساعد ALASSAUL">
         <div className="chat-header">
