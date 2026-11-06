@@ -526,7 +526,7 @@ const copy: Record<Language, Record<string, string>> = {
     controlDesc: "مسارات منفصلة للسكرتير، المعاونين، فريق IT، والـ CEO لمراجعة الطلبات والاحتياجات.",
     enterControl: "دخول غرفة التحكم",
     chatTitle: "مساعد ALASSAUL",
-    chatIntro: "اسألني عن العالم والأخبار والعلوم والرحلات، أو التقط صورة لأساعدك في فهمها.",
+    chatIntro: "طرابزون · خرائط · رحلات · العالم",
     chatPlaceholder: "اكتب سؤالك هنا…",
     send: "إرسال",
     footer: "بوابة الشمال التركي — معرفة محلية، في إيقاع واحد.",
@@ -1804,6 +1804,21 @@ export default function Home() {
 
       <footer className="site-footer"><div className="container footer-grid"><div className="footer-brand"><img src={ASSETS.mark} alt="" /><strong>ALASSAUL-AI</strong><p>{t.footer}</p></div><div className="footer-links"><span>المنصة</span><button onClick={() => scrollTo("cities")}>المدن</button><button onClick={() => scrollTo("live")}>البث المباشر</button><button onClick={() => scrollTo("map")}>الخريطة</button><button onClick={() => scrollTo("tiktok")}>تيك توك</button></div><div className="footer-links"><span>تواصل</span><button onClick={() => setModal("login")}>السكرتير</button><button onClick={() => setModal("control")}>غرفة التحكم</button><button onClick={() => setChatOpen(true)}>المساعد الذكي</button></div><div className="footer-social"><span>تابع الطريق</span><div><a className="social-link" href="https://www.tiktok.com/@trabzon_yomra" target="_blank" rel="noreferrer" aria-label="تيك توك @trabzon_yomra"><Music2 size={17} /></a><button><Instagram size={17} /></button><button><Facebook size={17} /></button><button><Youtube size={17} /></button></div></div></div><div className="container footer-bottom"><span>© 2026 ALASSAUL-AI</span><span>صنع لرحلة أكثر هدوءاً ووضوحاً</span></div></footer>
 
+      {!chatOpen && <div className="mobile-discovery-dock" role="group" aria-label="التنقل السريع">
+        <button type="button" onClick={() => scrollTo("cities")} aria-label="استكشف المدن">
+          <Compass size={19} /><span>استكشف</span>
+        </button>
+        <button type="button" onClick={() => scrollTo("map")} aria-label="افتح الخريطة">
+          <MapPin size={19} /><span>الخريطة</span>
+        </button>
+        <button type="button" onClick={() => scrollTo("gallery")} aria-label="افتح دفتر الصور">
+          <BookOpen size={19} /><span>الصور</span>
+        </button>
+        <button type="button" onClick={() => scrollTo("resident-services")} aria-label="خدمات المقيمين">
+          <UsersRound size={19} /><span>الخدمات</span>
+        </button>
+      </div>}
+
       <button className="floating-chat" aria-label="chat" onClick={() => setChatOpen((open) => !open)}><span className="floating-chat-avatar"><img src={ASSETS.officialRobot} alt="" /></span><span>اسأل العسول</span></button>
       {chatOpen && <aside className="chat-panel" style={{ left: "12px", right: "12px", insetInlineStart: "auto", insetInlineEnd: "auto", marginInline: "auto", transform: "none" }} aria-label="محادثة مساعد ALASSAUL">
         <div className="chat-header">
@@ -1814,7 +1829,7 @@ export default function Home() {
         <div className="chat-layout">
           <section className="chat-conversation">
             <div className="chat-body">
-              <div className="chat-welcome"><Sparkles size={16} /> اسألني عن العالم والأخبار والعلوم والرحلات، أو التقط صورة لأساعدك في فهمها.</div>
+              <div className="chat-welcome"><Sparkles size={16} /> أهلاً بك، أنا مساعد ALASSAUL الذكي. كيف أستطيع مساعدتك؟</div>
               <VoiceSelector value={voiceGender} onChange={setVoiceGender} />
               <div className="chat-quick-prompts">{quickPrompts.map((prompt) => <button key={prompt} onClick={() => void askAssistant(prompt)} disabled={chatMutation.isPending}>{prompt}</button>)}</div>
               {chatMessages.map((message, index) => <div key={`${message.from}-${index}`} className={`chat-message chat-${message.from}`}><span>{renderChatText(message.text)}</span>{message.imageDataUrl && <img className="chat-message-image" src={message.imageDataUrl} alt="الصورة التي أرسلها المستخدم" />}{message.from === "assistant" && <AssistantReply text={message.text} language={language} voiceGender={voiceGender} />}</div>)}

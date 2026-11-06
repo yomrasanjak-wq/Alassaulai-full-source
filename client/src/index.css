@@ -2698,3 +2698,52 @@ img { display: block; max-width: 100%; }
   .resident-accordion-trigger { min-height: 58px; padding: 14px; font-size: 14px; }
   .resident-accordion-group > .resident-services-grid { grid-template-columns: minmax(0, 1fr); padding: 10px; gap: 10px; }
 }
+
+
+/* Mobile discovery dock: four clear paths into the portal, without covering chat. */
+.mobile-discovery-dock { display: none; }
+@media (max-width: 640px) {
+  .mobile-discovery-dock {
+    position: fixed;
+    z-index: 28;
+    inset-inline: 10px;
+    bottom: max(9px, env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
+    padding: 7px 5px;
+    border: 1px solid rgb(211 190 145 / 42%);
+    background: rgb(13 59 51 / 96%);
+    box-shadow: 0 10px 28px rgb(8 35 29 / 24%);
+    backdrop-filter: blur(16px);
+    border-radius: 16px;
+  }
+  .mobile-discovery-dock button {
+    min-width: 0;
+    min-height: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 2px;
+    color: #e8d39f;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    font-size: 9px;
+    font-weight: 600;
+    touch-action: manipulation;
+  }
+  .mobile-discovery-dock button:active,
+  .mobile-discovery-dock button:focus-visible {
+    color: #fff8e8;
+    background: rgb(255 255 255 / 10%);
+    border-color: rgb(220 190 126 / 36%);
+  }
+  .site-shell { padding-bottom: 76px; }
+  .site-shell .floating-chat { bottom: 82px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-discovery-dock { backdrop-filter: none; }
+}
