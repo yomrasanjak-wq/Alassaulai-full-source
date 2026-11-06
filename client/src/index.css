@@ -2848,3 +2848,80 @@ img { display: block; max-width: 100%; }
   .site-shell .hero-cta-row .button-assistant { grid-column: auto; }
   .site-shell .header-actions .language-button { display: none; }
 }
+
+
+/* ALASSAUL mobile UX — phase 2: keep photo-book controls reachable above the phone edge. */
+@media (max-width: 640px) {
+  .photo-book-overlay {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+  }
+  .photo-book-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px) !important;
+    min-height: 0 !important;
+    padding: 12px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .photo-book-heading { padding: 4px 48px 12px !important; }
+  .photo-book-filters {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    padding: 2px 0 9px !important;
+    margin-bottom: 10px !important;
+    scrollbar-width: thin;
+  }
+  .photo-book-page { flex: 0 0 auto !important; }
+  .photo-book-image-wrap { height: clamp(165px, 27dvh, 245px) !important; min-height: 165px !important; }
+  .photo-book-page-copy { padding: 14px !important; }
+  .photo-book-page-copy h3 { margin: 5px 0 8px !important; }
+  .photo-book-page-copy p { margin-bottom: 10px !important; }
+  .photo-book-controls {
+    position: sticky !important;
+    bottom: calc(-12px - env(safe-area-inset-bottom)) !important;
+    z-index: 40 !important;
+    flex: 0 0 auto !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(34px, auto) minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 10px -12px -12px !important;
+    padding: 10px 12px max(12px, env(safe-area-inset-bottom)) !important;
+    background: #fbf7ed !important;
+    border-top: 1px solid #e2d7c2 !important;
+    box-shadow: 0 -8px 18px rgb(18 61 50 / 8%) !important;
+  }
+  .photo-book-controls button {
+    min-width: 0 !important;
+    min-height: 46px !important;
+    width: 100% !important;
+    padding: 8px 5px !important;
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+    white-space: normal !important;
+    touch-action: manipulation !important;
+  }
+  .photo-book-controls > span { font-size: 10px !important; text-align: center !important; }
+  .camera-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .camera-group-card { min-width: 0 !important; }
+  .camera-group-card .camera-info { gap: 6px !important; padding: 10px !important; }
+  .camera-group-card .camera-info strong { font-size: 12px !important; line-height: 1.6 !important; }
+  .camera-group-card .camera-info small { font-size: 10px !important; line-height: 1.55 !important; }
+}
+@media (max-width: 360px) {
+  .photo-book-controls { grid-template-columns: minmax(0, 1fr) minmax(28px, auto) minmax(0, 1fr) !important; gap: 4px !important; }
+  .photo-book-controls button { font-size: 10px !important; }
+  .camera-group-grid { grid-template-columns: minmax(0, 1fr) !important; }
+}
