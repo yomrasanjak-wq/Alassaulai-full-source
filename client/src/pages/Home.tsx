@@ -1912,11 +1912,11 @@ export default function Home() {
         <button type="button" onClick={() => scrollTo("map")} aria-label="افتح الخريطة">
           <MapPin size={19} /><span>الخريطة</span>
         </button>
-        <button type="button" onClick={() => scrollTo("gallery")} aria-label="افتح دفتر الصور">
-          <BookOpen size={19} /><span>الصور</span>
+        <button type="button" onClick={() => scrollTo("live")} aria-label="افتح البث المباشر">
+          <Camera size={19} /><span>البث</span>
         </button>
-        <button type="button" onClick={() => scrollTo("resident-services")} aria-label="خدمات المقيمين">
-          <UsersRound size={19} /><span>الخدمات</span>
+        <button type="button" onClick={() => setChatOpen(true)} aria-label="افتح مساعد ALASSAUL">
+          <Bot size={19} /><span>المساعد</span>
         </button>
       </div>}
 
