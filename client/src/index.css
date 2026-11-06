@@ -2767,3 +2767,84 @@ img { display: block; max-width: 100%; }
 .camera-image-credit { display: block; margin-top: 5px; font-size: 10px !important; line-height: 1.5; color: #6f7c73; }
 .camera-image-credit a { color: #597565; text-decoration: underline; text-underline-offset: 2px; }
 .camera-image-credit a:focus-visible { outline: 2px solid #b68a4a; outline-offset: 2px; border-radius: 2px; }
+
+
+/* ALASSAUL — mobile-first visual system, phase 1.
+   Keep existing sections and behaviors; refine hierarchy and one-hand navigation. */
+@media (max-width: 640px) {
+  .site-shell { padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important; }
+  .site-shell .topline { display: none; }
+  .site-shell .site-header {
+    background: rgb(14 59 53 / 97%);
+    border-bottom: 1px solid rgb(200 169 107 / 42%);
+    box-shadow: 0 5px 18px rgb(9 35 29 / 13%);
+  }
+  .site-shell .header-inner {
+    min-height: 64px;
+    gap: 10px;
+    padding-inline: 12px;
+  }
+  .site-shell .brand { gap: 7px; }
+  .site-shell .brand-mark-wrap { width: 38px; height: 38px; }
+  .site-shell .brand-wordmark { display: block; }
+  .site-shell .brand strong { color: #e5c47e; font-size: 12px; letter-spacing: .07em; }
+  .site-shell .brand small { display: block; color: #d7e3d9; font-size: 9px; }
+  .site-shell .mobile-menu-button { color: #f4ead4; width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+  .site-shell .header-actions { gap: 5px; }
+  .site-shell .language-button, .site-shell .login-button {
+    min-height: 38px; padding-inline: 9px; border-color: rgb(222 205 166 / 40%);
+    color: #f4ead4; background: rgb(255 255 255 / 7%); border-radius: 10px;
+  }
+  .site-shell .login-button { background: #c8a96b; color: #173d36; border-color: #c8a96b; }
+  .site-shell .hero-section { padding: 28px 0 24px; background: linear-gradient(180deg, #f6f2e9 0%, #f1eee4 100%); }
+  .site-shell .hero-grid { gap: 20px !important; }
+  .site-shell .hero-copy {
+    order: 0; padding: 0 2px; text-align: right;
+  }
+  .site-shell .hero-kicker { margin-bottom: 12px; font-size: 10px; }
+  .site-shell .hero-copy h1 {
+    max-width: 100%; margin: 0 0 12px; font-size: clamp(31px, 9vw, 43px);
+    line-height: 1.38; letter-spacing: -.045em;
+  }
+  .site-shell .hero-copy p { max-width: 100%; font-size: 13px; line-height: 1.85; }
+  .site-shell .hero-cta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+  .site-shell .hero-cta-row .button { min-height: 48px; padding-inline: 10px; font-size: 11px; border-radius: 12px; }
+  .site-shell .hero-cta-row .button-assistant { grid-column: 1 / -1; }
+  .site-shell .hero-proof { gap: 8px 12px; margin-top: 15px; font-size: 9px; }
+  .site-shell .hero-map-replacement { order: 2; margin-top: 0 !important; border-radius: 16px; }
+  .site-shell .hero-map-replacement > .north-map-experience { border-radius: 16px; }
+  .site-shell .search-wrap { margin-top: 14px; }
+  .site-shell .search-box {
+    display: grid; grid-template-columns: 24px minmax(0, 1fr) auto;
+    gap: 7px; padding: 9px; border-radius: 14px; min-height: 0;
+  }
+  .site-shell .search-box input { min-height: 42px; font-size: 13px; }
+  .site-shell .search-box button { min-height: 42px; padding-inline: 10px; border-radius: 9px; font-size: 10px; }
+  .site-shell .search-box button[type="button"] { display: none; }
+  .site-shell .search-hint { margin: 7px 4px 0; font-size: 9px; }
+  .site-shell .mobile-discovery-dock {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    inset-inline: 9px; gap: 4px; padding: 6px;
+    border-radius: 17px; grid-template-columns: repeat(4, minmax(0, 1fr));
+    background: rgb(12 54 48 / 97%); border-color: rgb(211 184 124 / 55%);
+  }
+  .site-shell .mobile-discovery-dock button {
+    min-height: 54px; gap: 4px; border-radius: 12px;
+    color: #d9e6dc; font-size: 10px; font-weight: 700;
+  }
+  .site-shell .mobile-discovery-dock button:last-child {
+    color: #f4d99e; background: rgb(200 169 107 / 13%);
+    border-color: rgb(200 169 107 / 32%);
+  }
+  .site-shell .floating-chat { display: none !important; }
+  .site-shell .chat-panel {
+    top: 72px !important; bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    height: auto !important; max-height: none !important; z-index: 1200 !important;
+    border-radius: 18px !important;
+  }
+}
+@media (max-width: 380px) {
+  .site-shell .hero-cta-row { grid-template-columns: 1fr; }
+  .site-shell .hero-cta-row .button-assistant { grid-column: auto; }
+  .site-shell .header-actions .language-button { display: none; }
+}
