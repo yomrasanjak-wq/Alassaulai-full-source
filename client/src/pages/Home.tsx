@@ -505,8 +505,8 @@ const copy: Record<Language, Record<string, string>> = {
     explore: "اكتشف وجهتك",
     viewLive: "شاهد الكاميرات",
     askAssistant: "اسأل المساعد",
-    searchPlaceholder: "ابحث عن مدينة، معلم، أو طريق…",
-    searchHint: "جرّب: أوزنجول، طرابزون، مطاعم قريبة",
+    searchPlaceholder: "ابحث عن أي مكان أو خدمة في العالم…",
+    searchHint: "ابحث في السعودية أو تركيا أو أي دولة — أماكن، مطاعم، مستشفيات، فنادق وطرق.",
     liveNow: "مباشر الآن",
     dailyPulse: "نبض يومك",
     prayer: "مواقيت الصلاة",
@@ -558,8 +558,8 @@ const copy: Record<Language, Record<string, string>> = {
     explore: "Keşfe başla",
     viewLive: "Canlı yayını izle",
     askAssistant: "Asistana sor",
-    searchPlaceholder: "Şehir, yer veya yol ara…",
-    searchHint: "Örnek: Uzungöl, Trabzon, yakın restoran",
+    searchPlaceholder: "Dünyada herhangi bir yer veya hizmet ara…",
+    searchHint: "Suudi Arabistan, Türkiye veya dünyanın herhangi bir yerinde ara.",
     liveNow: "Şimdi canlı",
     dailyPulse: "Günün ritmi",
     prayer: "Namaz vakitleri",
@@ -611,8 +611,8 @@ const copy: Record<Language, Record<string, string>> = {
     explore: "Discover a destination",
     viewLive: "Watch the cameras",
     askAssistant: "Ask the assistant",
-    searchPlaceholder: "Search a city, landmark, or route…",
-    searchHint: "Try: Uzungol, Trabzon, nearby restaurants",
+    searchPlaceholder: "Search any place or service worldwide…",
+    searchHint: "Search anywhere: places, restaurants, hospitals, hotels, and routes.",
     liveNow: "Live now",
     dailyPulse: "Your daily pulse",
     prayer: "Prayer times",
@@ -945,14 +945,24 @@ export default function Home() {
               : [`Plan an itinerary for ${selectedCity.latin}`, `What are the key places near ${selectedCity.latin}?`, "Open the best map or live channel"];
 
   const searchResults = useMemo(() => {
-    if (!search.trim()) return [];
-    const query = search.toLowerCase();
+    const rawQuery = search.trim();
+    if (!rawQuery) return [];
+    const normalize = (value: string) => value.normalize("NFKC").toLocaleLowerCase().replace(/[ً-ْـ]/g, "").trim();
+    const query = normalize(rawQuery);
     const matches: { city: City; place: string }[] = [];
-    cities.forEach((city) => city.places.forEach((place) => {
-      if (place.toLowerCase().includes(query) || city.name.toLowerCase().includes(query) || city.latin.toLowerCase().includes(query)) {
+    const seen = new Set<string>();
+    const addMatch = (city: City, place: string) => {
+      const key = `${city.name}:${place}`;
+      if (!seen.has(key) && normalize(place).includes(query)) {
+        seen.add(key);
         matches.push({ city, place });
       }
-    }));
+    };
+    cities.forEach((city) => {
+      if (normalize(city.name).includes(query) || normalize(city.latin).includes(query)) addMatch(city, city.name);
+      city.places.forEach((place) => addMatch(city, place));
+      city.destinations.forEach((place) => addMatch(city, place.name));
+    });
     return matches.slice(0, 6);
   }, [search]);
 
@@ -1009,8 +1019,26 @@ export default function Home() {
   function selectSearchResult(result: { city: City; place: string }) {
     setSelectedCity(result.city);
     setSearch("");
-    scrollTo("cities");
+    const matchedDestination = result.city.destinations.find((item) => item.name === result.place);
+    if (matchedDestination) {
+      setSelectedPlace(matchedDestination);
+      setModal("place");
+    } else {
+      setModal("city");
+    }
     notify("تم العثور على الوجهة", `${result.place} — ${result.city.name}`, "success");
+  }
+
+  function submitGlobalSearch(provider: "web" | "maps" = "web") {
+    const query = search.trim();
+    if (!query) {
+      notify("اكتب ما تريد البحث عنه", "ابحث عن مدينة أو مكان أو خدمة في أي دولة.", "warning");
+      return;
+    }
+    const url = provider === "maps"
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+      : `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   function openPlace(placeName: string) {
@@ -1570,6 +1598,35 @@ export default function Home() {
           <div id="map" className="hero-visual hero-map-replacement" aria-label="الخريطة التفاعلية للشمال التركي">
             <InteractiveNorthMap destinationRequest={mapDestinationRequest} onBackToDestinations={() => { setMapDestinationRequest(null); setModal("city"); }} />
           </div>
+        </div>
+        <div className="container search-wrap">
+          <form className="search-box" role="search" onSubmit={(event) => { event.preventDefault(); submitGlobalSearch("web"); }}>
+            <Search size={20} aria-hidden="true" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t.searchPlaceholder}
+              aria-label="بحث عالمي عن الأماكن والخدمات"
+              autoComplete="off"
+            />
+            <button type="submit">بحث عالمي</button>
+            <button type="button" onClick={() => submitGlobalSearch("maps")} aria-label="ابحث عن هذا المكان في الخرائط"><MapPin size={18} /><span>الخرائط</span></button>
+          </form>
+          {search.trim() && <div className="search-results" role="listbox" aria-label="اقتراحات من دليل ALASSAUL">
+            {searchResults.map((result, index) => (
+              <button type="button" role="option" aria-selected="false" key={`${result.city.name}-${result.place}-${index}`} onClick={() => selectSearchResult(result)}>
+                <MapPin size={17} />
+                <span><strong>{result.place}</strong><small>{result.city.name} · من دليل ALASSAUL</small></span>
+                <ArrowLeft size={15} />
+              </button>
+            ))}
+            <button type="button" role="option" aria-selected="false" onClick={() => submitGlobalSearch("maps")}>
+              <Search size={17} />
+              <span><strong>تابع البحث عن «{search.trim()}» عالمياً</strong><small>افتح نتائج الأماكن والأنشطة على خرائط Google</small></span>
+              <ExternalLink size={15} />
+            </button>
+          </div>}
+          <span className="search-hint"><Compass size={13} /> {t.searchHint}</span>
         </div>
         <div className="container hero-entry-only" aria-label="مسارات الاستكشاف السريعة">
           <button onClick={() => scrollTo("cities")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>ابدأ من المدينة المناسبة</small></span><ArrowLeft size={13} /></button>
