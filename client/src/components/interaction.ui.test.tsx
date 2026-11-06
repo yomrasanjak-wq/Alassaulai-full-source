@@ -160,6 +160,21 @@ describe("City card imagery", () => {
     expect(screen.getByRole("button", { name: "عرض شاطئ قانيتا على خريطة ALASSAUL" })).toBeTruthy();
   });
 
+  it("shows the documented Botanik Park and Cazilar Deresi photo-book covers", () => {
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: "افتح دفتر صور الشمال التركي" }));
+    fireEvent.click(screen.getByRole("button", { name: "الصفحة التالية" }));
+    expect((document.querySelector(".photo-book-page img") as HTMLImageElement).src).toBe("https://www.trabzon.bel.tr/img/SehriKesfet/SosyalTesis/botanik.jpg");
+    expect(screen.getByText("Trabzon Büyükşehir Belediyesi")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "يومرا وكاشوستو" }));
+    for (let page = 0; page < 3; page += 1) {
+      fireEvent.click(screen.getByRole("button", { name: "الصفحة التالية" }));
+    }
+    expect((document.querySelector(".photo-book-page img") as HTMLImageElement).src).toContain("/upload/Foto/7C3B3139A4ECAD41403C0E3BFF9CE55D_159420192241668_d5yshowlekpwgpjum9rs.jpg");
+    expect(screen.getByText("Yomra Belediyesi")).toBeTruthy();
+  });
+
   it("opens the map when the visitor taps a photo-book image", async () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: "افتح دفتر صور الشمال التركي" }));
