@@ -83,7 +83,20 @@ const ASSETS = {
   officialRobot: "/robot.png",
 };
 
-const DESTINATION_GALLERY = [
+type DestinationGalleryItem = {
+  name: string;
+  region: string;
+  category: string;
+  image: string | null;
+  alt: string;
+  query: string;
+  credit?: string;
+  sourceUrl?: string;
+  licenseLabel?: string;
+  licenseUrl?: string;
+};
+
+const DESTINATION_GALLERY: DestinationGalleryItem[] = [
   { name: "شاطئ قانيتا", region: "طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "الواجهة الساحلية والممشى في طرابزون", query: "Ganita Sahili Trabzon" },
   { name: "الحديقة النباتية", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة للحديقة النباتية؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Trabzon Botanik Parkı" },
   { name: "أكواريوم طرابزون", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة للأكواريوم؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Trabzon Akvaryum" },
