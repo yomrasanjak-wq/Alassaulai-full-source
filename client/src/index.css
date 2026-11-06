@@ -1958,6 +1958,8 @@ img { display: block; max-width: 100%; }
 .photo-book-page-copy > span { color: #a08042; font-size: 11px; }
 .photo-book-page-copy h3 { margin: 8px 0 10px; font-size: clamp(20px, 3vw, 29px); }
 .photo-book-page-copy p { margin: 0 0 20px; color: #66776e; font-size: 13px; line-height: 1.9; }
+.photo-book-image-credit { display: block; margin: -10px 0 14px; color: #77877d; font-size: 10px; line-height: 1.7; }
+.photo-book-image-credit a { display: inline !important; padding: 0 !important; color: #6d7f74 !important; background: transparent !important; border-radius: 0 !important; font-size: inherit !important; text-decoration: underline !important; }
 .photo-book-page-copy a { display: inline-flex; align-items: center; gap: 8px; padding: 10px 12px; color: #f9f4e8; background: #123d32; border-radius: 3px; text-decoration: none; font-size: 12px; }
 .photo-book-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 15px; }
 .photo-book-controls > span { color: #73837a; font-size: 11px; }
