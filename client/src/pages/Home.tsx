@@ -77,54 +77,67 @@ import {
 
 const ASSETS = {
   hero: "/images/hero.webp",
-  trabzon: "/images/trabzon.webp",
+  trabzon: "/images/modern-trabzon.webp",
   ayder: "/images/ayder.webp",
   mark: "/logo.png?gold-v2-20261014",
   officialRobot: "/robot.png",
 };
 
-const DESTINATION_GALLERY = [
-  { name: "شاطئ قانيتا", region: "طرابزون", category: "طرابزون", image: "/images/black-sea-coast.webp", alt: "الساحل والبحر الأسود في شمال تركيا", query: "Ganita Sahili Trabzon" },
+type DestinationGalleryItem = {
+  name: string;
+  region: string;
+  category: string;
+  image: string | null;
+  alt: string;
+  query: string;
+  credit?: string;
+  sourceUrl?: string;
+  licenseLabel?: string;
+  licenseUrl?: string;
+};
+
+const DESTINATION_GALLERY: DestinationGalleryItem[] = [
+  { name: "شاطئ قانيتا", region: "طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "الواجهة الساحلية والممشى في طرابزون", query: "Ganita Sahili Trabzon" },
   { name: "الحديقة النباتية", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة للحديقة النباتية؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Trabzon Botanik Parkı" },
   { name: "أكواريوم طرابزون", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة للأكواريوم؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Trabzon Akvaryum" },
-  { name: "الميدان", region: "طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "مشهد حضري من طرابزون", query: "Trabzon Meydan Parkı" },
-  { name: "بوزتبه والمطل", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة مؤكدة لمطل بوزتبه؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Boztepe Trabzon seyir terası" },
-  { name: "قصر أتاتورك", region: "طرابزون", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة لقصر أتاتورك؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Atatürk Köşkü Trabzon" },
-  { name: "بحيرة سيرا", region: "أكشابات", category: "طرابزون", image: "/images/trabzon-lake.webp", alt: "بحيرة وسط الطبيعة الخضراء", query: "Sera Gölü Trabzon" },
-  { name: "ممشى كاشوستو", region: "يومرا", category: "يومرا وكاشوستو", image: "/images/yomra.webp", alt: "ساحل يومرا في طرابزون", query: "Kaşüstü Sahil Yürüyüş Yolu Yomra" },
+  { name: "الميدان", region: "طرابزون", category: "طرابزون", image: null, alt: "لا تتوفر صورة مستقلة موثقة لميدان طرابزون؛ أُخفي غلاف الواجهة الساحلية حتى لا يُنسب للمكان خطأ", query: "Trabzon Meydan Parkı" },
+  { name: "بوزتبه والمطل", region: "طرابزون", category: "طرابزون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Boztepe%2C_Trabzon.jpg/1024px-Boztepe%2C_Trabzon.jpg", alt: "إطلالة بوزتبه على مدينة طرابزون", credit: "Onur capıt", sourceUrl: "https://commons.wikimedia.org/wiki/File:Boztepe,_Trabzon.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Boztepe Trabzon seyir terası" },
+  { name: "قصر أتاتورك", region: "طرابزون", category: "طرابزون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Atat%C3%BCrk_K%C3%B6%C5%9Fk%C3%BC-Trabzon-01.jpg/960px-Atat%C3%BCrk_K%C3%B6%C5%9Fk%C3%BC-Trabzon-01.jpg", alt: "قصر أتاتورك التاريخي في طرابزون", credit: "Kadıoğlu Muhsin", sourceUrl: "https://commons.wikimedia.org/wiki/File:Atat%C3%BCrk_K%C3%B6%C5%9Fk%C3%BC-Trabzon-01.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Atatürk Köşkü Trabzon" },
+  { name: "بحيرة سيرا", region: "أكشابات", category: "طرابزون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sera_G%C3%B6l%C3%BC.jpg/1024px-Sera_G%C3%B6l%C3%BC.jpg", alt: "بحيرة سيرا في أكشابات، طرابزون", credit: "Mustafa Özgen", sourceUrl: "https://commons.wikimedia.org/wiki/File:Sera_G%C3%B6l%C3%BC.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Sera Gölü Trabzon" },
+  { name: "ممشى كاشوستو", region: "يومرا", category: "يومرا وكاشوستو", image: null, alt: "الملف السابق كان صورة أوزنجول وليس ممشى كاشوستو؛ الغلاف المطابق قيد التوثيق", query: "Kaşüstü Sahil Yürüyüş Yolu Yomra" },
   { name: "حديقة يومرا والميناء", region: "يومرا", category: "يومرا وكاشوستو", image: null, alt: "لا تتوفر حاليًا صورة مستقلة موثقة للميناء؛ أُخفيت الصورة لتجنب تكرار غلاف ممشى كاشوستو", query: "Yomra Sahil Parkı Liman" },
   { name: "مطعم الطائرة", region: "طريق يومرا", category: "يومرا وكاشوستو", image: null, alt: "لا تتوفر صورة مؤكدة للمطعم نفسه؛ أُخفي الغلاف العام حتى لا يُفهم أنه صورة المطعم", query: "Terminal Pide Uçak Cafe Restaurant Yomra" },
   { name: "مطعم أوزديل وديكور الساحرات", region: "أوزديل، يومرا", category: "يومرا وكاشوستو", image: null, alt: "لا تتوفر صورة مؤكدة للمطعم أو ديكوره؛ أُخفي الغلاف العام حتى لا يُنسب للمكان خطأ", query: "Cazılar Deresi Alabalık Tesisi Özdil Yomra" },
-  { name: "مرتفعات يومرا", region: "يومرا", category: "يومرا وكاشوستو", image: "/images/black-sea-valley.webp", alt: "مرتفعات ووديان خضراء", query: "Yomra Yaylası Trabzon" },
+  { name: "مرتفعات يومرا", region: "يومرا", category: "يومرا وكاشوستو", image: null, alt: "الصورة السابقة لا تثبت أنها من مرتفعات يومرا؛ الغلاف المطابق قيد التوثيق", query: "Yomra Yaylası Trabzon" },
   { name: "أوزنجول", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/modern-uzungol.webp", alt: "بحيرة أوزنجول والجبال المحيطة", query: "Uzungöl Trabzon" },
-  { name: "مرتفعات ديمركابي", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/black-sea-valley.webp", alt: "وادي جبلي أخضر في شمال تركيا", query: "Demirkapı Yaylası Çaykara" },
-  { name: "السلطان مراد", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/uzungol.webp", alt: "مراعي ومرتفعات شمال تركيا", query: "Sultan Murat Yaylası Trabzon" },
-  { name: "حيدر نبي", region: "أكشابات", category: "أوزنجول والمرتفعات", image: null, alt: "لا تتوفر حاليًا صورة مستقلة موثقة لحيدر نبي؛ أُخفيت الصورة لأن الملف الحالي مكرر مع غلاف آيدر", query: "Hıdırnebi Yaylası Trabzon" },
-  { name: "مغارة تشال", region: "دوزكوي", category: "أوزنجول والمرتفعات", image: null, alt: "لم تتوفر بعد صورة موثقة لمغارة تشال؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Çal Mağarası Trabzon" },
-  { name: "دير صوميلا", region: "ماتشكا", category: "طرابزون", image: null, alt: "لم تتوفر بعد صورة موثقة لدير صوميلا؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Sümela Manastırı Trabzon" },
+  { name: "مرتفعات ديمركابي", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: null, alt: "الصورة المتاحة لوادٍ جبلي مستخدمة لوجهة أخرى؛ الغلاف المستقل قيد التوثيق", query: "Demirkapı Yaylası Çaykara" },
+  { name: "السلطان مراد", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: null, alt: "لا تتوفر صورة مستقلة مؤكدة لهضبة السلطان مراد؛ أُخفي الغلاف العام حتى لا يُنسب إليها مشهد غير مطابق", query: "Sultan Murat Yaylası Trabzon" },
+  { name: "حيدر نبي", region: "أكشابات", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/c/cf/Hidirnebi.jpg", alt: "هضبة حيدر نبي في طرابزون", credit: "3512495a", sourceUrl: "https://commons.wikimedia.org/wiki/File:Hidirnebi.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Hıdırnebi Yaylası Trabzon" },
+  { name: "مغارة تشال", region: "دوزكوي", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/%C3%87al_Magaras%C4%B1.jpg/960px-%C3%87al_Magaras%C4%B1.jpg", alt: "مدخل ومشهد من مغارة تشال في دوزكوي", credit: "Yazar Haber (إذن إعادة استخدام موثق لدى Wikimedia Commons)", sourceUrl: "https://commons.wikimedia.org/wiki/File:%C3%87al_Magaras%C4%B1.jpg", licenseLabel: "إذن إعادة استخدام موثق", query: "Çal Mağarası Trabzon" },
+  { name: "دير صوميلا", region: "ماتشكا", category: "طرابزون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/S%C3%BCmela_Manast%C4%B1r%C4%B1.jpg/1280px-S%C3%BCmela_Manast%C4%B1r%C4%B1.jpg", alt: "دير صوميلا التاريخي على سفح الجبل في ماتشكا", credit: "Selçuk Bağrışen", sourceUrl: "https://commons.wikimedia.org/wiki/File:S%C3%BCmela_Manast%C4%B1r%C4%B1.jpg", licenseLabel: "GNU Free Documentation License", licenseUrl: "https://www.gnu.org/licenses/old-licenses/fdl-1.2.html", query: "Sümela Manastırı Trabzon" },
   { name: "هامسي كوي وزيقانا", region: "ماتشكا", category: "أوزنجول والمرتفعات", image: null, alt: "لم تتوفر بعد صورة موثقة لهامسي كوي وزيقانا؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Hamsiköy Zigana Trabzon" },
-  { name: "بحيرة مافي غول", region: "قيرسون", category: "أوردو وقيرسون", image: null, alt: "لا تتوفر صورة موثقة مستقلة لبحيرة مافي غول؛ أُخفي الغلاف العام حتى توفير صورة مطابقة", query: "Mavi Göl Kuzalan Giresun" },
-  { name: "شاطئ أوردو وتلفريك بوزتبه", region: "أوردو", category: "أوردو وقيرسون", image: "/images/modern-ordu.webp", alt: "أوردو وساحل البحر الأسود", query: "Ordu Boztepe Teleferik" },
-  { name: "بيرشمبه وياسون بورنو", region: "أوردو", category: "أوردو وقيرسون", image: null, alt: "لا تتوفر صورة موثقة مستقلة لرأس ياسون بورنو؛ أُخفي الغلاف العام لحين توفير صورة مطابقة", query: "Yason Burnu Perşembe Ordu" },
-  { name: "ساحل غيرسون", region: "قيرسون", category: "أوردو وقيرسون", image: null, alt: "غلاف المدينة مستخدم بالفعل؛ أُخفي التكرار إلى حين توفير صورة مستقلة للساحل", query: "Giresun Sahil" },
+  { name: "بحيرة مافي غول", region: "قيرسون", category: "أوردو وقيرسون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Giresun_Mavi_G%C3%B6l.jpg/960px-Giresun_Mavi_G%C3%B6l.jpg", alt: "المياه الفيروزية والشلالات في بحيرة مافي غول بقيرسون", credit: "Thrdynr", sourceUrl: "https://commons.wikimedia.org/wiki/File:Giresun_Mavi_G%C3%B6l.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Mavi Göl Kuzalan Giresun" },
+  { name: "واجهة أوردو البحرية", region: "أوردو", category: "أوردو وقيرسون", image: null, alt: "الغلاف المتاح يُظهر تلفريك بوزتبه وليس الواجهة البحرية؛ ننتظر صورة مطابقة للواجهة", query: "Ordu sahil" },
+{ name: "بيرشمبه وياسون بورنو", region: "أوردو", category: "أوردو وقيرسون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Cape_Jason_-_Yason_Burnu%2C_Per%C5%9Fembe_-_Ordu_01.jpg/1024px-Cape_Jason_-_Yason_Burnu%2C_Per%C5%9Fembe_-_Ordu_01.jpg", alt: "رأس ياسون وكنيسة جيسون على ساحل بيرشمبه في أوردو", credit: "Zeynel Cebeci", sourceUrl: "https://commons.wikimedia.org/wiki/File:Cape_Jason_-_Yason_Burnu,_Per%C5%9Fembe_-_Ordu_01.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Yason Burnu Perşembe Ordu" },
+  { name: "ساحل غيرسون", region: "قيرسون", category: "أوردو وقيرسون", image: "/images/modern-giresun.webp", alt: "مشهد ساحلي من غيرسون", query: "Giresun Sahil" },
   { name: "قلعة ريزا وحدائق الشاي", region: "ريزا", category: "ريزا وآيدر", image: "/images/modern-rize.webp", alt: "الطبيعة ومزارع الشاي في ريزا", query: "Rize Kalesi çay bahçeleri" },
   { name: "وادي فيرتينا وزيل قلعة", region: "ريزا", category: "ريزا وآيدر", image: "/images/firtina-river.webp", alt: "نهر فيرتينا بين الجبال الخضراء", query: "Fırtına Vadisi Zilkale Rize" },
-  { name: "مرتفعات آيدر", region: "ريزا", category: "ريزا وآيدر", image: "/images/modern-ayder.webp", alt: "مرتفعات آيدر الخضراء", query: "Ayder Yaylası Rize" },
+  { name: "مرتفعات آيدر", region: "ريزا", category: "ريزا وآيدر", image: "/images/ayder.webp", alt: "مرتفعات آيدر الخضراء", query: "Ayder Yaylası Rize" },
   { name: "شلالات الشمال التركي", region: "وجهات متعددة", category: "ريزا وآيدر", image: "/images/modern-waterfall.webp", alt: "شلال بين الغابات الخضراء", query: "Ağaran Şelalesi Rize" },
   { name: "سامسون", region: "ساحل البحر الأسود", category: "أوردو وقيرسون", image: "/images/modern-samsun.webp", alt: "سامسون على البحر الأسود", query: "Samsun sahil" },
   { name: "إسطنبول", region: "إسطنبول", category: "إسطنبول", image: "/images/modern-istanbul.webp", alt: "مشهد من إسطنبول", query: "Istanbul Turkey" },
-  { name: "تلفريك ومرتفعات بوزتبه", region: "أوردو", category: "أوردو وقيرسون", image: null, alt: "لا تتوفر صورة موثقة مستقلة للتلفريك؛ أُخفي الغلاف العام المكرر مع بطاقة أوردو", query: "Ordu Boztepe Teleferik" },
-  { name: "شاطئ فatsa وممشى البحر", region: "فاتسا، أوردو", category: "أوردو وقيرسون", image: "/images/ordu.webp", alt: "ساحل البحر الأسود في أوردو", query: "Fatsa sahil Ordu" },
+  { name: "تلفريك ومرتفعات بوزتبه", region: "أوردو", category: "أوردو وقيرسون", image: "/images/modern-ordu.webp", alt: "تلفريك بوزتبه وإطلالة مدينة أوردو", query: "Ordu Boztepe Teleferik" },
+  { name: "شاطئ فاتسا وممشى البحر", region: "فاتسا، أوردو", category: "أوردو وقيرسون", image: null, alt: "الصورة المتاحة كانت لتلفريك بوزتبه في أوردو وليست شاطئ فاتسا؛ الغلاف الصحيح قيد التوثيق", query: "Fatsa sahil Ordu" },
   { name: "شلال كوزالان", region: "قيرسون", category: "أوردو وقيرسون", image: null, alt: "لا تتوفر صورة موثقة مستقلة لشلال كوزالان؛ أُخفي الغلاف العام لحين توفير صورة مطابقة", query: "Kuzalan Şelalesi Giresun" },
-  { name: "شاطئ أرسين", region: "أرسين، طرابزون", category: "الساحل الشرقي", image: "/images/black-sea-coast.webp", alt: "ساحل البحر الأسود", query: "Arsin Sahili Trabzon" },
-  { name: "سورميني وسوق السكاكين", region: "سورميني", category: "الساحل الشرقي", image: null, alt: "لا تتوفر صورة موثقة لسوق سكاكين سورميني؛ أُخفي الغلاف العام غير المطابق", query: "Sürmene bıçakçılar çarşısı" },
+  { name: "شاطئ أرسين", region: "أرسين، طرابزون", category: "الساحل الشرقي", image: null, alt: "لا تتوفر صورة مستقلة موثقة لشاطئ أرسين؛ أُخفي الغلاف الساحلي العام لتجنب تكراره مع قانيتا", query: "Arsin Sahili Trabzon" },
+  { name: "سورميني وسوق السكاكين", region: "سورميني", category: "الساحل الشرقي", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/S%C3%BCrmene_knife.jpg/1280px-S%C3%BCrmene_knife.jpg", alt: "سكاكين سورميني التركية التقليدية وصناعتها اليدوية", credit: "Macukali", sourceUrl: "https://commons.wikimedia.org/wiki/File:S%C3%BCrmene_knife.jpg", licenseLabel: "CC BY-SA 3.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/", query: "Sürmene bıçakçılar çarşısı" },
   { name: "مصانع الشاي في سورميني", region: "سورميني", category: "الساحل الشرقي", image: null, alt: "لا تتوفر صورة موثقة لمصانع الشاي في سورميني؛ أُخفي الغلاف العام غير المطابق", query: "Sürmene çay fabrikası" },
   { name: "شلال أراكلي الكبير", region: "أراكلي، طرابزون", category: "الساحل الشرقي", image: null, alt: "لا تتوفر صورة موثقة لشلال أراكلي الكبير؛ أُخفيت صورة الشلال العامة لحين توفير صورة مطابقة", query: "Araklı büyük şelale Trabzon" },
   { name: "مدينة أوف وساحلها", region: "أوف، طرابزون", category: "الساحل الشرقي", image: null, alt: "الغلاف الساحلي العام مستخدم لوجهة أخرى؛ أُخفي التكرار لحين توفير صورة مستقلة لأوف", query: "Of Trabzon sahil" },
-  { name: "ممشى وحديقة إيوف", region: "قرب فوروم طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "مدينة طرابزون ومرافقها", query: "EYOF Park Trabzon" },
+  { name: "ممشى وحديقة إيوف", region: "قرب فوروم طرابزون", category: "طرابزون", image: null, alt: "لا تتوفر صورة مستقلة موثقة لحديقة إيوف؛ أُخفي الغلاف الحضري العام لتجنب تكراره مع الميدان", query: "EYOF Park Trabzon" },
   { name: "منزلق الجبل في كاشوستو", region: "يومرا، كاشوستو", category: "يومرا وكاشوستو", image: null, alt: "لا تتوفر صورة مؤكدة لمنزلق الجبل؛ أُخفي الغلاف المكرر مع ممشى كاشوستو", query: "Kaşüstü Yomra mountain luge" },
-  { name: "شلال آغاران", region: "تشايلي، ريزا", category: "ريزا وآيدر", image: null, alt: "لم تتوفر بعد صورة موثقة لشلال آغاران؛ الصورة غير معروضة حتى لا نضلل الزائر", query: "Ağaran Şelalesi Çayeli Rize" },
-  { name: "قرية ياسون بورنو الساحلية", region: "بيرشمبه، أوردو", category: "أوردو وقيرسون", image: null, alt: "لا تتوفر صورة موثقة مستقلة لقرية ياسون بورنو؛ أُخفي الغلاف العام لحين توفير صورة مطابقة", query: "Yason Burnu Perşembe Ordu" },
+  { name: "شلال آغاران", region: "تشايلي، ريزا", category: "ريزا وآيدر", image: "https://upload.wikimedia.org/wikipedia/commons/0/09/A%C4%9Faran_%C5%9Eelalesi.JPG", alt: "شلال آغاران في ولاية ريزا", credit: "Karduelis", sourceUrl: "https://commons.wikimedia.org/wiki/File:A%C4%9Faran_%C5%9Eelalesi.JPG", licenseLabel: "ملكية عامة", query: "Ağaran Şelalesi Çayeli Rize" },
+
 ] as const;
 
 const GALLERY_FILTERS = ["الكل", "طرابزون", "يومرا وكاشوستو", "أوزنجول والمرتفعات", "ريزا وآيدر", "أوردو وقيرسون", "الساحل الشرقي", "إسطنبول"] as const;
@@ -1614,7 +1627,7 @@ export default function Home() {
               </div>
               {(() => { const pages = DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter); const item = pages[Math.min(photoBookPage, Math.max(0, pages.length - 1))]; return item ? <article key={`${item.name}-${photoBookPage}`} className="photo-book-page">
                 <button type="button" className={`photo-book-image-wrap photo-book-image-action${item.image ? "" : " photo-book-image-unverified"}`} onClick={() => openGalleryDestinationOnMap(item)} aria-label={`اعرض ${item.name} على خريطة ALASSAUL`}>{item.image ? <img src={item.image} alt={item.alt} loading="eager" /> : <span className="photo-book-no-image" role="img" aria-label={item.alt} style={{minHeight:280,height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,padding:24,textAlign:"center",background:"linear-gradient(145deg,#153f37,#23665a 55%,#9dbdb0)",color:"#fff"}}><span style={{letterSpacing:5,fontSize:12}}>ALASSAUL</span><strong style={{fontSize:"clamp(22px,4vw,36px)"}}>{item.name}</strong><small style={{color:"#f2e9d4"}}>الصورة الأصلية قيد التوثيق</small></span>}<span className="photo-book-page-number">{String(photoBookPage + 1).padStart(2, "0")}</span></button>
-                <div className="photo-book-page-copy"><span>{item.region}</span><h3>{item.name}</h3><p>{item.alt}. اكتشف الموقع وخطط الطريق قبل الزيارة، فالمسافات والظروف قد تختلف حسب الموسم.</p><button type="button" className="text-link" onClick={() => openGalleryDestinationOnMap(item)}>اعرض الوجهة على خريطة ALASSAUL <MapPin size={15} /></button></div>
+                <div className="photo-book-page-copy"><span>{item.region}</span><h3>{item.name}</h3><p>{item.alt}. اكتشف الموقع وخطط الطريق قبل الزيارة، فالمسافات والظروف قد تختلف حسب الموسم.</p>{item.credit && item.sourceUrl && <small className="photo-book-image-credit">مصدر الصورة: <a href={item.sourceUrl} target="_blank" rel="noreferrer">{item.credit}</a>{item.licenseLabel && item.licenseUrl ? <> · <a href={item.licenseUrl} target="_blank" rel="noreferrer">{item.licenseLabel}</a></> : item.licenseLabel ? <> · {item.licenseLabel}</> : null}</small>}<button type="button" className="text-link" onClick={() => openGalleryDestinationOnMap(item)}>اعرض الوجهة على خريطة ALASSAUL <MapPin size={15} /></button></div>
               </article> : <p className="media-empty">لا توجد صور في هذا التصنيف.</p>; })()}
               <div className="photo-book-controls"><button type="button" className="button button-quiet" onClick={() => setPhotoBookPage((page) => Math.max(0, page - 1))} disabled={photoBookPage === 0}><ArrowRight size={16} /> الصفحة السابقة</button><span>{photoBookPage + 1} / {DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length}</span><button type="button" className="button button-primary" onClick={() => setPhotoBookPage((page) => Math.min(DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length - 1, page + 1))} disabled={photoBookPage >= DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length - 1}>الصفحة التالية <ArrowLeft size={16} /></button></div>
             </div>
