@@ -269,7 +269,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
   }, [map, selectedCity]);
 
   const directionsUrl = selected
-    ? `https://www.google.com/maps/dir/?api=1&destination=${selected.position.lat}%2C${selected.position.lng}&destination_place_id=&travelmode=driving`
+    ? `https://www.google.com/maps/dir/?api=1&destination=${selected.position.lat}%2C${selected.position.lng}&travelmode=driving`
     : "https://www.google.com/maps/search/Northern+Turkey";
   const selectedCityPlaces = destinations.filter((item) => item.city === selectedCity);
   const fallbackCenter = selected?.position ?? (selectedCityPlaces.length
@@ -354,7 +354,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
         <button type="button" className="north-map-back" onClick={onBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button>
         <div className="north-map-detail-icon"><Sparkles size={20} /></div>
         <div className="north-map-detail-copy"><span>{selected.label} · {selected.latin}</span><strong>{selected.name}</strong><p>{selected.note}</p></div>
-        <a className="north-map-directions" href={directionsUrl} target="_blank" rel="noreferrer"><Navigation size={17} /> احصل على الاتجاهات <ExternalLink size={14} /></a>
+        <a className="north-map-directions" href={directionsUrl} target="_self"><Navigation size={17} /> احصل على الاتجاهات <ExternalLink size={14} /></a>
       </div>}
     </div>
   );
