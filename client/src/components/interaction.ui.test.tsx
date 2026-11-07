@@ -54,6 +54,14 @@ function chatProps(overrides: Partial<React.ComponentProps<typeof ChatComposer>>
   };
 }
 
+describe("Interactive North map destination matching", () => {
+  it("resolves the city directory name for Trabzon Meydan to its verified map pin", () => {
+    render(<InteractiveNorthMap destinationRequest={{ name: "ميدان طرابزون والأسواق", city: "طرابزون", query: "Meydan Trabzon Turkey" }} />);
+    expect(screen.getByRole("region", { name: "تفاصيل ميدان طرابزون" })).toBeTruthy();
+    expect(screen.getByText("ميدان طرابزون")).toBeTruthy();
+  });
+});
+
 describe("Home voice-to-chat flow", () => {
   class FakeSpeechRecognition {
     static current: FakeSpeechRecognition | undefined;
