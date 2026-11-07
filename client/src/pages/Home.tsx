@@ -1089,7 +1089,24 @@ export default function Home() {
   }
 
   function openGalleryDestinationOnMap(item: { name: string; query: string; region: string }) {
-    const cityName = item.region.includes("يومرا") ? "يومرا" : item.region.includes("ريزا") ? "ريزا" : item.region.includes("أوردو") ? "أوردو" : "طرابزون";
+    // Resolve the gallery's geographic region to the same city key used by the map.
+    // Falling back to Trabzon for every eastern-coast place prevented Arsin,
+    // Sürmene, Araklı, Samsun, Giresun, and Istanbul entries from matching.
+    const region = item.region.toLocaleLowerCase();
+    const regionCityRules: Array<{ terms: string[]; city: string }> = [
+      { terms: ["يومرا", "كاشوستو"], city: "يومرا" },
+      { terms: ["أرسين", "ارسين"], city: "أرسين" },
+      { terms: ["سورميني", "سورمنه"], city: "سورميني" },
+      { terms: ["أراكلي", "اراكلي"], city: "أراكلي" },
+      { terms: ["ريزا", "آيدر"], city: "ريزا" },
+      { terms: ["أوردو", "اوردو"], city: "أوردو" },
+      { terms: ["سامسون"], city: "سامسون" },
+      { terms: ["قيرسون", "غيرسون"], city: "جيرسون" },
+      { terms: ["إسطنبول", "اسطنبول"], city: "إسطنبول" },
+      { terms: ["جورجيا", "باتومي"], city: "جورجيا" },
+    ];
+    const matchedRule = regionCityRules.find((rule) => rule.terms.some((term) => region.includes(term)));
+    const cityName = matchedRule?.city ?? "طرابزون";
     openDestinationOnMap({ name: item.name, mapQuery: item.query }, cityName);
   }
 
