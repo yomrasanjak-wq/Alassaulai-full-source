@@ -3033,3 +3033,36 @@ img { display: block; max-width: 100%; }
   .site-shell .global-search-dock { margin: 9px auto 13px !important; padding-inline: 12px; }
   .site-shell .global-search-dock .search-box { min-height: 0; border-radius: 13px; }
 }
+
+
+/* ALASSAUL mobile directions fix: keep the selected-place panel and route action visible on phones. */
+@media (max-width: 820px) {
+  .north-map-experience:not(.north-map-expanded) .north-map-detail {
+    display: grid !important;
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    gap: 10px !important;
+    margin: 10px !important;
+    padding: 14px !important;
+    position: relative !important;
+    z-index: 12 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    background: #173d36 !important;
+    color: #fffaf0 !important;
+  }
+  .north-map-experience:not(.north-map-expanded) .north-map-directions {
+    display: flex !important;
+    grid-column: 1 / -1 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-height: 54px !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: rgb(210 174 98 / 35%);
+  }
+}
