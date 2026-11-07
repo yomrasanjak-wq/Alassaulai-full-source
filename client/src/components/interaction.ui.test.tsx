@@ -58,7 +58,17 @@ describe("Interactive North map destination matching", () => {
   it("resolves the city directory name for Trabzon Meydan to its verified map pin", () => {
     render(<InteractiveNorthMap destinationRequest={{ name: "ميدان طرابزون والأسواق", city: "طرابزون", query: "Meydan Trabzon Turkey" }} />);
     expect(screen.getByRole("region", { name: "تفاصيل ميدان طرابزون" })).toBeTruthy();
-    expect(screen.getByText("ميدان طرابزون")).toBeTruthy();
+    expect(screen.getAllByText("ميدان طرابزون").length).toBeGreaterThan(0);
+  });
+
+  it("resolves the Kaşüstü gallery label to the existing waterfront pin", () => {
+    render(<InteractiveNorthMap destinationRequest={{ name: "ممشى كاشوستو البحري الجديد", city: "يومرا", query: "Kaşüstü Cumhuriyet Parkı deniz manzaralı yürüyüş yolu" }} />);
+    expect(screen.getByRole("region", { name: "تفاصيل واجهة كاشستوس البحرية" })).toBeTruthy();
+  });
+
+  it("resolves Yomra highlands in the Yomra city filter", () => {
+    render(<InteractiveNorthMap destinationRequest={{ name: "مرتفعات يومرا", city: "يومرا", query: "Yomra Yaylası Trabzon" }} />);
+    expect(screen.getByRole("region", { name: "تفاصيل مرتفعات يومرا" })).toBeTruthy();
   });
 });
 
