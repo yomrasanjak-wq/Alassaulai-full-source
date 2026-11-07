@@ -462,7 +462,7 @@ export const appRouter = router({
     visitorCount: publicProcedure.query(() => countRegisteredVisitors()),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      (ctx.res as unknown as { clearCookie: (name: string, options: Record<string, unknown>) => void }).clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
   }),
