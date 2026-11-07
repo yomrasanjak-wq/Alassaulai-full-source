@@ -9,17 +9,20 @@ function isIpAddress(host: string) {
 }
 
 function isSecureRequest(req: unknown) {
-  const request = req as { protocol?: string; headers?: Record<string, unknown> };
+  const request = req as {
+    protocol?: string;
+    headers?: Record<string, string | string[] | undefined>;
+  };
   if (request.protocol === "https") return true;
 
   const forwardedProto = request.headers?.["x-forwarded-proto"];
   if (!forwardedProto) return false;
 
-  const protoList = Array.isArray(forwardedProto)
+  const protoList: string[] = Array.isArray(forwardedProto)
     ? forwardedProto
     : forwardedProto.split(",");
 
-  return protoList.some(proto => proto.trim().toLowerCase() === "https");
+  return protoList.some((proto: string) => proto.trim().toLowerCase() === "https");
 }
 
 export function getSessionCookieOptions(
