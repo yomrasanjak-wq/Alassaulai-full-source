@@ -168,14 +168,32 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     const normalize = (value: string) => value.toLocaleLowerCase().normalize("NFKD").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/[^a-z0-9\u0600-\u06FF]+/gi, "");
     const requested = normalize(destinationRequest.name);
     const requestedQuery = normalize(destinationRequest.query);
-    const exactMatch = destinations.find((item) => [item.name, item.latin, item.query].some((candidate) => {
-      const value = normalize(candidate);
-      return value === requested || value === requestedQuery;
-    }));
-    const match = exactMatch ?? destinations.find((item) => [item.name, item.latin, item.query].some((candidate) => {
-      const value = normalize(candidate);
-      return (requested.length > 3 && value.includes(requested)) || (requestedQuery.length > 5 && requestedQuery.includes(value));
-    }));
+    const aliases: Record<string, string[]> = {
+      [normalize("ميدان طرابزون والأسواق")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
+      [normalize("ميدان طرابزون")]: [normalize("Meydan Trabzon Turkey")],
+      [normalize("ميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
+    };
+    const requestNames = [requested, ...(aliases[requested] ?? [])];
+    const requestedCity = destinationRequest.city;
+    const cityMatches = (item: MapDestination) =>
+      !requestedCity || item.city === requestedCity ||
+      (requestedCity === "طرابزون" && item.city === "طرابزون");
+    const exactMatch = destinations.find((item) =>
+      cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
+        const value = normalize(candidate);
+        return requestNames.includes(value) || value === requestedQuery;
+      })
+    );
+    const match = exactMatch ?? destinations.find((item) =>
+      cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
+        const value = normalize(candidate);
+        const requestTokens = requestNames.flatMap((name) => name.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? []);
+        const candidateTokens = value.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? [];
+        const tokenMatch = requestTokens.length > 0 && requestTokens.every((token) => candidateTokens.includes(token));
+        return tokenMatch || (requested.length > 3 && value.includes(requested)) ||
+          (requestedQuery.length > 5 && requestedQuery.includes(value));
+      })
+    );
     if (match) {
       openDestination(match);
       return;
@@ -186,6 +204,13 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     setSelected(null);
     setQuery(destinationRequest.name);
   }, [destinationRequest?.name, destinationRequest?.query, destinationRequest?.city]);
+
+  // If a destination was selected before the map finished loading, focus it as soon as the map is ready.
+  useEffect(() => {
+    if (!map || !selected) return;
+    map.panTo(selected.position);
+    map.setZoom(14);
+  }, [map, selected]);
 
   // Keep map markers synchronized with the city, category, and text search.
   // This avoids showing pins that are hidden from the destination list.
@@ -272,7 +297,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
               <span><strong>{destination.name}</strong><small>{destination.latin} · {destination.label}</small></span>
               <MapPin size={15} />
             </button>)}</div>) : <p className="north-map-empty">اختر مدينة من الأعلى لتظهر وجهاتها هنا.</p>}
-            {!visible.length && selectedCity && <div className="north-map-empty"><p>لم نعثر على نقطة موثقة لهذا الاسم داخل دليل الخريطة حتى الآن، لذلك لن نضع دبوسًا تخمينيًا.</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinationRequest?.query ?? query)}`} target="_blank" rel="noreferrer">ابحث عن الموقع على Google Maps <ExternalLink size={14} /></a><button type="button" className="north-map-back" onClick={onBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button></div>}
+            {!visible.length && selectedCity && (query.trim() || destinationRequest) && <div className="north-map-empty"><p>لم نعثر على نقطة موثقة لهذا الاسم داخل دليل الخريطة حتى الآن، لذلك لن نضع دبوسًا تخمينيًا.</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinationRequest?.query ?? query)}`} target="_blank" rel="noreferrer">ابحث عن الموقع على Google Maps <ExternalLink size={14} /></a><button type="button" className="north-map-back" onClick={onBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button></div>}
           </div>
         </aside>
 
