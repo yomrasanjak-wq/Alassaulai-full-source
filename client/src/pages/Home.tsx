@@ -1107,9 +1107,21 @@ export default function Home() {
       { terms: ["جورجيا", "باتومي"], city: "جورجيا" },
     ];
     const matchedRule = regionCityRules.find((rule) => rule.terms.some((term) => region.includes(term)));
+    // Some gallery cards use broad editorial regions. In those cases, use
+    // only an explicit province/place name present in the card's search query.
+    const query = item.query.toLocaleLowerCase();
+    const queryCityRules: Array<{ terms: string[]; city: string }> = [
+      { terms: ["samsun"], city: "سامسون" },
+      { terms: ["giresun"], city: "جيرسون" },
+      { terms: ["ordu", "fatsa", "perşembe", "yason"], city: "أوردو" },
+      { terms: ["rize", "ayder", "ağaran", "fırtına", "zil kale", "zil?kale"], city: "ريزا" },
+      { terms: ["istanbul"], city: "إسطنبول" },
+      { terms: ["batumi", "georgia", "martvili"], city: "جورجيا" },
+    ];
+    const matchedQueryRule = queryCityRules.find((rule) => rule.terms.some((term) => query.includes(term)));
     // "وجهات متعددة" and "ساحل البحر الأسود" are intentionally ambiguous:
-    // retain the visitor's current map city rather than guessing Trabzon.
-    const cityName = matchedRule?.city ?? selectedCity.name;
+    // a verified city in the query wins; otherwise retain the current city.
+    const cityName = matchedRule?.city ?? matchedQueryRule?.city ?? selectedCity.name;
     openDestinationOnMap({ name: item.name, mapQuery: item.query }, cityName);
   }
 
