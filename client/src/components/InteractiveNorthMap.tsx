@@ -175,9 +175,14 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     };
     const requestNames = [requested, ...(aliases[requested] ?? [])];
     const requestedCity = destinationRequest.city;
+    const isCevahirOutlet = requestedQuery.includes(normalize("Cevahir Outlet")) ||
+      requested.includes(normalize("جواهر"));
     const cityMatches = (item: MapDestination) =>
       !requestedCity || item.city === requestedCity ||
-      (requestedCity === "طرابزون" && item.city === "طرابزون");
+      // Cevahir Outlet is physically in Kaşüstü, Yomra. Some older Trabzon
+      // city cards still carry the same search query, so prefer its verified
+      // Yomra map record instead of the duplicate Trabzon pin.
+      (isCevahirOutlet && item.city === "يومرا");
     const exactMatch = destinations.find((item) =>
       cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
         const value = normalize(candidate);
