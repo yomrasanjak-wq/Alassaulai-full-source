@@ -170,6 +170,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     const requestedQuery = normalize(destinationRequest.query);
     const aliases: Record<string, string[]> = {
       [normalize("ميدان طرابزون والأسواق")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
+      [normalize("الميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
       [normalize("ميدان طرابزون")]: [normalize("Meydan Trabzon Turkey")],
       [normalize("ميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
     };
