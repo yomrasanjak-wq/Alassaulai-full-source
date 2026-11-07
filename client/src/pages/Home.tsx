@@ -1634,11 +1634,11 @@ export default function Home() {
                 <span><strong>لا توجد نتيجة مطابقة في دليلنا المحلي بعد</strong><small>يمكنك متابعة البحث عن هذا الطلب في جميع أنحاء العالم.</small></span>
               </div>
             )}
-            <button type="button" role="option" aria-selected="false" onClick={() => submitGlobalSearch("maps")}>
+            {!searchResults.length && <button type="button" role="option" aria-selected="false" onClick={() => submitGlobalSearch("maps")}>
               <Search size={17} />
-              <span><strong>ابحث عن هذا الطلب في العالم</strong><small>متابعة البحث عن الأماكن والخدمات عبر خرائط Google</small></span>
+              <span><strong>تابع البحث في الخرائط العالمية</strong><small>ابحث عن هذا الطلب خارج دليل ALASSAUL</small></span>
               <ExternalLink size={15} />
-            </button>
+            </button>}
           </div>}
           <span className="search-hint"><Compass size={13} /> {t.searchHint}</span>
         </div>
@@ -1650,7 +1650,7 @@ export default function Home() {
             <h1>{t.heroTitle}</h1>
             <p>{t.heroDesc}</p>
             <div className="hero-cta-row">
-              <button className="button button-primary" onClick={() => scrollTo("cities")}>{t.explore} <ArrowLeft size={17} /></button>
+              <button className="button button-primary" onClick={() => { setDiscoveryIndex(0); setDiscoveryImageLoaded(false); setDiscoveryOpen(true); }}>{t.explore} <ArrowLeft size={17} /></button>
               <button className="button button-quiet camera-hero-button" onClick={() => scrollTo("cameras")}><span className="camera-cta-thumb"><img src={cameraFeeds[0]?.image ?? undefined} alt="" /></span> {t.viewLive}</button>
               <button className="button button-assistant" onClick={() => setChatOpen(true)}><span className="assistant-button-avatar"><img src={ASSETS.officialRobot} alt="" /></span> {t.askAssistant}</button>
             </div>
