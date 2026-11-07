@@ -70,6 +70,18 @@ describe("Interactive North map destination matching", () => {
     render(<InteractiveNorthMap destinationRequest={{ name: "مرتفعات يومرا", city: "يومرا", query: "Yomra Yaylası Trabzon" }} />);
     expect(screen.getByRole("region", { name: "تفاصيل مرتفعات يومرا" })).toBeTruthy();
   });
+
+  it("does not pin the Hamsikoy and Zigana combination to Hamsikoy alone", () => {
+    render(<InteractiveNorthMap destinationRequest={{ name: "هامسي كوي وزيقانا", city: "طرابزون", query: "Hamsiköy Zigana Trabzon" }} />);
+    expect(screen.queryByRole("region", { name: "تفاصيل همسي كوي" })).toBeNull();
+    expect((screen.getByRole("textbox", { name: "ابحث في الخريطة" }) as HTMLInputElement).value).toBe("هامسي كوي وزيقانا");
+  });
+
+  it("does not pin the Firtina Valley and Zilkale combination to the valley alone", () => {
+    render(<InteractiveNorthMap destinationRequest={{ name: "وادي فيرتينا وزيل قلعة", city: "ريزا", query: "Fırtına Vadisi Zilkale Rize" }} />);
+    expect(screen.queryByRole("region", { name: /تفاصيل وادي فرتينا/ })).toBeNull();
+    expect((screen.getByRole("textbox", { name: "ابحث في الخريطة" }) as HTMLInputElement).value).toBe("وادي فيرتينا وزيل قلعة");
+  });
 });
 
 describe("Home voice-to-chat flow", () => {
