@@ -1077,7 +1077,7 @@ export default function Home() {
     setMapDestinationRequest({ name: item.name, city: cityName, query: item.mapQuery });
     setModal(null);
     setPhotoBookOpen(false);
-    const knownCities = ["طرابزون", "يومرا", "أرسين", "سورميني", "أراكلي", "ريزا", "أوردو", "سامسون", "جيرسون", "إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أنقرة"];
+    const knownCities = ["طرابزون", "يومرا", "أرسين", "سورميني", "أراكلي", "ريزا", "أوردو", "سامسون", "جيرسون", "إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أولاشلي", "أنقرة", "جورجيا"];
     const resolvedCity = knownCities.includes(cityName) ? cityName : "طرابزون";
     window.setTimeout(() => {
       scrollTo("map");
