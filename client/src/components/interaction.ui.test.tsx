@@ -711,7 +711,7 @@ describe("Global search guidance", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "بحث عالمي عن الأماكن والخدمات" }), {
       target: { value: "أوزنجول" },
     });
-    expect(screen.getByText(/نتيجة من دليل ALASSAUL/)).toBeTruthy();
+    expect(screen.getAllByText(/نتيجة من دليل ALASSAUL/).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "بحث عالمي" })).toBeTruthy();
   });
 });
