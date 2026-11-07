@@ -358,7 +358,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
             });
           }} />
           {selected && <div className="north-map-detail" role="region" aria-label={`تفاصيل ${selected.name}`}>
-            <button type="button" className="north-map-back" onClick={onBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button>
+            <button type="button" className="north-map-back" onClick={handleBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button>
             <div className="north-map-detail-icon"><Sparkles size={20} /></div>
             <div className="north-map-detail-copy"><span>{selected.label} · {selected.latin}</span><strong>{selected.name}</strong><p>{selected.note}</p></div>
             <a className="north-map-directions" href={directionsUrl} target="_self"><Navigation size={17} /> احصل على الاتجاهات <ExternalLink size={14} /></a>
