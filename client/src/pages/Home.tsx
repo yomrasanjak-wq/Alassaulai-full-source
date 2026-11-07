@@ -1121,7 +1121,9 @@ export default function Home() {
     const matchedQueryRule = queryCityRules.find((rule) => rule.terms.some((term) => query.includes(term)));
     // "وجهات متعددة" and "ساحل البحر الأسود" are intentionally ambiguous:
     // a verified city in the query wins; otherwise retain the current city.
-    const cityName = matchedRule?.city ?? matchedQueryRule?.city ?? selectedCity.name;
+    // An explicit province in the destination query is more precise than
+    // a broad editorial gallery region such as "الساحل الشرقي".
+    const cityName = matchedQueryRule?.city ?? matchedRule?.city ?? selectedCity.name;
     openDestinationOnMap({ name: item.name, mapQuery: item.query }, cityName);
   }
 
