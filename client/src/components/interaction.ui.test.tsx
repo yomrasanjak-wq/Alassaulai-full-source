@@ -181,7 +181,7 @@ describe("City card imagery", () => {
   it("opens a selected destination on the in-app map and offers a return to the directory", async () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
-    expect(document.querySelector(".discovery-viewer")).toBeNull();
+    expect(screen.getByRole("dialog", { name: "اكتشف الشمال التركي" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /افتح صفحة المدينة/ }));
     fireEvent.click(screen.getByRole("button", { name: "عرض أوزنجول على خريطة ALASSAUL" }));
     await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
@@ -553,13 +553,13 @@ describe("Account, live modal, and place details", () => {
     expect(screen.getByRole("button", { name: /متابعة الدخول الآمن/ })).toBeTruthy();
   });
 
-  it("opens a detail modal for a featured place instead of only filling search", () => {
+  it("opens a selected place chip directly on the in-app map", async () => {
     render(<Home />);
     const placeButton = document.querySelector(".place-chips button") as HTMLButtonElement;
     expect(placeButton).toBeTruthy();
     fireEvent.click(placeButton);
-    expect(screen.getByText("ما الذي ستجده هنا؟")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /اعرض المكان على الخريطة/ })).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
+    expect(screen.getByRole("link", { name: /احصل على الاتجاهات/ })).toBeTruthy();
   });
 
   it("opens the selected live channel inside the broadcast box without the old modal", () => {
@@ -630,15 +630,16 @@ describe("City and place detail actions", () => {
     fireEvent.click(screen.getByRole("button", { name: /02.*ريزا.*Rize/ }));
     expect(screen.getByRole("heading", { name: /ريزا — Rize/ })).toBeTruthy();
     expect(screen.getAllByAltText("ريزا").length).toBeGreaterThan(0);
-    expect(screen.getByText(/المعالم والقرى والوجهات/)).toBeTruthy();
+    expect(screen.getByText("اختر أي وجهة لعرضها على الخريطة")).toBeTruthy();
+    expect(screen.getByText("المعالم")).toBeTruthy();
+    expect(screen.getByText("القرى والامتداد")).toBeTruthy();
   });
 
-  it("opens place details with an image and route action from a place chip", () => {
+  it("opens map details and directions from an Uzungol place chip", async () => {
     render(<Home />);
     fireEvent.click(screen.getAllByRole("button", { name: /أوزنجول/ })[0]!);
-    expect(screen.getByRole("heading", { name: "أوزنجول" })).toBeTruthy();
-    expect(screen.getByAltText(/طرابزون — أوزنجول/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: /اعرض المكان على الخريطة/ })).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
+    expect(screen.getByRole("link", { name: /احصل على الاتجاهات/ })).toBeTruthy();
   });
 });
 
@@ -701,7 +702,8 @@ describe("Global search guidance", () => {
       target: { value: "مستشفى في جدة" },
     });
     expect(screen.getByRole("status").textContent).toContain("لا توجد نتيجة مطابقة في دليلنا المحلي بعد");
-    expect(screen.getByText("ابحث عن هذا الطلب في العالم")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "بحث عالمي" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "ابحث عن هذا المكان في الخرائط" })).toBeTruthy();
   });
 
   it("shows local directory matches separately from global continuation", () => {
@@ -709,7 +711,7 @@ describe("Global search guidance", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "بحث عالمي عن الأماكن والخدمات" }), {
       target: { value: "أوزنجول" },
     });
-    expect(screen.getByText("نتيجة من دليل ALASSAUL")).toBeTruthy();
-    expect(screen.getByText("ابحث عن هذا الطلب في العالم")).toBeTruthy();
+    expect(screen.getByText(/نتيجة من دليل ALASSAUL/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "بحث عالمي" })).toBeTruthy();
   });
 });
