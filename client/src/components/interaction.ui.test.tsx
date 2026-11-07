@@ -528,6 +528,11 @@ describe("Redesign entry points and notifications", () => {
     expect(screen.getByRole("button", { name: /وجهات موثوقة/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /خريطة يومك/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /مساعد الرحلة/ })).toBeTruthy();
+    const mapTarget = document.getElementById("map") as HTMLElement;
+    mapTarget.scrollIntoView = vi.fn();
+    fireEvent.click(screen.getByRole("button", { name: "افتح خريطة يومك" }));
+    expect(mapTarget.scrollIntoView).toHaveBeenCalled();
+    expect(screen.queryByRole("textbox", { name: "سؤال المساعد" })).toBeNull();
     const gmailEntry = screen.getByRole("link", { name: /فتح Gmail في تبويب جديد/ }) as HTMLAnchorElement;
     expect(gmailEntry.getAttribute("href")).toBe("https://mail.google.com/mail/u/0/");
     expect(gmailEntry.getAttribute("target")).toBe("_blank");
