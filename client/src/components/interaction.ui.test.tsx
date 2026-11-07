@@ -82,6 +82,18 @@ describe("Interactive North map destination matching", () => {
     expect(screen.queryByRole("region", { name: /تفاصيل وادي فرتينا/ })).toBeNull();
     expect((screen.getByRole("textbox", { name: "ابحث في الخريطة" }) as HTMLInputElement).value).toBe("وادي فيرتينا وزيل قلعة");
   });
+
+  it("keeps the airplane restaurant as a search when no verified restaurant pin exists", () => {
+    render(<InteractiveNorthMap destinationRequest={{ name: "مطعم الطائرة", city: "يومرا", query: "Terminal Pide Uçak Cafe Restaurant Yomra" }} />);
+    expect(screen.queryByRole("region", { name: /تفاصيل/ })).toBeNull();
+    expect((screen.getByRole("textbox", { name: "ابحث في الخريطة" }) as HTMLInputElement).value).toBe("مطعم الطائرة");
+  });
+
+  it("does not replace the Asmasu waterfall with a generic Araklı waterfall pin", () => {
+    render(<InteractiveNorthMap destinationRequest={{ name: "شلال أراكلي الكبير", city: "أراكلي", query: "Araklı Asmasu Şelalesi Trabzon" }} />);
+    expect(screen.queryByRole("region", { name: "تفاصيل شلالات أراكلي" })).toBeNull();
+    expect((screen.getByRole("textbox", { name: "ابحث في الخريطة" }) as HTMLInputElement).value).toBe("شلال أراكلي الكبير");
+  });
 });
 
 describe("Home voice-to-chat flow", () => {
