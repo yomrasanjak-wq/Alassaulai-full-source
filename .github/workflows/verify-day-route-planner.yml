@@ -1,0 +1,40 @@
+name: Verify ALASSAUL Day Route Planner
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "client/src/components/DayRoutePlanner.tsx"
+      - "client/src/components/DayRoutePlanner.test.tsx"
+      - "client/src/pages/Home.tsx"
+      - "client/src/index.css"
+      - ".github/workflows/verify-day-route-planner.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  route-planner:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Type check
+        run: pnpm check
+      - name: Test route planner
+        run: pnpm exec vitest run client/src/components/DayRoutePlanner.test.tsx
+      - name: Build application
+        run: pnpm run build
