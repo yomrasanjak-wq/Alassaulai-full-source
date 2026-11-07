@@ -1089,24 +1089,27 @@ export default function Home() {
   }
 
   function openGalleryDestinationOnMap(item: { name: string; query: string; region: string }) {
-    // Resolve the gallery's geographic region to the same city key used by the map.
-    // Falling back to Trabzon for every eastern-coast place prevented Arsin,
-    // Sürmene, Araklı, Samsun, Giresun, and Istanbul entries from matching.
+    // Resolve the gallery region to a city key that actually exists in the map.
+    // Specific districts belong to Trabzon; ambiguous regional labels must not
+    // silently send visitors to an unrelated city.
     const region = item.region.toLocaleLowerCase();
     const regionCityRules: Array<{ terms: string[]; city: string }> = [
-      { terms: ["يومرا", "كاشوستو"], city: "يومرا" },
+      { terms: ["يومرا", "كاشوستو", "طريق يومرا"], city: "يومرا" },
       { terms: ["أرسين", "ارسين"], city: "أرسين" },
       { terms: ["سورميني", "سورمنه"], city: "سورميني" },
       { terms: ["أراكلي", "اراكلي"], city: "أراكلي" },
-      { terms: ["ريزا", "آيدر"], city: "ريزا" },
-      { terms: ["أوردو", "اوردو"], city: "أوردو" },
+      { terms: ["طرابزون", "أكشابات", "اكشابات", "تشايكارا", "دوزكوي", "ماتشكا", "أوف", "فوروم"], city: "طرابزون" },
+      { terms: ["ريزا", "آيدر", "تشايلي"], city: "ريزا" },
+      { terms: ["أوردو", "اوردو", "فاتسا"], city: "أوردو" },
       { terms: ["سامسون"], city: "سامسون" },
       { terms: ["قيرسون", "غيرسون"], city: "جيرسون" },
       { terms: ["إسطنبول", "اسطنبول"], city: "إسطنبول" },
       { terms: ["جورجيا", "باتومي"], city: "جورجيا" },
     ];
     const matchedRule = regionCityRules.find((rule) => rule.terms.some((term) => region.includes(term)));
-    const cityName = matchedRule?.city ?? "طرابزون";
+    // "وجهات متعددة" and "ساحل البحر الأسود" are intentionally ambiguous:
+    // retain the visitor's current map city rather than guessing Trabzon.
+    const cityName = matchedRule?.city ?? selectedCity.name;
     openDestinationOnMap({ name: item.name, mapQuery: item.query }, cityName);
   }
 
