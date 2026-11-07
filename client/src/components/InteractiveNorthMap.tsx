@@ -65,7 +65,7 @@ const destinations: MapDestination[] = [
   { name: "ساحل أولاشلي", city: "أولاشلي", branch: "الساحل والقرى", latin: "Ulasli Sahili", category: "nature", label: "واجهة بحرية", note: "واجهة ساحلية محلية للتنزه؛ تحقق من الخدمات المتاحة ميدانيًا.", query: "Ulasli Sahili Golcuk Turkey", position: { lat: 40.694, lng: 29.752 } },
   { name: "دغرمندره", city: "أولاشلي", branch: "الساحل والقرى", latin: "Degirmendere", category: "family", label: "بلدة ساحلية قريبة", note: "واجهة بحرية ومقاهٍ في محيط غولجوك، مناسبة لإضافة محطة قريبة للرحلة.", query: "Degirmendere Golcuk Kocaeli Turkey", position: { lat: 40.712, lng: 29.78 } },
   { name: "باتومي", city: "جورجيا", branch: "المدينة والواجهة البحرية", latin: "Batumi", category: "cities", label: "ساحل جورجيا", note: "بوليفارد باتومي والحدائق والواجهة البحرية.", query: "Batumi Georgia", position: { lat: 41.6168, lng: 41.6367 } },
-  { name: "مرتفعات يومرا", city: "طرابزون", branch: "مرتفعات يومرا", latin: "Yomra", category: "nature", label: "مرتفعات وإطلالات", note: "إطلالات بحرية ومرافق ترفيهية قريبة من طرابزون.", query: "Yomra Trabzon Turkey", position: { lat: 40.955, lng: 39.86 } },
+  { name: "مرتفعات يومرا", city: "يومرا", branch: "مرتفعات يومرا", latin: "Yomra", category: "nature", label: "مرتفعات وإطلالات", note: "إطلالات بحرية ومرافق ترفيهية قريبة من طرابزون.", query: "Yomra Trabzon Turkey", position: { lat: 40.955, lng: 39.86 } },
   { name: "مرتفعات سلطان مراد", city: "طرابزون", branch: "سلطان مراد · أوزنجول · ديمركابي", latin: "Sultan Murat", category: "nature", label: "مرتفعات", note: "مروج جبلية وإطلالات موسمية لعشاق الطبيعة.", query: "Sultan Murat Plateau Trabzon Turkey", position: { lat: 40.74, lng: 40.18 } },
   { name: "أكشبات", city: "طرابزون", branch: "أكشبات · حيدر نبي · مغارة تشال · كاياباشا · حاجي", latin: "Akçaabat", category: "family", label: "ساحل ومرتفعات", note: "شاطئ وممشى أكشبات ومرتفعات حيدر نبي ومغارة تشال.", query: "Akcaabat Trabzon Turkey", position: { lat: 41.02, lng: 39.57 } },
   { name: "مرتفعات حيدر نبي", city: "طرابزون", branch: "أكشبات · حيدر نبي · مغارة تشال · كاياباشا · حاجي", latin: "Hıdırnebi", category: "nature", label: "مرتفعات", note: "مرتفعات خضراء وإطلالات واسعة قرب أكشبات.", query: "Hidirnebi Plateau Trabzon Turkey", position: { lat: 40.99, lng: 39.49 } },
@@ -172,28 +172,45 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
       [normalize("ميدان طرابزون والأسواق")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
       [normalize("ميدان طرابزون")]: [normalize("Meydan Trabzon Turkey")],
       [normalize("ميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
+      // Gallery labels that intentionally differ from the curated map-pin names.
+      // These aliases reuse existing map records only; they do not create coordinates.
+      [normalize("ممشى كاشوستو البحري الجديد")]: [normalize("واجهة كاشستوس البحرية"), normalize("Kaşüstü Waterfront")],
+      [normalize("السلطان مراد")]: [normalize("مرتفعات سلطان مراد"), normalize("Sultan Murat Plateau Trabzon Turkey")],
+      [normalize("حيدر نبي")]: [normalize("مرتفعات حيدر نبي"), normalize("Hidirnebi Plateau Trabzon Turkey")],
+      [normalize("دير صوميلا")]: [normalize("دير سوميلا"), normalize("Sumela Monastery Turkey")],
+      [normalize("بحيرة سيرا")]: [normalize("بحيرة سيرا جول"), normalize("Sera Lake Trabzon Turkey")],
+      [normalize("مرتفعات آيدر")]: [normalize("أيدر"), normalize("Ayder Plateau Turkey")],
+      [normalize("تلفريك ومرتفعات بوزتبه")]: [normalize("تلفريك بوزتبه"), normalize("Ordu Boztepe Cable Car Turkey")],
+      [normalize("واجهة أوردو البحرية")]: [normalize("شاطئ أوردو"), normalize("Ordu coast Turkey")],
+      [normalize("سورميني وسوق السكاكين")]: [normalize("محال سكاكين سورميني"), normalize("Surmene bicak dukkanlari Turkey")],
     };
     const requestNames = [requested, ...(aliases[requested] ?? [])];
     const requestedCity = destinationRequest.city;
+    const isCevahirOutlet = requestedQuery.includes(normalize("Cevahir Outlet")) ||
+      requested.includes(normalize("جواهر"));
     const cityMatches = (item: MapDestination) =>
       !requestedCity || item.city === requestedCity ||
-      (requestedCity === "طرابزون" && item.city === "طرابزون");
-    const exactMatch = destinations.find((item) =>
+      // Cevahir Outlet is physically in Kaşüstü, Yomra. Older Trabzon cards
+      // may still carry the same query, so prefer the verified Yomra map pin.
+      (isCevahirOutlet && item.city === "يومرا");
+    // These gallery labels combine two distinct landmarks, but the curated
+    // map has no verified pin for the full pair. Keep them as a map search
+    // instead of silently dropping one landmark and opening the other.
+    const isCombinedDestinationWithoutSinglePin =
+      ((requested.includes(normalize("هامسي كوي")) && requested.includes(normalize("زيقانا"))) ||
+        (requestedQuery.includes(normalize("hamsikoy")) && requestedQuery.includes(normalize("zigana")))) ||
+      ((requested.includes(normalize("فيرتينا")) && requested.includes(normalize("زيل قلعة"))) ||
+        (requestedQuery.includes(normalize("firtina")) && requestedQuery.includes(normalize("zilkale"))));
+    const exactMatch = isCombinedDestinationWithoutSinglePin ? undefined : destinations.find((item) =>
       cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
         const value = normalize(candidate);
         return requestNames.includes(value) || value === requestedQuery;
       })
     );
-    const match = exactMatch ?? destinations.find((item) =>
-      cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
-        const value = normalize(candidate);
-        const requestTokens: string[] = requestNames.flatMap((name) => name.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? []);
-        const candidateTokens: string[] = value.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? [];
-        const tokenMatch = requestTokens.length > 0 && requestTokens.every((token: string) => candidateTokens.some((candidateToken: string) => candidateToken === token));
-        return tokenMatch || (requested.length > 3 && value.includes(requested)) ||
-          (requestedQuery.length > 5 && requestedQuery.includes(value));
-      })
-    );
+    // Only open a pin for an exact curated destination or an explicit alias.
+    // Fuzzy token/substring matching can mistake a city or nearby attraction
+    // for a specific gallery place that has no verified pin.
+    const match = isCombinedDestinationWithoutSinglePin ? undefined : exactMatch;
     if (match) {
       openDestination(match);
       return;

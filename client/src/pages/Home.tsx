@@ -1077,7 +1077,7 @@ export default function Home() {
     setMapDestinationRequest({ name: item.name, city: cityName, query: item.mapQuery });
     setModal(null);
     setPhotoBookOpen(false);
-    const knownCities = ["طرابزون", "يومرا", "أرسين", "سورميني", "أراكلي", "ريزا", "أوردو", "سامسون", "جيرسون", "إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أنقرة"];
+    const knownCities = ["طرابزون", "يومرا", "أرسين", "سورميني", "أراكلي", "ريزا", "أوردو", "سامسون", "جيرسون", "إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أولاشلي", "أنقرة", "جورجيا"];
     const resolvedCity = knownCities.includes(cityName) ? cityName : "طرابزون";
     window.setTimeout(() => {
       scrollTo("map");
@@ -1089,7 +1089,46 @@ export default function Home() {
   }
 
   function openGalleryDestinationOnMap(item: { name: string; query: string; region: string }) {
-    const cityName = item.region.includes("يومرا") ? "يومرا" : item.region.includes("ريزا") ? "ريزا" : item.region.includes("أوردو") ? "أوردو" : "طرابزون";
+    // Resolve the gallery region to a city key that actually exists in the map.
+    // Specific districts belong to Trabzon; ambiguous regional labels must not
+    // silently send visitors to an unrelated city.
+    const region = item.region.toLocaleLowerCase();
+    const regionCityRules: Array<{ terms: string[]; city: string }> = [
+      { terms: ["يومرا", "كاشوستو", "طريق يومرا"], city: "يومرا" },
+      { terms: ["أرسين", "ارسين"], city: "أرسين" },
+      { terms: ["سورميني", "سورمنه"], city: "سورميني" },
+      { terms: ["أراكلي", "اراكلي"], city: "أراكلي" },
+      { terms: ["طرابزون", "أكشابات", "اكشابات", "تشايكارا", "دوزكوي", "ماتشكا", "أوف", "فوروم"], city: "طرابزون" },
+      { terms: ["ريزا", "آيدر", "تشايلي"], city: "ريزا" },
+      { terms: ["أوردو", "اوردو", "فاتسا"], city: "أوردو" },
+      { terms: ["سامسون"], city: "سامسون" },
+      { terms: ["قيرسون", "غيرسون"], city: "جيرسون" },
+      { terms: ["إسطنبول", "اسطنبول"], city: "إسطنبول" },
+      { terms: ["جورجيا", "باتومي"], city: "جورجيا" },
+    ];
+    const matchedRule = regionCityRules.find((rule) => rule.terms.some((term) => region.includes(term)));
+    // Some gallery cards use broad editorial regions. In those cases, use
+    // only an explicit province/place name present in the card's search query.
+    const query = item.query.toLocaleLowerCase();
+    const queryCityRules: Array<{ terms: string[]; city: string }> = [
+      // Prefer specific eastern Trabzon districts over broad editorial regions.
+      { terms: ["yeşilyalı", "yesilyali", "arsin"], city: "أرسين" },
+      { terms: ["sürmene", "surmene"], city: "سورميني" },
+      { terms: ["araklı", "arakli"], city: "أراكلي" },
+      { terms: ["kaşüstü", "kasustu", "yomra"], city: "يومرا" },
+      { terms: ["samsun"], city: "سامسون" },
+      { terms: ["giresun"], city: "جيرسون" },
+      { terms: ["ordu", "fatsa", "perşembe", "yason"], city: "أوردو" },
+      { terms: ["rize", "ayder", "ağaran", "fırtına", "zil kale", "zil?kale"], city: "ريزا" },
+      { terms: ["istanbul"], city: "إسطنبول" },
+      { terms: ["batumi", "georgia", "martvili"], city: "جورجيا" },
+    ];
+    const matchedQueryRule = queryCityRules.find((rule) => rule.terms.some((term) => query.includes(term)));
+    // "وجهات متعددة" and "ساحل البحر الأسود" are intentionally ambiguous:
+    // a verified city in the query wins; otherwise retain the current city.
+    // An explicit province in the destination query is more precise than
+    // a broad editorial gallery region such as "الساحل الشرقي".
+    const cityName = matchedQueryRule?.city ?? matchedRule?.city ?? selectedCity.name;
     openDestinationOnMap({ name: item.name, mapQuery: item.query }, cityName);
   }
 
