@@ -188,7 +188,7 @@ async function getJeddahWeatherAnswer(content: string) {
 const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
 function isLocalBusinessSearchQuestion(message: string) {
-  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast)/i.test(message);
+  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|مستشفى|مستشفيات|مركز طبي|عيادة|طبيب|دكتور|صيدلية|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast|hospital|clinic|pharmacy)/i.test(message);
   const asksForPlace = /(?:أقرب|اقرب|قريب|بالقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث|يقع|عنوان|موقع|nearby|nearest|near me|best|where|location|address|search)/i.test(message);
   return mentionsBusiness && asksForPlace;
 }
@@ -198,12 +198,18 @@ function isSaudiLeagueQuestion(message: string) {
 }
 
 function isSaudiLeagueScheduleQuestion(message: string) {
-  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
+  return isSaudiLeagueQuestion(message) && /(?:متى|يبدا|يبدأ|موعد|القادم|القادمة|المباراة القادمة|جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week|next)/i.test(message);
 }
 
 /** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
 async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", message: string) {
   const scheduleQuestion = isSaudiLeagueScheduleQuestion(message);
+  if (scheduleQuestion) {
+    const fixturesUrl = "https://www.spl.com.sa/en/fixtures-results";
+    return language === "AR"
+      ? `طلبك عن مواعيد أو نتائج مباريات دوري روشن. بدلاً من عرض عناوين أخبار على أنها جدول مباريات، افتح صفحة الرابطة الرسمية التي تعرض المباريات والنتائج حسب الجولة والتاريخ: [جدول ونتائج دوري روشن الرسمية](${fixturesUrl})`
+      : `For verified Saudi Pro League fixtures and results, use the official league match centre: [Fixtures and results](${fixturesUrl})`;
+  }
   const query = language === "AR"
     ? scheduleQuestion ? "دوري روشن السعودي جدول مباريات الجولة القادمة مواعيد" : "أخبار دوري روشن السعودي اليوم"
     : scheduleQuestion ? "Saudi Pro League fixtures schedule upcoming matches" : "Saudi Pro League latest news today";
@@ -265,10 +271,45 @@ function getContextualFallback(
 ): string | undefined {
   const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
-  const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
-    && /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
-  if (asksItinerary && language === "AR") {
+  const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest);
+  if (asksItinerary && language === "AR" && /(?:مصر|القاهرة|القاهره|الجيزة|الجيزه|الاهرامات|الأهرامات|egypt|cairo)/i.test(latest)) {
+    return "إليك برنامجاً مبدئياً لخمسة أيام في مصر، بافتراض أن الوصول والمغادرة من القاهرة:\n\n1. **اليوم الأول – الأهرامات:** أهرامات الجيزة وأبو الهول، ثم المتحف المصري الكبير إذا سمح الوقت.\n2. **اليوم الثاني – القاهرة التاريخية:** قلعة صلاح الدين ومسجد محمد علي، ثم شارع المعز وخان الخليلي مساءً.\n3. **اليوم الثالث – وسط القاهرة والنيل:** متحف الحضارة أو المتحف المصري، ثم جولة على النيل مساءً.\n4. **اليوم الرابع – الإسكندرية:** مكتبة الإسكندرية وقلعة قايتباي والكورنيش؛ خصص يوماً كاملاً للتنقل ذهاباً وعودة.\n5. **اليوم الخامس – القاهرة:** وقت حر للتسوق أو زيارة مكان فاتك، ثم التوجه للمطار.\n\nهذه خطة مبدئية وليست تحققاً من ساعات العمل أو التذاكر أو المرور. أستطيع تخصيصها للعائلة أو لمن يفضل البقاء في القاهرة.";
+  }
+  const asksTrabzonItinerary = asksItinerary && /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
+  if (asksTrabzonItinerary && language === "AR") {
     return "تعذّر تشغيل المساعد الذكي مؤقتاً، لكن إليك برنامجاً مبدئياً ليوم في طرابزون:\n\n1. **الصباح:** قصر أتاتورك وحدائقه، ثم جولة قصيرة في ميدان طرابزون.\n2. **وقت الغداء:** اختر مطعماً محلياً في وسط المدينة، وتحقق من التقييمات وساعات العمل قبل التوجه إليه.\n3. **بعد الظهر:** ممشى غانيتا على البحر، أو أكواريوم طرابزون إذا كانت الرحلة عائلية.\n4. **قبل الغروب:** بو زتبه للإطلالة على المدينة والبحر.\n\nهذا اقتراح عام وليس تحققاً من الطقس أو أوقات الفتح اليوم. إذا أخبرتني بوجود أطفال أو سيارة وعدد أيام الرحلة، أرتّب لك نسخة أنسب عند عودة المساعد.";
+  }
+
+  const asksHospital = /(?:مستشفى|مستشفيات|مركز طبي|عيادة|hospital|clinic)/i.test(latest)
+    && /(?:موقع|وين|أين|اين|عنوان|أقرب|اقرب|في|دلني|location|where|address|directions)/i.test(latest);
+  if (asksHospital) {
+    const context = `${latest} ${recentUserText}`;
+    const facility = /(?:الحبيب|سليمان الحبيب|sulaiman al habib)/i.test(context) ? "مستشفى الدكتور سليمان الحبيب"
+      : /(?:المواساة|mouwasat)/i.test(context) ? "مستشفى المواساة"
+      : /(?:السعودي الألماني|السعودي الالماني|saudi german)/i.test(context) ? "المستشفى السعودي الألماني"
+      : "مستشفى";
+    const district = /المحمدية|المحمديه/i.test(context) ? "المحمدية" : "";
+    const city = /جدة|جده|jeddah/i.test(context) ? "جدة"
+      : /الرياض|riyadh/i.test(context) ? "الرياض"
+      : /ينبع|yanbu/i.test(context) ? "ينبع"
+      : /مكة|مكه|makkah/i.test(context) ? "مكة" : "";
+    const query = [facility, district, city].filter(Boolean).join(" ");
+    const url = new URL("https://www.google.com/maps/search/");
+    url.searchParams.set("api", "1");
+    url.searchParams.set("query", query);
+    return language === "AR"
+      ? `حتى لا أوجّهك إلى فرع في مدينة خاطئة، لن أخمّن العنوان. هذا بحث مباشر عن **${query}** في خرائط Google: [افتح موقع المستشفى](${url.toString()})`
+      : `I can't verify the branch address, so I won't guess. [Find ${query} on Google Maps](${url.toString()})`;
+  }
+
+  const asksImages = /(?:ارسل|أرسل|ورني|ورّني|اعرض|أبغى أشوف|ابغى اشوف).{0,20}(?:صور|صورة|image|photo)|(?:صور|صورة).{0,24}(?:الأهرامات|الاهرامات|مصر|egypt|pyramids)/i.test(latest);
+  if (asksImages) {
+    const query = /(?:الأهرامات|الاهرامات|pyramids)/i.test(latest) ? "الأهرامات المصرية" : latest.replace(/(?:ارسل|أرسل|لي|صور|صورة|بالله|لو سمحت|ورني|ورّني|اعرض)/g, "").trim() || "صور عامة";
+    const url = new URL("https://www.google.com/search");
+    url.search = new URLSearchParams({ tbm: "isch", q: query }).toString();
+    return language === "AR"
+      ? `أستطيع توجيهك إلى صور مطابقة للموضوع، لكن لا أريد الادعاء أنني أرفقت صوراً داخل المحادثة. [شاهد صور ${query}](${url.toString()})`
+      : `[View images for ${query}](${url.toString()})`;
   }
 
   const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
@@ -656,11 +697,22 @@ export const appRouter = router({
           // Without verified Google Maps grounding, route local business lookups
           // to an actual map search instead of allowing the model to guess branches,
           // addresses, ratings, or opening status.
+          if (/(?:ارسل|أرسل|ورني|ورّني|اعرض|أبغى أشوف|ابغى اشوف).{0,20}(?:صور|صورة|image|photo)|(?:صور|صورة).{0,24}(?:الأهرامات|الاهرامات|مصر|egypt|pyramids)/i.test(latestText)) {
+            const imageSearch = getContextualFallback(input.messages, input.language);
+            if (imageSearch) return { text: imageSearch };
+          }
+
           const mapsGroundingAvailable = Boolean(process.env.GEMINI_API_KEY?.trim())
             && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true";
           if (isLocalBusinessSearchQuestion(latestText) && !mapsGroundingAvailable) {
             const localSearch = getContextualFallback(input.messages, input.language);
             if (localSearch) return { text: localSearch };
+          }
+
+          if (/(?:النخبة الآسيوية|دوري أبطال آسيا للنخبة|دوري ابطال اسيا للنخبه|AFC Champions League Elite)/i.test(latestText)) {
+            return { text: input.language === "AR"
+              ? "لنتائج دوري أبطال آسيا للنخبة، هذا المصدر الرسمي للاتحاد الآسيوي؛ يعرض الأخبار والنتائج والمباريات: [دوري أبطال آسيا للنخبة](https://www.the-afc.com/en/club/afc_champions_league_elite/home.html). لن أخمّن نتيجة مباراة غير متحقق منها."
+              : "For official AFC Champions League Elite results and fixtures, use the [AFC competition page](https://www.the-afc.com/en/club/afc_champions_league_elite/home.html). I won't guess unverified scores." };
           }
 
           if (isSaudiLeagueQuestion(latestText)) {
