@@ -24,6 +24,7 @@ const destinations: MapDestination[] = [
   { name: "أراكلي", city: "أراكلي", branch: "الساحل والقرى", latin: "Araklı", category: "cities", label: "ساحل وبلدة", note: "بلدة ساحلية شرقي طرابزون ضمن مسار الطريق الساحلي إلى ريزا.", query: "Arakli Trabzon Turkey", position: { lat: 40.939, lng: 40.058 } },
   { name: "واجهة كاشستوس البحرية", city: "يومرا", branch: "الساحل والخدمات", latin: "Kaşüstü Waterfront", category: "family", label: "واجهة بحرية", note: "منطقة ساحلية قرب يومرا؛ تحقق من المداخل والخدمات المتاحة قبل الزيارة.", query: "Kasustu Yomra Trabzon Turkey", position: { lat: 40.958, lng: 39.856 } },
   { name: "مركز جواهر طرابزون", city: "يومرا", branch: "الساحل والخدمات", latin: "Cevahir Outlet Trabzon", category: "family", label: "تسوق ومطاعم", note: "مركز تسوق في منطقة يومرا؛ تحقق من ساعات العمل والفعاليات قبل الانطلاق.", query: "Cevahir Outlet Trabzon Yomra Turkey", position: { lat: 40.957, lng: 39.862 } },
+  { name: "زلاجة فورابارك الجبلية في يومرا", city: "يومرا", branch: "الأنشطة والمغامرات", latin: "Forapark Dağ Kızağı ve Restoran", category: "family", label: "زلاجة جبلية ومغامرات", note: "فورابارك في كاشستوس، يومرا؛ عنوانها İskenderoğlu Sokak No:17. تحقق من مواعيد التشغيل والأسعار قبل الزيارة.", query: "Forapark Dağ Kızağı Merkezi Kaşüstü Yomra Trabzon Turkey", position: { lat: 40.949145, lng: 39.805972 } },
   { name: "حديقة ساحل أرسين", city: "أرسين", branch: "الساحل والخدمات", latin: "Arsin Sahil Parkı", category: "family", label: "حديقة ساحلية", note: "مساحة ساحلية للتنزه؛ قد تتغير الخدمات المتاحة حسب الموسم والطقس.", query: "Arsin Sahil Parki Trabzon Turkey", position: { lat: 40.953, lng: 39.927 } },
   { name: "مركز سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene Center", category: "cities", label: "أسواق وخدمات", note: "مركز البلدة على الطريق الساحلي؛ استخدم الخريطة للتحقق من الوجهة وساعات العمل.", query: "Surmene merkez Trabzon Turkey", position: { lat: 40.912, lng: 40.116 } },
   { name: "محال سكاكين سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene Knife Shops", category: "culture", label: "حرف محلية وتسوق", note: "تشتهر سورميني بحرفة صناعة السكاكين؛ تحقق من المتجر ومواعيد العمل قبل الزيارة.", query: "Surmene bicak dukkanlari Turkey", position: { lat: 40.912, lng: 40.118 } },
@@ -188,11 +189,13 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     const requestedCity = destinationRequest.city;
     const isCevahirOutlet = requestedQuery.includes(normalize("Cevahir Outlet")) ||
       requested.includes(normalize("جواهر"));
+    const isForapark = requestedQuery.includes(normalize("Forapark")) ||
+      requested.includes(normalize("زحليقة")) || requested.includes(normalize("زلاجة"));
     const cityMatches = (item: MapDestination) =>
       !requestedCity || item.city === requestedCity ||
-      // Cevahir Outlet is physically in Kaşüstü, Yomra. Older Trabzon cards
-      // may still carry the same query, so prefer the verified Yomra map pin.
-      (isCevahirOutlet && item.city === "يومرا");
+      // Cevahir Outlet and Forapark are in Kaşüstü, Yomra, even when opened
+      // from the broader Trabzon destination collection.
+      ((isCevahirOutlet || isForapark) && item.city === "يومرا");
     // These gallery labels combine two distinct landmarks, but the curated
     // map has no verified pin for the full pair. Keep them as a map search
     // instead of silently dropping one landmark and opening the other.
