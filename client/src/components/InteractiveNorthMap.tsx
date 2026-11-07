@@ -187,8 +187,8 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     const match = exactMatch ?? destinations.find((item) =>
       cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
         const value = normalize(candidate);
-        const requestTokens = requestNames.flatMap((name) => name.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? []);
-        const candidateTokens = value.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? [];
+        const requestTokens: string[] = requestNames.flatMap((name) => name.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? []);
+        const candidateTokens: string[] = value.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? [];
         const tokenMatch = requestTokens.length > 0 && requestTokens.every((token) => candidateTokens.includes(token));
         return tokenMatch || (requested.length > 3 && value.includes(requested)) ||
           (requestedQuery.length > 5 && requestedQuery.includes(value));
