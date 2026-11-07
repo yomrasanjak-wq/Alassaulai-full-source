@@ -207,16 +207,10 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
         return requestNames.includes(value) || value === requestedQuery;
       })
     );
-    const match = isCombinedDestinationWithoutSinglePin ? undefined : exactMatch ?? destinations.find((item) =>
-      cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
-        const value = normalize(candidate);
-        const requestTokens: string[] = requestNames.flatMap((name) => name.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? []);
-        const candidateTokens: string[] = value.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? [];
-        const tokenMatch = requestTokens.length > 0 && requestTokens.every((token: string) => candidateTokens.some((candidateToken: string) => candidateToken === token));
-        return tokenMatch || (requested.length > 3 && value.includes(requested)) ||
-          (requestedQuery.length > 5 && requestedQuery.includes(value));
-      })
-    );
+    // Only open a pin for an exact curated destination or an explicit alias.
+    // Fuzzy token/substring matching can mistake a city or nearby attraction
+    // for a specific gallery place that has no verified pin.
+    const match = isCombinedDestinationWithoutSinglePin ? undefined : exactMatch;
     if (match) {
       openDestination(match);
       return;
