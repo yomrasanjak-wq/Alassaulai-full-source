@@ -65,7 +65,7 @@ const destinations: MapDestination[] = [
   { name: "ساحل أولاشلي", city: "أولاشلي", branch: "الساحل والقرى", latin: "Ulasli Sahili", category: "nature", label: "واجهة بحرية", note: "واجهة ساحلية محلية للتنزه؛ تحقق من الخدمات المتاحة ميدانيًا.", query: "Ulasli Sahili Golcuk Turkey", position: { lat: 40.694, lng: 29.752 } },
   { name: "دغرمندره", city: "أولاشلي", branch: "الساحل والقرى", latin: "Degirmendere", category: "family", label: "بلدة ساحلية قريبة", note: "واجهة بحرية ومقاهٍ في محيط غولجوك، مناسبة لإضافة محطة قريبة للرحلة.", query: "Degirmendere Golcuk Kocaeli Turkey", position: { lat: 40.712, lng: 29.78 } },
   { name: "باتومي", city: "جورجيا", branch: "المدينة والواجهة البحرية", latin: "Batumi", category: "cities", label: "ساحل جورجيا", note: "بوليفارد باتومي والحدائق والواجهة البحرية.", query: "Batumi Georgia", position: { lat: 41.6168, lng: 41.6367 } },
-  { name: "مرتفعات يومرا", city: "طرابزون", branch: "مرتفعات يومرا", latin: "Yomra", category: "nature", label: "مرتفعات وإطلالات", note: "إطلالات بحرية ومرافق ترفيهية قريبة من طرابزون.", query: "Yomra Trabzon Turkey", position: { lat: 40.955, lng: 39.86 } },
+  { name: "مرتفعات يومرا", city: "يومرا", branch: "مرتفعات يومرا", latin: "Yomra", category: "nature", label: "مرتفعات وإطلالات", note: "إطلالات بحرية ومرافق ترفيهية قريبة من طرابزون.", query: "Yomra Trabzon Turkey", position: { lat: 40.955, lng: 39.86 } },
   { name: "مرتفعات سلطان مراد", city: "طرابزون", branch: "سلطان مراد · أوزنجول · ديمركابي", latin: "Sultan Murat", category: "nature", label: "مرتفعات", note: "مروج جبلية وإطلالات موسمية لعشاق الطبيعة.", query: "Sultan Murat Plateau Trabzon Turkey", position: { lat: 40.74, lng: 40.18 } },
   { name: "أكشبات", city: "طرابزون", branch: "أكشبات · حيدر نبي · مغارة تشال · كاياباشا · حاجي", latin: "Akçaabat", category: "family", label: "ساحل ومرتفعات", note: "شاطئ وممشى أكشبات ومرتفعات حيدر نبي ومغارة تشال.", query: "Akcaabat Trabzon Turkey", position: { lat: 41.02, lng: 39.57 } },
   { name: "مرتفعات حيدر نبي", city: "طرابزون", branch: "أكشبات · حيدر نبي · مغارة تشال · كاياباشا · حاجي", latin: "Hıdırnebi", category: "nature", label: "مرتفعات", note: "مرتفعات خضراء وإطلالات واسعة قرب أكشبات.", query: "Hidirnebi Plateau Trabzon Turkey", position: { lat: 40.99, lng: 39.49 } },
@@ -174,6 +174,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
       [normalize("ميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
       // Gallery labels that intentionally differ from the curated map-pin names.
       // These aliases reuse existing map records only; they do not create coordinates.
+      [normalize("ممشى كاشوستو البحري الجديد")]: [normalize("واجهة كاشستوس البحرية"), normalize("Kaşüstü Waterfront")],
       [normalize("السلطان مراد")]: [normalize("مرتفعات سلطان مراد"), normalize("Sultan Murat Plateau Trabzon Turkey")],
       [normalize("حيدر نبي")]: [normalize("مرتفعات حيدر نبي"), normalize("Hidirnebi Plateau Trabzon Turkey")],
       [normalize("دير صوميلا")]: [normalize("دير سوميلا"), normalize("Sumela Monastery Turkey")],
