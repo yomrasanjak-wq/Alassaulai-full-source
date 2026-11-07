@@ -172,6 +172,18 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
       [normalize("ميدان طرابزون والأسواق")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
       [normalize("ميدان طرابزون")]: [normalize("Meydan Trabzon Turkey")],
       [normalize("ميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
+      // Gallery labels that intentionally differ from the curated map-pin names.
+      // These aliases reuse existing map records only; they do not create coordinates.
+      [normalize("السلطان مراد")]: [normalize("مرتفعات سلطان مراد"), normalize("Sultan Murat Plateau Trabzon Turkey")],
+      [normalize("حيدر نبي")]: [normalize("مرتفعات حيدر نبي"), normalize("Hidirnebi Plateau Trabzon Turkey")],
+      [normalize("دير صوميلا")]: [normalize("دير سوميلا"), normalize("Sumela Monastery Turkey")],
+      [normalize("هامسي كوي وزيقانا")]: [normalize("همسي كوي"), normalize("Hamsikoy Trabzon Turkey")],
+      [normalize("بحيرة سيرا")]: [normalize("بحيرة سيرا جول"), normalize("Sera Lake Trabzon Turkey")],
+      [normalize("مرتفعات آيدر")]: [normalize("أيدر"), normalize("Ayder Plateau Turkey")],
+      [normalize("وادي فيرتينا وزيل قلعة")]: [normalize("وادي فرتينا"), normalize("Firtina Valley Rize Turkey")],
+      [normalize("تلفريك ومرتفعات بوزتبه")]: [normalize("تلفريك بوزتبه"), normalize("Ordu Boztepe Cable Car Turkey")],
+      [normalize("واجهة أوردو البحرية")]: [normalize("شاطئ أوردو"), normalize("Ordu coast Turkey")],
+      [normalize("سورميني وسوق السكاكين")]: [normalize("محال سكاكين سورميني"), normalize("Surmene bicak dukkanlari Turkey")],
     };
     const requestNames = [requested, ...(aliases[requested] ?? [])];
     const requestedCity = destinationRequest.city;
