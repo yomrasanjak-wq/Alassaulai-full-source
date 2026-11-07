@@ -1699,7 +1699,7 @@ export default function Home() {
             <div className="hero-proof"><span><ShieldCheck size={15} /> 8 مدن موثقة</span><span><Clock3 size={15} /> تحديثات يومية</span><span><Sparkles size={15} /> مساعد ذكي</span></div>
           </div>
           <div id="map" className="hero-visual hero-map-replacement" aria-label="الخريطة التفاعلية للشمال التركي">
-            <InteractiveNorthMap destinationRequest={mapDestinationRequest} onBackToDestinations={() => { setMapDestinationRequest(null); setModal("city"); }} />
+            <InteractiveNorthMap destinationRequest={mapDestinationRequest} onBackToDestinations={() => { setMapDestinationRequest(null); }} />
           </div>
         </div>
         <div className="container hero-entry-only" aria-label="مسارات الاستكشاف السريعة">
