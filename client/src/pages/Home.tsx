@@ -1070,9 +1070,8 @@ export default function Home() {
   function openPlace(placeName: string) {
     const place = selectedCity.destinations.find((item) => item.name === placeName || item.mapQuery.toLowerCase().includes(placeName.toLowerCase()));
     const resolvedPlace = place ?? destination(placeName, "أنشطة ومغامرات", `${placeName} ${selectedCity.name} Turkey`, `موقع مقترح في ${selectedCity.name}. افتح الخريطة للتحقق من الطريق وساعات الزيارة قبل الانطلاق.`);
-    setSelectedPlace(resolvedPlace);
-    setModal("place");
-    notify("تم فتح تفاصيل المكان", `${resolvedPlace.name} — ${selectedCity.name}`, "success");
+    openDestinationOnMap(resolvedPlace, selectedCity.name);
+    notify("تم فتح الوجهة على الخريطة", `${resolvedPlace.name} — ${selectedCity.name}`, "success");
   }
 
   function openDestinationOnMap(item: { name: string; mapQuery: string }, cityName = selectedCity.name) {
@@ -1679,7 +1678,7 @@ export default function Home() {
           <div className="cities-layout">
             <aside className="city-rail">
               <div className="rail-title"><span>01—08</span><span>{language === "AR" ? "محطات" : language === "TR" ? "Durak" : "stops"}</span></div>
-              {cities.map((city) => <button key={city.name} className={`city-tab ${selectedCity.name === city.name ? "city-tab-active" : ""}`} onClick={() => { setSelectedCity(city); setModal("city"); notify("تم فتح ملف المدينة", `${city.name} — المعالم والقرى والوجهات`, "success"); }}><span className="city-number">{city.icon}</span><span><strong>{city.name}</strong><small>{city.latin}</small></span><ArrowLeft size={15} /></button>)}
+              {cities.map((city) => <button key={city.name} className={`city-tab ${selectedCity.name === city.name ? "city-tab-active" : ""}`} onClick={() => { setSelectedCity(city); setModal("city"); notify("اختر وجهتك لفتحها على الخريطة", `${city.name} — اختر مكانًا من الدليل وستنتقل إليه مباشرةً`, "success"); }}><span className="city-number">{city.icon}</span><span><strong>{city.name}</strong><small>{city.latin}</small></span><ArrowLeft size={15} /></button>)}
             </aside>
             <div className="city-feature">
               <div className="city-feature-image">
