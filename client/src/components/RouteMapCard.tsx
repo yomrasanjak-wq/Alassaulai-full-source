@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Clock3, ExternalLink, MapPin, Route as RouteIcon } from "lucide-react";
 import { MapView } from "@/components/Map";
 import { buildDirectionsUrl } from "@shared/routeRequest";
-import { getRouteMapCamera } from "@shared/routeMap";
+import { getRouteMapCamera, getRouteMapPoints } from "@shared/routeMap";
 
 type RouteMapCardProps = {
   origin?: string;
@@ -11,61 +11,70 @@ type RouteMapCardProps = {
 };
 
 type RouteSummary = { distance: string; duration: string };
+type LeafletMapAdapter = { leafletMap: any };
 
 export function RouteMapCard({ origin, destination, language = "AR" }: RouteMapCardProps) {
-  const rendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
-  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const routeLayerRef = useRef<any>(null);
+  const [mapInstance, setMapInstance] = useState<LeafletMapAdapter | null>(null);
   const [mapLoadFailed, setMapLoadFailed] = useState(false);
   const [summary, setSummary] = useState<RouteSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const camera = useMemo(() => getRouteMapCamera(origin, destination), [destination, origin]);
+  const routePoints = useMemo(() => getRouteMapPoints(origin, destination), [destination, origin]);
   const labels = useMemo(() => {
-    if (language === "TR") return { loading: "Rota haritada hazırlanıyor…", distance: "Mesafe", duration: "Süre", open: "Google Maps'te aç", error: "Rota çizilemedi. Resmî Google Maps yönlendirmesini açabilirsiniz.", noCenter: "Bu rota için yerel koordinatlar belirlenemedi; resmî yol tarifini açın." };
-    if (language === "EN") return { loading: "Preparing the route on the map…", distance: "Distance", duration: "Time", open: "Open in Google Maps", error: "The route could not be drawn. You can open the official Google Maps directions.", noCenter: "Local coordinates are unavailable for this route; use the official directions link." };
-    return { loading: "أرسم الطريق على الخريطة…", distance: "المسافة", duration: "المدة", open: "فتح الاتجاهات في Google Maps", error: "تعذر رسم الطريق على الخريطة. يمكنك فتح الاتجاهات الرسمية في Google Maps.", noCenter: "لم أتمكن من تحديد إحداثيات هذه الوجهة دون خدمة خرائط Google. استخدم رابط الاتجاهات الرسمي أدناه." };
+    if (language === "TR") return { loading: "Rota haritada hazırlanıyor…", distance: "Mesafe", duration: "Süre", open: "Google Maps'te aç", error: "Rota şu anda çizilemedi. Aşağıdaki harici yönlendirmeyi açabilirsiniz.", noCenter: "Bu rota için doğrulanmış koordinatlar yok; harici yol tarifini kullanın." };
+    if (language === "EN") return { loading: "Preparing the route on the map…", distance: "Distance", duration: "Time", open: "Open in Google Maps", error: "The route could not be drawn right now. Use the external directions link below.", noCenter: "Verified coordinates are unavailable for this route; use the external directions link." };
+    return { loading: "أرسم الطريق على الخريطة…", distance: "المسافة", duration: "المدة", open: "فتح الاتجاهات في Google Maps", error: "تعذر رسم الطريق الآن. يمكنك فتح الاتجاهات الخارجية أدناه.", noCenter: "لا تتوفر إحداثيات موثقة لهذه الوجهة لرسم الطريق داخل الخريطة. استخدم الاتجاهات الخارجية أدناه." };
   }, [language]);
 
   useEffect(() => {
     setSummary(null);
-    setError(mapLoadFailed ? labels.error : null);
-    if (!mapInstance || mapLoadFailed || !window.google?.maps) return;
+    setError(null);
+    if (!mapInstance || mapLoadFailed) return;
+    if (!routePoints) {
+      setError(labels.noCenter);
+      return;
+    }
 
-    let cancelled = false;
-    const renderer = new google.maps.DirectionsRenderer({ suppressMarkers: false, preserveViewport: false });
-    rendererRef.current = renderer;
-    renderer.setMap(mapInstance);
-    const service = new google.maps.DirectionsService();
-    const clearRenderer = () => {
-      renderer.setMap(null);
-      google.maps.event.clearInstanceListeners(renderer);
-      if (rendererRef.current === renderer) rendererRef.current = null;
-    };
-    service.route(
-      {
-        origin: origin?.trim() || "Trabzon, Türkiye",
-        destination: destination.trim(),
-        travelMode: google.maps.TravelMode.DRIVING,
-        provideRouteAlternatives: true,
-      },
-      (result, status) => {
-        if (cancelled) return;
-        if (status !== "OK" || !result) {
-          clearRenderer();
-          setError(labels.error);
-          return;
-        }
-        renderer.setDirections(result);
-        const leg = result.routes[0]?.legs[0];
-        setSummary(leg?.distance && leg?.duration ? { distance: leg.distance.text, duration: leg.duration.text } : null);
-        if (!leg?.distance || !leg?.duration) setError(labels.error);
-      },
-    );
+    const controller = new AbortController();
+    const leafletMap = mapInstance.leafletMap;
+    const [from, to] = routePoints;
+    const coordinates = `${from.lng},${from.lat};${to.lng},${to.lat}`;
+    fetch(`https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Route service unavailable");
+        return response.json();
+      })
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        const route = data?.code === "Ok" ? data.routes?.[0] : null;
+        const points = route?.geometry?.coordinates;
+        if (!route || !Array.isArray(points) || points.length < 2 || !window.L) throw new Error("No route geometry");
+        if (routeLayerRef.current) leafletMap.removeLayer(routeLayerRef.current);
+        const latLngs = points.map(([lng, lat]: [number, number]) => [lat, lng]);
+        const layer = window.L.polyline(latLngs, { color: "#0f766e", weight: 5, opacity: 0.9 });
+        layer.addTo(leafletMap);
+        routeLayerRef.current = layer;
+        leafletMap.fitBounds(layer.getBounds(), { padding: [28, 28], maxZoom: 12 });
+        const distanceKm = route.distance / 1000;
+        const durationMinutes = Math.round(route.duration / 60);
+        setSummary({
+          distance: distanceKm >= 1 ? `${distanceKm.toFixed(1)} كم` : `${Math.round(route.distance)} م`,
+          duration: durationMinutes >= 60 ? `${Math.floor(durationMinutes / 60)} س ${durationMinutes % 60} د` : `${durationMinutes} د`,
+        });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setError(labels.error);
+      });
 
     return () => {
-      cancelled = true;
-      clearRenderer();
+      controller.abort();
+      if (routeLayerRef.current) {
+        leafletMap.removeLayer(routeLayerRef.current);
+        routeLayerRef.current = null;
+      }
     };
-  }, [destination, labels.error, mapInstance, mapLoadFailed, origin]);
+  }, [labels.error, labels.noCenter, mapInstance, mapLoadFailed, routePoints]);
 
   const routeCaption = `${origin?.trim() || "طرابزون"} ← ${destination}`;
 
@@ -85,7 +94,7 @@ export function RouteMapCard({ origin, destination, language = "AR" }: RouteMapC
           fallbackCompact
           fallbackEnabled={Boolean(camera.center)}
           fallbackUnavailableMessage={labels.noCenter}
-          onMapReady={(readyMap) => { setMapLoadFailed(false); setMapInstance(readyMap); }}
+          onMapReady={(readyMap) => { setMapLoadFailed(false); setMapInstance(readyMap as LeafletMapAdapter); }}
           onMapError={() => setMapLoadFailed(true)}
         />
         {!summary && !error && <div className="route-map-overlay"><MapPin size={17} /> {labels.loading}</div>}
