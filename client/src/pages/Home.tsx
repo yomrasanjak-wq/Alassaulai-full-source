@@ -1659,7 +1659,7 @@ export default function Home() {
           </div>
         </div>
         <div className="container hero-entry-only" aria-label="مسارات الاستكشاف السريعة">
-          <button onClick={() => scrollTo("cities")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>ابدأ من المدينة المناسبة</small></span><ArrowLeft size={13} /></button>
+          <button onClick={() => scrollTo("map")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>اختر وجهتك لتظهر مباشرة على الخريطة</small></span><ArrowLeft size={13} /></button>
           <button onClick={() => { setChatInput("خطط لي يومًا سياحيًا في طرابزون، ورتّب المحطات بالترتيب مع مسار الطريق والمسافات والمدة."); setChatOpen(true); }}><Navigation size={14} /><span><strong>خريطة يومك</strong><small>خطط محطاتك مع المساعد وافتح مسارها</small></span><ArrowLeft size={13} /></button>
           <button onClick={() => setChatOpen(true)}><span className="assistant-button-avatar assistant-button-avatar-small"><img src={ASSETS.officialRobot} alt="" /></span><span><strong>مساعد الرحلة</strong><small>اسأل عن الطريق والمكان</small></span><ArrowLeft size={13} /></button>
           <a className="gmail-shortcut" href="https://mail.google.com/mail/u/0/" target="_blank" rel="noreferrer" aria-label="فتح Gmail في تبويب جديد"><span className="gmail-shortcut-icon"><Mail size={18} /></span><span><strong>Gmail</strong><small>افتح بريدك بأمان</small></span><ExternalLink size={13} /></a>
