@@ -1111,6 +1111,11 @@ export default function Home() {
     // only an explicit province/place name present in the card's search query.
     const query = item.query.toLocaleLowerCase();
     const queryCityRules: Array<{ terms: string[]; city: string }> = [
+      // Prefer specific eastern Trabzon districts over broad editorial regions.
+      { terms: ["yeşilyalı", "yesilyali", "arsin"], city: "أرسين" },
+      { terms: ["sürmene", "surmene"], city: "سورميني" },
+      { terms: ["araklı", "arakli"], city: "أراكلي" },
+      { terms: ["kaşüstü", "kasustu", "yomra"], city: "يومرا" },
       { terms: ["samsun"], city: "سامسون" },
       { terms: ["giresun"], city: "جيرسون" },
       { terms: ["ordu", "fatsa", "perşembe", "yason"], city: "أوردو" },
