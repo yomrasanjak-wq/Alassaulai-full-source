@@ -47,3 +47,11 @@ export function getRouteMapCamera(origin: string | undefined, destination: strin
   const maxDelta = Math.max(Math.abs(first.lat - second.lat), Math.abs(first.lng - second.lng));
   return { center, zoom: maxDelta > 5 ? 5 : maxDelta > 1 ? 7 : maxDelta > 0.4 ? 9 : 11 };
 }
+
+
+/** Exact known coordinates used by the free Leaflet/OSRM route renderer. */
+export function getRouteMapPoints(origin: string | undefined, destination: string): [MapPoint, MapPoint] | null {
+  const from = findPlace(origin) ?? (origin ? undefined : findPlace("Trabzon"));
+  const to = findPlace(destination);
+  return from && to ? [from.position, to.position] : null;
+}
