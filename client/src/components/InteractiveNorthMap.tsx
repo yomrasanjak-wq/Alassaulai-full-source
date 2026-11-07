@@ -193,13 +193,21 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
       // Cevahir Outlet is physically in Kaşüstü, Yomra. Older Trabzon cards
       // may still carry the same query, so prefer the verified Yomra map pin.
       (isCevahirOutlet && item.city === "يومرا");
-    const exactMatch = destinations.find((item) =>
+    // These gallery labels combine two distinct landmarks, but the curated
+    // map has no verified pin for the full pair. Keep them as a map search
+    // instead of silently dropping one landmark and opening the other.
+    const isCombinedDestinationWithoutSinglePin =
+      ((requested.includes(normalize("هامسي كوي")) && requested.includes(normalize("زيقانا"))) ||
+        (requestedQuery.includes(normalize("hamsikoy")) && requestedQuery.includes(normalize("zigana")))) ||
+      ((requested.includes(normalize("فيرتينا")) && requested.includes(normalize("زيل قلعة"))) ||
+        (requestedQuery.includes(normalize("firtina")) && requestedQuery.includes(normalize("zilkale"))));
+    const exactMatch = isCombinedDestinationWithoutSinglePin ? undefined : destinations.find((item) =>
       cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
         const value = normalize(candidate);
         return requestNames.includes(value) || value === requestedQuery;
       })
     );
-    const match = exactMatch ?? destinations.find((item) =>
+    const match = isCombinedDestinationWithoutSinglePin ? undefined : exactMatch ?? destinations.find((item) =>
       cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
         const value = normalize(candidate);
         const requestTokens: string[] = requestNames.flatMap((name) => name.match(/[a-z0-9]+|[\\u0600-\\u06FF]+/g) ?? []);
