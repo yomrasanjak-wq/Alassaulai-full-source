@@ -298,7 +298,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
   const mapContent = (
     <div className={`north-map-experience ${expanded ? "north-map-expanded" : ""}`} dir="rtl">
       <div className="north-map-view-actions">
-        {!expanded ? <button type="button" className="north-map-expand" onClick={() => setExpanded(true)}><ExternalLink size={16} /> فتح الخريطة بحجم كامل</button> : <button type="button" className="north-map-close" onClick={() => setExpanded(false)}><X size={17} /> إغلاق الخريطة</button>}
+        {!expanded ? <button type="button" className="north-map-expand" onClick={() => setExpanded(true)}><ExternalLink size={16} /> فتح الخريطة بحجم كامل</button> : <><button type="button" className="north-map-close" onClick={() => setExpanded(false)}><X size={17} /> إغلاق الخريطة</button><button type="button" className="north-map-return-page" onClick={() => { setExpanded(false); setSelected(null); }}><ArrowLeft size={17} /> العودة إلى الصفحة</button></>}
       </div>
       <div className="north-map-toolbar">
         <div className="north-map-search">
