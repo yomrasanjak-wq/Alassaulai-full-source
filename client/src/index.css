@@ -3174,37 +3174,23 @@ img { display: block; max-width: 100%; }
   }
 }
 
-
-/* Mobile navigation refinements: tighter search rhythm, compact dock, and a map-first full-screen view. */
-@media (max-width: 640px) {
-  .site-shell .prayer-ticker { margin-bottom: 0 !important; }
-  .site-shell .global-search-dock { margin: 3px auto 6px !important; }
-  .site-shell .global-search-dock .search-hint { margin-top: 3px !important; }
-  .site-shell .mobile-discovery-dock {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: 3px !important;
-    padding: 4px !important;
-    bottom: max(5px, env(safe-area-inset-bottom)) !important;
-  }
-  .site-shell .mobile-discovery-dock button {
-    min-height: 47px !important;
-    gap: 2px !important;
-    padding: 3px 1px !important;
-    font-size: 9px !important;
-  }
-  .site-shell .mobile-discovery-dock button svg { width: 17px !important; height: 17px !important; }
-  .site-shell footer { padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important; }
-  .north-map-expanded .north-map-body { display: flex !important; flex-direction: column !important; }
-  .north-map-expanded .north-map-canvas-wrap {
-    order: 1 !important;
-    min-height: 52dvh !important;
-    height: 52dvh !important;
-  }
-  .north-map-expanded .north-map-canvas,
-  .north-map-expanded .north-map-canvas > div:first-child {
-    height: 52dvh !important;
-    min-height: 52dvh !important;
-  }
-  .north-map-expanded .north-map-destinations { order: 2 !important; }
-  .north-map-expanded .north-map-city-picker { order: 0 !important; }
+/* City-first discovery: keep the city guide action clear inside the destination photo story. */
+.discovery-caption .discovery-city-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  margin-top: 10px;
+  padding: 9px 14px;
+  border: 1px solid rgb(224 199 145 / 72%);
+  border-radius: 999px;
+  color: #fff8e8;
+  background: rgb(20 55 48 / 82%);
+  text-decoration: none;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+}
+.discovery-caption .discovery-city-link:hover {
+  background: #b48c4c;
+  color: #173d36;
 }
