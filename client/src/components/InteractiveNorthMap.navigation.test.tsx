@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React, { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/Map", () => ({
   MapView: () => <div data-testid="north-map-view" />,
@@ -10,6 +10,12 @@ vi.mock("@/components/Map", () => ({
 import { InteractiveNorthMap } from "./InteractiveNorthMap";
 
 describe("InteractiveNorthMap return navigation", () => {
+  beforeEach(() => {
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: vi.fn(),
+    });
+  });
   it("keeps the same city list after the parent clears the selected destination request", () => {
     function Harness() {
       const [request, setRequest] = useState<{ name: string; city: string; query: string } | null>({
@@ -31,6 +37,7 @@ describe("InteractiveNorthMap return navigation", () => {
     fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
     expect(screen.queryByRole("region", { name: /تفاصيل/ })).toBeNull();
     expect(screen.getByText("يومرا · الوجهات")).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "يومرا" }).getAttribute("aria-selected")).toBe("true");
 
     const destinations = screen.getAllByRole("button", { name: /اختيار وجهة الخريطة رقم/ });
     expect(destinations.length).toBeGreaterThan(1);
