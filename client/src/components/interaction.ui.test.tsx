@@ -183,6 +183,13 @@ describe("City-first map and discovery flow", () => {
     expect(screen.queryByText("ميدان طرابزون")).toBeNull();
   });
 
+  it("shows the newly verified Rize tea tower only in the Rize city list", () => {
+    render(<InteractiveNorthMap />);
+    fireEvent.click(screen.getByRole("tab", { name: "ريزا" }));
+    expect(screen.getByText("برج كأس الشاي العملاق")).toBeTruthy();
+    expect(screen.queryByText("أوزنجول")).toBeNull();
+  });
+
   it("introduces cities through discovery photos and opens the complete city guide", () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
