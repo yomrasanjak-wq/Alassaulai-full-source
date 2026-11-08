@@ -20,6 +20,26 @@ describe("InteractiveNorthMap return navigation", () => {
       value: scrollIntoView,
     });
   });
+
+  it("opens the Rize Tea Glass Tower on the map with verified coordinates", () => {
+    render(
+      <InteractiveNorthMap
+        destinationRequest={{
+          name: "برج كأس الشاي العملاق",
+          city: "ريزا",
+          query: "Rize Çay Çarşısı Bardak Kule",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("ريزا · الوجهات")).toBeTruthy();
+    expect(screen.getByText(/1 وجهات أمامك/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /اختيار وجهة الخريطة رقم 1/ }));
+    expect(screen.getByRole("region", { name: /تفاصيل برج كأس الشاي العملاق/ })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /احصل على الاتجاهات/ }).getAttribute("href"))
+      .toContain("41.02878%2C40.51844");
+  });
+
   it("keeps the same city list after the parent clears the selected destination request", () => {
     function Harness() {
       const [request, setRequest] = useState<{ name: string; city: string; query: string } | null>({
