@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
 import React, { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/Map", () => ({
   MapView: () => <div data-testid="north-map-view" />,
 }));
 
 import { InteractiveNorthMap } from "./InteractiveNorthMap";
+
+afterEach(() => cleanup());
 
 describe("InteractiveNorthMap return navigation", () => {
   const scrollIntoView = vi.fn();
@@ -20,6 +22,26 @@ describe("InteractiveNorthMap return navigation", () => {
       value: scrollIntoView,
     });
   });
+
+  it("opens the Rize Tea Glass Tower on the map with verified coordinates", () => {
+    render(
+      <InteractiveNorthMap
+        destinationRequest={{
+          name: "برج كأس الشاي العملاق",
+          city: "ريزا",
+          query: "Rize Çay Çarşısı Bardak Kule",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("ريزا · الوجهات")).toBeTruthy();
+    expect(screen.getByText(/1 وجهات أمامك/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /اختيار وجهة الخريطة رقم 1/ }));
+    expect(screen.getByRole("region", { name: /تفاصيل برج كأس الشاي العملاق/ })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /احصل على الاتجاهات/ }).getAttribute("href"))
+      .toContain("41.02878%2C40.51844");
+  });
+
   it("keeps the same city list after the parent clears the selected destination request", () => {
     function Harness() {
       const [request, setRequest] = useState<{ name: string; city: string; query: string } | null>({
@@ -38,7 +60,7 @@ describe("InteractiveNorthMap return navigation", () => {
     render(<Harness />);
     expect(screen.getByRole("region", { name: /تفاصيل يومرا/ })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
+    fireEvent.click(screen.getByRole("region", { name: /تفاصيل يومرا/ }).querySelector("button")!);
     expect(screen.queryByRole("region", { name: /تفاصيل/ })).toBeNull();
     expect(screen.getByText("يومرا · الوجهات")).toBeTruthy();
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });

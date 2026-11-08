@@ -32,6 +32,7 @@ const destinations: MapDestination[] = [
   { name: "طرابزون", city: "طرابزون", branch: "المدينة والساحل", latin: "Trabzon", category: "cities", label: "مدينة ساحلية", note: "بوابة البحر الأسود والأسواق والمطاعم والميناء.", query: "Trabzon Turkey", position: { lat: 41.0053, lng: 39.7225 } },
   { name: "أوزنجول", city: "طرابزون", branch: "سلطان مراد · أوزنجول · ديمركابي", latin: "Uzungöl", category: "nature", label: "بحيرة وقرية", note: "بحيرة جبلية ومسارات هادئة وإطلالات لا تنسى.", query: "Uzungol Trabzon Turkey", position: { lat: 40.6197, lng: 40.2958 } },
   { name: "ريزا", city: "ريزا", branch: "المدينة والساحل", latin: "Rize", category: "cities", label: "مدينة الشاي", note: "مزارع الشاي والمرتفعات والهواء البحري.", query: "Rize Turkey", position: { lat: 41.0201, lng: 40.5234 } },
+  { name: "برج كأس الشاي العملاق", city: "ريزا", branch: "معالم الشاي والثقافة", latin: "Rize Çay Çarşısı – Bardak Kule", category: "culture", label: "برج الشاي ومنصة مشاهدة", note: "برج كأس الشاي في مجمع Çay Çarşısı وسط ريزا، ويضم منصة مشاهدة بانورامية.", query: "Rize Çay Çarşısı Bardak Kule, Eminettin Mahallesi, Rize, Turkey", position: { lat: 41.02878, lng: 40.51844 } },
   { name: "أيدر", city: "ريزا", branch: "الطبيعة والمرتفعات", latin: "Ayder", category: "nature", label: "مرتفعات وشلالات", note: "غابات وشلالات وينابيع في قلب الطبيعة.", query: "Ayder Plateau Turkey", position: { lat: 40.9527, lng: 41.0931 } },
   { name: "دير سوميلا", city: "طرابزون", branch: "سوميلا · همسي كوي · حاجي مصطفى · زيغانا", latin: "Sümela", category: "culture", label: "تاريخ وثقافة", note: "دير تاريخي معلق بين الجبال ومسار مذهل.", query: "Sumela Monastery Turkey", position: { lat: 40.6898, lng: 39.6585 } },
   { name: "أوردو", city: "أوردو", branch: "المدينة والساحل", latin: "Ordu", category: "cities", label: "ساحل وتلفريك", note: "واجهة بحرية وتلفريك وإطلالة بانورامية.", query: "Ordu Turkey", position: { lat: 40.9839, lng: 37.8764 } },
@@ -184,7 +185,11 @@ export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpan
   };
 
   useEffect(() => {
-    if (!destinationRequest) return;
+    if (!destinationRequest) {
+      setSelected(null);
+      setQuery("");
+      return;
+    }
     const normalize = (value: string) => value.toLocaleLowerCase().normalize("NFKD").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/[^a-z0-9\u0600-\u06FF]+/gi, "");
     const requested = normalize(destinationRequest.name);
     const requestedQuery = normalize(destinationRequest.query);
