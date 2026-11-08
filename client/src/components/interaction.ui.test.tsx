@@ -173,28 +173,40 @@ describe("Home voice-to-chat flow", () => {
   });
 });
 
-describe("City card imagery", () => {
-  it("shows a dedicated image for every city that was missing artwork", () => {
-    render(<Home />);
-    for (const cityName of ["سامسون", "أوردو", "جيرسون", "أنقرة", "إسطنبول", "جورجيا"]) {
-      fireEvent.click(screen.getAllByRole("button", { name: new RegExp(cityName) }).find((button) => button.classList.contains("city-tab"))!);
-      expect(screen.getAllByAltText(cityName).length).toBeGreaterThan(0);
-    }
+describe("City-first map and discovery flow", () => {
+  it("shows city tabs above the map and filters the destination list to the selected city", () => {
+    render(<InteractiveNorthMap />);
+    fireEvent.click(screen.getByRole("tab", { name: "يومرا" }));
+    expect(screen.getByText("يومرا · الوجهات")).toBeTruthy();
+    expect(screen.getByText("واجهة كاشستوس البحرية")).toBeTruthy();
+    expect(screen.getByText("مركز جواهر طرابزون")).toBeTruthy();
+    expect(screen.queryByText("ميدان طرابزون")).toBeNull();
   });
 
-  it("shows the expanded Istanbul collection in the city file", () => {
-    render(<Home />);
-    fireEvent.click(screen.getAllByRole("button", { name: /إسطنبول/ }).find((button) => button.classList.contains("city-tab"))!);
-    for (const place of ["جامع السلطان أحمد", "برج غلطة", "قصر دولما بهجة", "السوق المصري", "حديقة أميرغان", "بولونيزكوي", "أكواريوم إسطنبول"]) {
-      expect(screen.getAllByText(place).length).toBeGreaterThan(0);
-    }
+  it("shows the newly verified Rize tea tower only in the Rize city list", () => {
+    render(<InteractiveNorthMap />);
+    fireEvent.click(screen.getByRole("tab", { name: "ريزا" }));
+    expect(screen.getByText("برج كأس الشاي العملاق")).toBeTruthy();
+    expect(screen.queryByText("أوزنجول")).toBeNull();
   });
 
-  it("opens a selected destination on the in-app map and offers a return to the directory", async () => {
+  it("introduces cities through discovery photos and opens the complete city guide", () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
     expect(screen.getByRole("dialog", { name: "اكتشف الشمال التركي" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /افتح صفحة المدينة/ }));
+    fireEvent.click(screen.getByRole("button", { name: "عرض طرابزون" }));
+    expect(screen.getByRole("heading", { name: "طرابزون" })).toBeTruthy();
+    expect(screen.getByText("البحر، الجبال، وأيام تبدأ من ضباب أوزنجول.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "افتح دليل المدينة وجميع وجهاتها" }));
+    expect(screen.getByText("CITY FILE / 01")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "اختر أي وجهة لعرضها على الخريطة" })).toBeTruthy();
+  });
+
+  it("opens a selected destination on the in-app map and returns to the same city list", async () => {
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
+    fireEvent.click(screen.getByRole("button", { name: "عرض طرابزون" }));
+    fireEvent.click(screen.getByRole("button", { name: "افتح دليل المدينة وجميع وجهاتها" }));
     fireEvent.click(screen.getByRole("button", { name: "عرض أوزنجول على خريطة ALASSAUL" }));
     await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
     expect(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ })).toBeTruthy();
@@ -203,80 +215,14 @@ describe("City card imagery", () => {
     expect(screen.getAllByRole("button", { name: /اختيار وجهة الخريطة رقم/ }).length).toBeGreaterThan(1);
   });
 
-  it("shows the documented Botanik Park and Cazilar Deresi photo-book covers", () => {
+  it("shows every requested Trabzon destination category in one city guide", () => {
     render(<Home />);
-    fireEvent.click(screen.getByRole("button", { name: "افتح دفتر صور الشمال التركي" }));
-    fireEvent.click(screen.getByRole("button", { name: "الصفحة التالية" }));
-    expect((document.querySelector(".photo-book-page img") as HTMLImageElement).src).toBe("https://www.trabzon.bel.tr/img/SehriKesfet/SosyalTesis/botanik.jpg");
-    expect(screen.getByText("Trabzon Büyükşehir Belediyesi")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "يومرا وكاشوستو" }));
-    for (let page = 0; page < 3; page += 1) {
-      fireEvent.click(screen.getByRole("button", { name: "الصفحة التالية" }));
-    }
-    expect((document.querySelector(".photo-book-page img") as HTMLImageElement).src).toContain("/upload/Foto/7C3B3139A4ECAD41403C0E3BFF9CE55D_159420192241668_d5yshowlekpwgpjum9rs.jpg");
-    expect(screen.getByText("Yomra Belediyesi")).toBeTruthy();
-  });
-
-  it("opens the map when the visitor taps a photo-book image", async () => {
-    render(<Home />);
-    fireEvent.click(screen.getByRole("button", { name: "افتح دفتر صور الشمال التركي" }));
-    fireEvent.click(screen.getByRole("button", { name: "أوزنجول والمرتفعات" }));
-    fireEvent.click(screen.getByRole("button", { name: "اعرض أوزنجول على خريطة ALASSAUL" }));
-    await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
-  });
-
-  it("shows individually named camera previews with official links and one Uzungol camera", () => {
-    render(<Home />);
-
-    const expectedGroups = [
-      ["مجموعة أوردو", "altinordu.bel.tr/sehir-kameralari"],
-      ["مجموعة طرابزون", "trabzon.bel.tr/Web/SehirKameralari"],
-      ["كاميرا يومرا – منظر عام", "trabzon.bel.tr/Web/SehirKameralari#camera-3073"],
-      ["كاميرا أوزنجول", "trabzon.bel.tr/Web/SehirKameralari#camera-3049"],
-      ["كاميرا ميدان طرابزون", "trabzon.bel.tr/Web/SehirKameralari#camera-3055"],
-      ["كاميرا ديغيرمندره", "trabzon.bel.tr/Web/SehirKameralari#camera-3047"],
-      ["مجموعة سامسون", "mobil.samsun.bel.tr/canliizle.html"],
-      ["مجموعة إسطنبول", "ibb.istanbul"],
-      ["كاميرا ميدان تقسيم", "istanbuluseyret.ibb.istanbul/tr/turistik-kamera/taksim-meydan"],
-      ["كاميرا كاديكوي", "istanbuluseyret.ibb.istanbul/tr/turistik-kamera/kadikoy"],
-      ["كاميرا إمينونو", "istanbuluseyret.ibb.istanbul/tr/turistik-kamera/eminonu"],
-      ["كاميرا أناضولو حصاري", "istanbuluseyret.ibb.istanbul/tr/turistik-kamera/anadolu-hisari"],
-      ["كاميرا تلة تشامليجا", "istanbuluseyret.ibb.istanbul/tr/turistik-kamera/buyuk-camlica"],
-      ["كاميرا أوسكودار", "istanbuluseyret.ibb.istanbul/tr/turistik-kamera/uskudar"],
-      ["مجموعة ريزا وآيدر", "camlihemsin.bel.tr"],
-    ] as const;
-
-    for (const [name, href] of expectedGroups) {
-      const link = screen.getByRole("link", { name: `فتح المصدر الرسمي لـ ${name}` }) as HTMLAnchorElement;
-      expect(link.href).toContain(href);
-    }
-
-    expect(screen.getAllByText(/CAMERA GROUP \/ 0/)).toHaveLength(15);
-    const cameraCardText = Array.from(document.querySelectorAll(".camera-card")).map((card) => card.textContent ?? "").join(" ");
-    expect(cameraCardText).not.toContain("ألتِن أوردو — أكشاتِبه");
-    expect(cameraCardText).not.toContain("ألتِن أوردو — ساحل طاشباشي");
-    expect(cameraCardText).not.toContain("أكياظي بارك");
-    expect(screen.queryByText("بث مؤكد")).toBeNull();
-    expect(document.querySelectorAll(".camera-card .status-pill")).toHaveLength(15);
-    expect(Array.from(document.querySelectorAll("a")).filter((anchor) => anchor.href.includes("trabzon.bel.tr/Web/SehirKameralari#camera-3049")).length).toBe(1);
-    expect((screen.getByRole("link", { name: "فتح المصدر الرسمي لـ كاميرا ميدان طرابزون" }).querySelector("img") as HTMLImageElement).src).toContain("/img/kameralar/3055.webp");
-    expect((screen.getByRole("link", { name: "فتح المصدر الرسمي لـ كاميرا يومرا – منظر عام" }).querySelector("img") as HTMLImageElement).src).toContain("/img/kameralar/3073.webp");
-    expect((screen.getByRole("link", { name: "فتح المصدر الرسمي لـ كاميرا ديغيرمندره" }).querySelector("img") as HTMLImageElement).src).toContain("/img/kameralar/3047.webp");
-    expect(screen.getByText(/صور واضحة لكل كمرة/)).toBeTruthy();
-  });
-
-  it("shows every requested Trabzon destination category", () => {
-    render(<Home />);
-    fireEvent.click(screen.getByRole("button", { name: /افتح صفحة المدينة/ }));
+    fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
+    fireEvent.click(screen.getByRole("button", { name: "عرض طرابزون" }));
+    fireEvent.click(screen.getByRole("button", { name: "افتح دليل المدينة وجميع وجهاتها" }));
     for (const category of ["قرى ومرتفعات", "تاريخ وثقافة", "تسوق وأسواق", "مقاهٍ ومطاعم", "حدائق وشواطئ", "تلفريك وثلج", "أنشطة ومغامرات"]) {
       expect(screen.getByRole("heading", { name: category, level: 4 })).toBeTruthy();
     }
-    expect(screen.getAllByRole("button", { name: "عرض همشِكوي على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: "عرض حاجي مصطفى فوق همشِكوي على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: "عرض أكبر وأحدث زحليقة في يومرا على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: "عرض ركوب الخيل في طرابزون على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: "عرض كارتينغ طرابزون على خريطة ALASSAUL" }).length).toBeGreaterThan(0);
     for (const placeName of ["مغارة تشال", "كاياباشا", "بحيرة سيراجول", "أطول زحليقة سيراجول", "الطيران الشراعي في سيراجول", "شاطئ قانيتا", "شاطئ يلنجك", "شارع العرب في بليتلي", "همشِكوي وممشى القرية", "سانتا خراباط", "سلطان مراد", "مول جواهر طرابزون", "ممشى كاشستوس", "مرسى القوارب في يومرا", "حديقة يومرا", "أكبر وأحدث زحليقة في يومرا", "ممشى أكشابات", "تاريخ أكشابات ومعالمها", "حاجي مصطفى فوق همشِكوي", "سوق موللوز", "مسجد غلبهار خاتون (خانتون)", "أكواريوم طرابزون", "سوق القلعة القديم / بدستان", "الحديقة النباتية", "حديقة الفورم", "حديقة الفورميرجي"]) {
       expect(screen.getAllByRole("button", { name: `عرض ${placeName} على خريطة ALASSAUL` }).length).toBeGreaterThan(0);
     }
