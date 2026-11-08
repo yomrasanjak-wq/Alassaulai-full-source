@@ -30,7 +30,7 @@ vi.mock("@/components/Map", () => ({ MapView: ({ className }: { className?: stri
 
 afterEach(() => cleanup());
 beforeEach(() => { mutateAsyncMock.mockReset(); auxiliaryMutationMock.mockReset(); auxiliaryMutationMock.mockResolvedValue({ success: true, id: 1, item: { name: "file", url: "https://example.com/file", mimeType: "image/jpeg" } }); });
-Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
+Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, writable: true, value: vi.fn() });
 import { ChatComposer } from "./ChatComposer";
 import { AssistantReply } from "./AssistantReply";
 import { VoiceSelector } from "./VoiceSelector";
@@ -199,7 +199,8 @@ describe("City card imagery", () => {
     await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
     expect(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
-    expect(screen.getByRole("button", { name: "عرض شاطئ قانيتا على خريطة ALASSAUL" })).toBeTruthy();
+    expect(screen.getByText("طرابزون · الوجهات")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /اختيار وجهة الخريطة رقم/ }).length).toBeGreaterThan(1);
   });
 
   it("shows the documented Botanik Park and Cazilar Deresi photo-book covers", () => {
