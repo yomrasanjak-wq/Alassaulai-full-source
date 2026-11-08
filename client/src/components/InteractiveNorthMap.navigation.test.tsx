@@ -16,13 +16,14 @@ describe("InteractiveNorthMap return navigation", () => {
     scrollIntoView.mockClear();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
+      writable: true,
       value: scrollIntoView,
     });
   });
   it("keeps the same city list after the parent clears the selected destination request", () => {
     function Harness() {
       const [request, setRequest] = useState<{ name: string; city: string; query: string } | null>({
-        name: "مرتفعات يومرا",
+        name: "يومرا",
         city: "يومرا",
         query: "Yomra Trabzon Turkey",
       });
@@ -35,7 +36,7 @@ describe("InteractiveNorthMap return navigation", () => {
     }
 
     render(<Harness />);
-    expect(screen.getByRole("region", { name: /تفاصيل مرتفعات يومرا/ })).toBeTruthy();
+    expect(screen.getByRole("region", { name: /تفاصيل يومرا/ })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
     expect(screen.queryByRole("region", { name: /تفاصيل/ })).toBeNull();
