@@ -140,6 +140,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
   const [map, setMap] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
   const markersRef = useRef<Array<{ destination: MapDestination; marker: any }>>([]);
+  const destinationsPanelRef = useRef<HTMLElement | null>(null);
 
   const cityNames = ["طرابزون", "يومرا", "أرسين", "سورميني", "أراكلي", "ريزا", "أوردو", "سامسون", "جيرسون", "إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أولاشلي", "أنقرة", "جورجيا"];
 
@@ -158,6 +159,9 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
     setFilter("all");
     setQuery("");
     onBackToDestinations?.();
+    // On mobile the destination panel is rendered below the map. Return the
+    // visitor to that list instead of leaving the viewport at the removed detail card.
+    destinationsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const openDestination = (destination: MapDestination) => {
@@ -316,7 +320,7 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
       </div>
 
       <div className="north-map-body">
-        <aside className="north-map-destinations">
+        <aside ref={destinationsPanelRef} className="north-map-destinations">
           <div className="north-map-aside-heading"><span>{selectedCity} · الوجهات</span><strong>{visible.length} وجهات أمامك</strong></div>
           <div className="north-map-destination-list">
             {selectedCity ? Array.from(new Set(visible.map((item) => item.branch))).map((branch) => <div className="north-map-branch" key={branch}><h4>{branch}</h4>{visible.filter((item) => item.branch === branch).map((destination, index) => <button type="button" key={destination.name} aria-label={`اختيار وجهة الخريطة رقم ${index + 1}`} className={`north-map-destination ${selected?.name === destination.name ? "selected" : ""}`} onClick={() => openDestination(destination)}>
