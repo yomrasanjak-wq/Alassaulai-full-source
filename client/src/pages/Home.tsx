@@ -904,7 +904,7 @@ export default function Home() {
       cityName: null as string | null,
     }));
     const allSlides = [...citySlides, ...uploadedSlides, ...freshDiscoverySlides, ...fallbackDiscoverySlides]
-      .map((slide) => ({ ...slide, cityName: "cityName" in slide ? slide.cityName : null }));
+      .map((slide) => ({ ...slide, cityName: "cityName" in slide && typeof slide.cityName === "string" ? slide.cityName : null }));
     const uniqueSlides = allSlides.filter((slide, index, list) => list.findIndex((candidate) => candidate.src === slide.src) === index);
     if (!uniqueSlides.length) return fallbackDiscoverySlides.map((slide) => ({ ...slide, cityName: null }));
     const start = discoveryWeek % uniqueSlides.length;
