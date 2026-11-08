@@ -459,6 +459,13 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    // Safe self-diagnostic: reports only the signed-in user's own effective permissions.
+    // Never returns the configured owner identifier or any secret.
+    permissionStatus: protectedProcedure.query(({ ctx }) => ({
+      role: ctx.user.role,
+      ownerMatched: Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId),
+      canAdmin: ctx.user.role === "admin" || Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId),
+    })),
     visitorCount: publicProcedure.query(() => countRegisteredVisitors()),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
