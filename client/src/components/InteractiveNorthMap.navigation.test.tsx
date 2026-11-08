@@ -12,7 +12,7 @@ import { InteractiveNorthMap } from "./InteractiveNorthMap";
 describe("InteractiveNorthMap return navigation", () => {
   it("keeps the same city list after the parent clears the selected destination request", () => {
     function Harness() {
-      const [request, setRequest] = useState({
+      const [request, setRequest] = useState<{ name: string; city: string; query: string } | null>({
         name: "مرتفعات يومرا",
         city: "يومرا",
         query: "Yomra Yaylası Trabzon",
@@ -20,7 +20,7 @@ describe("InteractiveNorthMap return navigation", () => {
       return (
         <InteractiveNorthMap
           destinationRequest={request}
-          onBackToDestinations={() => setRequest(null as never)}
+          onBackToDestinations={() => setRequest(null)}
         />
       );
     }
