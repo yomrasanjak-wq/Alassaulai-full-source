@@ -10,10 +10,13 @@ vi.mock("@/components/Map", () => ({
 import { InteractiveNorthMap } from "./InteractiveNorthMap";
 
 describe("InteractiveNorthMap return navigation", () => {
+  const scrollIntoView = vi.fn();
+
   beforeEach(() => {
+    scrollIntoView.mockClear();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
-      value: vi.fn(),
+      value: scrollIntoView,
     });
   });
   it("keeps the same city list after the parent clears the selected destination request", () => {
@@ -37,6 +40,7 @@ describe("InteractiveNorthMap return navigation", () => {
     fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
     expect(screen.queryByRole("region", { name: /تفاصيل/ })).toBeNull();
     expect(screen.getByText("يومرا · الوجهات")).toBeTruthy();
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
     expect(screen.getByRole("tab", { name: "يومرا" }).getAttribute("aria-selected")).toBe("true");
 
     const destinations = screen.getAllByRole("button", { name: /اختيار وجهة الخريطة رقم/ });
