@@ -132,7 +132,7 @@ const categoryColor: Record<MapDestination["category"], string> = {
 
 type DestinationRequest = { name: string; city: string; query: string } | null;
 
-export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }: { destinationRequest?: DestinationRequest; onBackToDestinations?: () => void }) {
+export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpandedChange, onBackToDestinations }: { destinationRequest?: DestinationRequest; expandRequest?: boolean; onExpandedChange?: (expanded: boolean) => void; onBackToDestinations?: () => void }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<MapCategory>("all");
   const [selectedCity, setSelectedCity] = useState<string | null>("طرابزون");
@@ -141,6 +141,14 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
   const [expanded, setExpanded] = useState(false);
   const markersRef = useRef<Array<{ destination: MapDestination; marker: any }>>([]);
   const destinationsPanelRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (expandRequest) setExpanded(true);
+  }, [expandRequest]);
+
+  useEffect(() => {
+    onExpandedChange?.(expanded);
+  }, [expanded, onExpandedChange]);
 
   const cityNames = ["طرابزون", "يومرا", "أرسين", "سورميني", "أراكلي", "ريزا", "أوردو", "سامسون", "جيرسون", "إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أولاشلي", "أنقرة", "جورجيا"];
 
