@@ -177,7 +177,11 @@ export function InteractiveNorthMap({ destinationRequest, onBackToDestinations }
   };
 
   useEffect(() => {
-    if (!destinationRequest) return;
+    if (!destinationRequest) {
+      setSelected(null);
+      setQuery("");
+      return;
+    }
     const normalize = (value: string) => value.toLocaleLowerCase().normalize("NFKD").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/[^a-z0-9\u0600-\u06FF]+/gi, "");
     const requested = normalize(destinationRequest.name);
     const requestedQuery = normalize(destinationRequest.query);
