@@ -21,7 +21,7 @@ describe("InteractiveNorthMap return navigation", () => {
       const [request, setRequest] = useState<{ name: string; city: string; query: string } | null>({
         name: "مرتفعات يومرا",
         city: "يومرا",
-        query: "Yomra Yaylası Trabzon",
+        query: "Yomra Trabzon Turkey",
       });
       return (
         <InteractiveNorthMap
@@ -42,6 +42,6 @@ describe("InteractiveNorthMap return navigation", () => {
     const destinations = screen.getAllByRole("button", { name: /اختيار وجهة الخريطة رقم/ });
     expect(destinations.length).toBeGreaterThan(1);
     fireEvent.click(destinations[1]!);
-    expect(screen.getByRole("region", { name: /تفاصيل/ })).toBeTruthy();
+    expect(screen.getByRole("region", { name: /تفاصيل واجهة كاشستوس البحرية/ })).toBeTruthy();
   });
 });
