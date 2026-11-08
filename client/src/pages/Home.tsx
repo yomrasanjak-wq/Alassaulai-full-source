@@ -888,15 +888,25 @@ export default function Home() {
     { src: "/images/rize-nature.webp", alt: "طبيعة ريزا الخضراء", title: "ريزا الخضراء", note: "وديان وشلالات ومزارع شاي في رحلة واحدة." },
   ];
   const discoverySlides = useMemo(() => {
+    // City introductions live inside the visual discovery journey, avoiding a second city list.
+    const citySlides = cities.filter((city) => city.image).map((city) => ({
+      src: city.image!,
+      alt: city.name,
+      title: city.name,
+      note: city.intro,
+      cityName: city.name,
+    }));
     const uploadedSlides = (discoveryItemsQuery.data ?? []).map((item) => ({
       src: item.url,
       alt: item.name,
       title: item.name.replace(/\.[^/.]+$/, ""),
       note: "صورة مضافة من غرفة التحكم إلى معرض اكتشاف الشمال.",
+      cityName: null as string | null,
     }));
-    const allSlides = [...uploadedSlides, ...freshDiscoverySlides, ...fallbackDiscoverySlides];
+    const allSlides = [...citySlides, ...uploadedSlides, ...freshDiscoverySlides, ...fallbackDiscoverySlides]
+      .map((slide) => ({ ...slide, cityName: "cityName" in slide ? slide.cityName : null }));
     const uniqueSlides = allSlides.filter((slide, index, list) => list.findIndex((candidate) => candidate.src === slide.src) === index);
-    if (!uniqueSlides.length) return fallbackDiscoverySlides;
+    if (!uniqueSlides.length) return fallbackDiscoverySlides.map((slide) => ({ ...slide, cityName: null }));
     const start = discoveryWeek % uniqueSlides.length;
     return uniqueSlides.map((_, index) => uniqueSlides[(start + index) % uniqueSlides.length]);
   }, [discoveryItemsQuery.data, discoveryWeek]);
@@ -1628,7 +1638,7 @@ export default function Home() {
             <span className="brand-wordmark"><strong>ALASSAUL-AI</strong><small>بوابتك للشمال التركي</small></span>
           </button>
           <nav className={`main-nav ${mobileMenu ? "main-nav-open" : ""}`} aria-hidden={!mobileMenu}>
-            <button onClick={() => { setMobileMenu(false); scrollTo("cities"); }}>{t.navExplore}</button>
+            <button onClick={() => { setMobileMenu(false); scrollTo("map"); }}>{t.navExplore}</button>
             <button onClick={() => { setMobileMenu(false); scrollTo("gallery"); }}>معرض الصور</button>
             <button onClick={() => { setMobileMenu(false); scrollTo("resident-services"); }}>خدمات المقيمين</button>
             <button onClick={() => { setMobileMenu(false); scrollTo("live"); }}>{t.navLive}</button>
@@ -1707,7 +1717,7 @@ export default function Home() {
           </div>
         </div>
         <div className="container hero-entry-only" aria-label="مسارات الاستكشاف السريعة">
-          <button onClick={() => scrollTo("cities")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>ابدأ من المدينة المناسبة</small></span><ArrowLeft size={13} /></button>
+          <button onClick={() => scrollTo("map")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>ابدأ من المدينة المناسبة</small></span><ArrowLeft size={13} /></button>
           <button type="button" onClick={() => scrollTo("map")} aria-label="افتح خريطة يومك"><Navigation size={14} /><span><strong>خريطة يومك</strong><small>اختر وجهتك وشاهدها على الخريطة</small></span><ArrowLeft size={13} /></button>
           <button onClick={() => setChatOpen(true)}><span className="assistant-button-avatar assistant-button-avatar-small"><img src={ASSETS.officialRobot} alt="" /></span><span><strong>مساعد الرحلة</strong><small>اسأل عن الطريق والمكان</small></span><ArrowLeft size={13} /></button>
           <a className="gmail-shortcut" href="https://mail.google.com/mail/u/0/" target="_blank" rel="noreferrer" aria-label="فتح Gmail في تبويب جديد"><span className="gmail-shortcut-icon"><Mail size={18} /></span><span><strong>Gmail</strong><small>افتح بريدك بأمان</small></span><ExternalLink size={13} /></a>
@@ -1718,25 +1728,6 @@ export default function Home() {
       <LiveBroadcastSection />
 
       <LivePulse language={language} onPlanRoute={() => scrollTo("map")} />
-
-      <section id="cities" className="cities-section section-pad">
-        <div className="container">
-          <SectionHeading eyebrow={t.citiesLabel} title={t.citiesTitle} desc={t.citiesDesc} />
-          <div className="cities-layout">
-            <aside className="city-rail">
-              <div className="rail-title"><span>01—08</span><span>{language === "AR" ? "محطات" : language === "TR" ? "Durak" : "stops"}</span></div>
-              {cities.map((city) => <button key={city.name} className={`city-tab ${selectedCity.name === city.name ? "city-tab-active" : ""}`} onClick={() => { setSelectedCity(city); setModal("city"); notify("اختر وجهتك لفتحها على الخريطة", `${city.name} — اختر مكانًا من الدليل وستنتقل إليه مباشرةً`, "success"); }}><span className="city-number">{city.icon}</span><span><strong>{city.name}</strong><small>{city.latin}</small></span><ArrowLeft size={15} /></button>)}
-            </aside>
-            <div className="city-feature">
-              <div className="city-feature-image">
-                {selectedCity.image ? <img src={selectedCity.image} alt={selectedCity.name} loading="lazy" /> : <div className="city-gradient-art"><Landmark size={60} /><span>{selectedCity.latin}</span></div>}
-                <div className="city-feature-label"><span>{selectedCity.region}</span><strong>{selectedCity.latin}</strong></div>
-              </div>
-              <div className="city-feature-copy"><span className="section-eyebrow">{selectedCity.icon} / {selectedCity.name}</span><h3>{selectedCity.intro}</h3><p>{t.places}</p><div className="place-chips">{selectedCity.places.map((place) => <button key={place} onClick={() => openPlace(place)}><MapPin size={13} /> {place}</button>)}</div><div className="city-feature-actions"><button className="text-link" onClick={() => setModal("city")}>{language === "AR" ? "افتح صفحة المدينة" : language === "TR" ? "Şehir sayfasını aç" : "Open city page"} <ArrowLeft size={16} /></button><button className="text-link" onClick={() => setModal("map")}>{language === "AR" ? "افتح الخريطة" : language === "TR" ? "Haritayı aç" : "Open map"} <MapPin size={16} /></button></div></div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <section id="gallery" className="destination-gallery-section section-pad">
         <div className="container">
@@ -1950,10 +1941,10 @@ export default function Home() {
         <div className="container control-layout"><div className="control-copy"><SectionHeading eyebrow={t.controlLabel} title={t.controlTitle} desc={t.controlDesc} /><div className="control-roles"><span><ShieldCheck size={16} /> CEO</span><span><UsersRound size={16} /> سكرتير</span><span><Settings2 size={16} /> IT</span></div><button className="button button-dark" onClick={() => setModal("control")}>{t.enterControl} <LockKeyhole size={15} /></button></div><div className="control-dashboard"><div className="dashboard-top"><span><span className="green-ping" /> لوحة تعريفية</span><span>ALASSAUL · OPERATIONS</span></div><div className="dashboard-grid"><div className="dash-number"><small>إدارة الطلبات</small><strong>—</strong><span>تظهر الأرقام بعد الدخول بصلاحية مسؤول</span></div><div className="dash-number"><small>تحديث المدن</small><strong>—</strong><span>لا نعرض أرقاماً غير متصلة ببيانات فعلية</span></div><div className="dash-task"><small>مسارات العمل</small><div><span className="task-dot task-gold" /> مراجعة طلبات الزوار</div><div><span className="task-dot task-green" /> متابعة المحتوى والخدمات</div><div><span className="task-dot task-blue" /> استقبال البلاغات التقنية</div></div></div></div></div>
       </section>
 
-      <footer className="site-footer"><div className="container footer-grid"><div className="footer-brand"><img src={ASSETS.mark} alt="" /><strong>ALASSAUL-AI</strong><p>{t.footer}</p></div><div className="footer-links"><span>المنصة</span><button onClick={() => scrollTo("cities")}>المدن</button><button onClick={() => scrollTo("live")}>البث المباشر</button><button onClick={() => scrollTo("map")}>الخريطة</button><button onClick={() => scrollTo("tiktok")}>تيك توك</button></div><div className="footer-links"><span>تواصل</span><button onClick={() => setModal("login")}>السكرتير</button><button onClick={() => setModal("control")}>غرفة التحكم</button><button onClick={() => setChatOpen(true)}>المساعد الذكي</button></div><div className="footer-social"><span>تابع الطريق</span><div><a className="social-link" href="https://www.tiktok.com/@trabzon_yomra" target="_blank" rel="noreferrer" aria-label="تيك توك @trabzon_yomra"><Music2 size={17} /></a><button><Instagram size={17} /></button><button><Facebook size={17} /></button><button><Youtube size={17} /></button></div></div></div><div className="container footer-bottom"><span>© 2026 ALASSAUL-AI</span><span>صنع لرحلة أكثر هدوءاً ووضوحاً</span></div></footer>
+      <footer className="site-footer"><div className="container footer-grid"><div className="footer-brand"><img src={ASSETS.mark} alt="" /><strong>ALASSAUL-AI</strong><p>{t.footer}</p></div><div className="footer-links"><span>المنصة</span><button onClick={() => scrollTo("map")}>المدن</button><button onClick={() => scrollTo("live")}>البث المباشر</button><button onClick={() => scrollTo("map")}>الخريطة</button><button onClick={() => scrollTo("tiktok")}>تيك توك</button></div><div className="footer-links"><span>تواصل</span><button onClick={() => setModal("login")}>السكرتير</button><button onClick={() => setModal("control")}>غرفة التحكم</button><button onClick={() => setChatOpen(true)}>المساعد الذكي</button></div><div className="footer-social"><span>تابع الطريق</span><div><a className="social-link" href="https://www.tiktok.com/@trabzon_yomra" target="_blank" rel="noreferrer" aria-label="تيك توك @trabzon_yomra"><Music2 size={17} /></a><button><Instagram size={17} /></button><button><Facebook size={17} /></button><button><Youtube size={17} /></button></div></div></div><div className="container footer-bottom"><span>© 2026 ALASSAUL-AI</span><span>صنع لرحلة أكثر هدوءاً ووضوحاً</span></div></footer>
 
       {!chatOpen && !photoBookOpen && <div className="mobile-discovery-dock" role="group" aria-label="التنقل السريع">
-        <button type="button" onClick={() => scrollTo("cities")} aria-label="استكشف المدن">
+        <button type="button" onClick={() => scrollTo("map")} aria-label="استكشف المدن">
           <Compass size={19} /><span>استكشف</span>
         </button>
         <button type="button" onClick={() => scrollTo("map")} aria-label="افتح الخريطة">
@@ -1996,7 +1987,7 @@ export default function Home() {
       {discoveryOpen && <div className="discovery-viewer" role="dialog" aria-modal="true" aria-label="اكتشف الشمال التركي">
         <button className="discovery-close" aria-label="إغلاق معرض الشمال" onClick={() => setDiscoveryOpen(false)}><X size={21} /></button>
         <div className="discovery-progress"><span>اكتشف الشمال التركي</span><strong>{String(discoveryIndex + 1).padStart(2, "0")} / {String(discoverySlides.length).padStart(2, "0")}</strong></div>
-        <div className="discovery-stage"><img key={discoverySlides[discoveryIndex].src} src={discoverySlides[discoveryIndex].src} alt={discoverySlides[discoveryIndex].alt} onLoad={() => setDiscoveryImageLoaded(true)} /><div className="discovery-caption"><span>ALASSAUL / BLACK SEA ROUTE</span><h2>{discoverySlides[discoveryIndex].title}</h2><p>{discoverySlides[discoveryIndex].note}</p></div></div>
+        <div className="discovery-stage"><img key={discoverySlides[discoveryIndex].src} src={discoverySlides[discoveryIndex].src} alt={discoverySlides[discoveryIndex].alt} onLoad={() => setDiscoveryImageLoaded(true)} /><div className="discovery-caption"><span>ALASSAUL / BLACK SEA ROUTE</span><h2>{discoverySlides[discoveryIndex].title}</h2><p>{discoverySlides[discoveryIndex].note}</p>{discoverySlides[discoveryIndex].cityName && <button type="button" className="text-link discovery-city-link" onClick={() => { const city = cities.find((item) => item.name === discoverySlides[discoveryIndex].cityName); if (city) { setSelectedCity(city); setDiscoveryOpen(false); setModal("city"); } }}>افتح دليل المدينة وجميع وجهاتها <ArrowLeft size={15} /></button>}</div></div>
         <div className="discovery-controls"><button aria-label="الصورة السابقة" onClick={() => { setDiscoveryImageLoaded(false); setDiscoveryIndex((current) => (current - 1 + discoverySlides.length) % discoverySlides.length); }}><ArrowRight size={18} /></button><div className="discovery-dots">{discoverySlides.map((slide, index) => <button key={slide.src} className={index === discoveryIndex ? "active" : ""} aria-label={`عرض ${slide.title}`} onClick={() => { setDiscoveryImageLoaded(false); setDiscoveryIndex(index); }} />)}</div><button aria-label="الصورة التالية" onClick={() => { setDiscoveryImageLoaded(false); setDiscoveryIndex((current) => (current + 1) % discoverySlides.length); }}><ArrowLeft size={18} /></button></div>
       </div>}
 
