@@ -42,6 +42,7 @@ import {
   Flame,
   Headphones,
   Heart,
+  House,
   Image as ImageIcon,
   Instagram,
   Languages,
