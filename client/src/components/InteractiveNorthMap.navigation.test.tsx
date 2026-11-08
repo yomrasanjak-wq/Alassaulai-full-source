@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
 import React, { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/Map", () => ({
   MapView: () => <div data-testid="north-map-view" />,
 }));
 
 import { InteractiveNorthMap } from "./InteractiveNorthMap";
+
+afterEach(() => cleanup());
 
 describe("InteractiveNorthMap return navigation", () => {
   const scrollIntoView = vi.fn();
