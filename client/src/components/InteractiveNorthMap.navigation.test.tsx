@@ -58,7 +58,7 @@ describe("InteractiveNorthMap return navigation", () => {
     render(<Harness />);
     expect(screen.getByRole("region", { name: /تفاصيل يومرا/ })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: /العودة لاختيار وجهة أخرى/ })[0]);
     expect(screen.queryByRole("region", { name: /تفاصيل/ })).toBeNull();
     expect(screen.getByText("يومرا · الوجهات")).toBeTruthy();
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
