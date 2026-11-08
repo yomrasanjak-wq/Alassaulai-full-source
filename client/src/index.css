@@ -3194,3 +3194,58 @@ img { display: block; max-width: 100%; }
   background: #b48c4c;
   color: #173d36;
 }
+
+
+/* Mobile refinement: turn the tall floating green dock into a slim integrated bottom navigation rail. */
+@media (max-width: 640px) {
+  .site-shell {
+    padding-bottom: calc(58px + env(safe-area-inset-bottom)) !important;
+  }
+  .site-shell .mobile-discovery-dock {
+    inset-inline: 0 !important;
+    bottom: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: center !important;
+    gap: 0 !important;
+    min-height: 48px !important;
+    padding: 3px 8px max(3px, env(safe-area-inset-bottom)) !important;
+    border: 0 !important;
+    border-top: 1px solid rgb(211 184 124 / 48%) !important;
+    border-radius: 0 !important;
+    background: rgb(14 59 53 / 98%) !important;
+    box-shadow: 0 -4px 16px rgb(8 35 29 / 15%) !important;
+    backdrop-filter: blur(12px);
+  }
+  .site-shell .mobile-discovery-dock button {
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-height: 38px !important;
+    padding: 4px 3px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    color: #e7d7b0 !important;
+    background: transparent !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+  .site-shell .mobile-discovery-dock button svg {
+    width: 16px !important;
+    height: 16px !important;
+    flex: 0 0 16px !important;
+  }
+  .site-shell .mobile-discovery-dock button:last-child {
+    color: #f2d99e !important;
+    background: rgb(200 169 107 / 10%) !important;
+    border: 0 !important;
+  }
+  .site-shell .mobile-discovery-dock button:active,
+  .site-shell .mobile-discovery-dock button:focus-visible {
+    background: rgb(255 255 255 / 10%) !important;
+    outline-offset: -2px;
+  }
+}
