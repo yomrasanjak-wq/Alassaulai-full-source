@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import React from "react";
+import React, { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -10,14 +10,23 @@ vi.mock("@/components/Map", () => ({
 import { InteractiveNorthMap } from "./InteractiveNorthMap";
 
 describe("InteractiveNorthMap return navigation", () => {
-  it("returns to the same city destination list and allows choosing another place", () => {
-    render(<InteractiveNorthMap />);
+  it("keeps the same city list after the parent clears the selected destination request", () => {
+    function Harness() {
+      const [request, setRequest] = useState({
+        name: "مرتفعات يومرا",
+        city: "يومرا",
+        query: "Yomra Yaylası Trabzon",
+      });
+      return (
+        <InteractiveNorthMap
+          destinationRequest={request}
+          onBackToDestinations={() => setRequest(null as never)}
+        />
+      );
+    }
 
-    fireEvent.click(screen.getByRole("tab", { name: "يومرا" }));
-    expect(screen.getByText("يومرا · الوجهات")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "اختيار وجهة الخريطة رقم 1" }));
-    expect(screen.getByRole("region", { name: /تفاصيل/ })).toBeTruthy();
+    render(<Harness />);
+    expect(screen.getByRole("region", { name: /تفاصيل مرتفعات يومرا/ })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /العودة لاختيار وجهة أخرى/ }));
     expect(screen.queryByRole("region", { name: /تفاصيل/ })).toBeNull();
