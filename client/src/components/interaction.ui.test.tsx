@@ -517,11 +517,12 @@ describe("Account, live modal, and place details", () => {
     expect(screen.getByRole("button", { name: /متابعة الدخول الآمن/ })).toBeTruthy();
   });
 
-  it("opens a selected place chip directly on the in-app map", async () => {
+  it("opens a city-guide destination directly on the in-app map", async () => {
     render(<Home />);
-    const placeButton = document.querySelector(".place-chips button") as HTMLButtonElement;
-    expect(placeButton).toBeTruthy();
-    fireEvent.click(placeButton);
+    fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
+    fireEvent.click(screen.getByRole("button", { name: "عرض طرابزون" }));
+    fireEvent.click(screen.getByRole("button", { name: "افتح دليل المدينة وجميع وجهاتها" }));
+    fireEvent.click(screen.getByRole("button", { name: "عرض أوزنجول على خريطة ALASSAUL" }));
     await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
     expect(screen.getByRole("link", { name: /احصل على الاتجاهات/ })).toBeTruthy();
   });
@@ -589,9 +590,12 @@ describe("Official live channel actions", () => {
 });
 
 describe("City and place detail actions", () => {
-  it("opens the selected city file with its image when a city tab is clicked", () => {
+  it("opens the Rize city file from its discovery photo", () => {
     render(<Home />);
-    fireEvent.click(screen.getByRole("button", { name: /02.*ريزا.*Rize/ }));
+    fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
+    fireEvent.click(screen.getByRole("button", { name: "عرض ريزا" }));
+    expect(screen.getByRole("heading", { name: "ريزا" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "افتح دليل المدينة وجميع وجهاتها" }));
     expect(screen.getByRole("heading", { name: /ريزا — Rize/ })).toBeTruthy();
     expect(screen.getAllByAltText("ريزا").length).toBeGreaterThan(0);
     expect(screen.getByText("اختر أي وجهة لعرضها على الخريطة")).toBeTruthy();
@@ -599,9 +603,12 @@ describe("City and place detail actions", () => {
     expect(screen.getByText("القرى والامتداد")).toBeTruthy();
   });
 
-  it("opens map details and directions from an Uzungol place chip", async () => {
+  it("opens map details and directions from the Uzungol city guide", async () => {
     render(<Home />);
-    fireEvent.click(screen.getAllByRole("button", { name: /أوزنجول/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: /اكتشف وجهتك/ }));
+    fireEvent.click(screen.getByRole("button", { name: "عرض طرابزون" }));
+    fireEvent.click(screen.getByRole("button", { name: "افتح دليل المدينة وجميع وجهاتها" }));
+    fireEvent.click(screen.getByRole("button", { name: "عرض أوزنجول على خريطة ALASSAUL" }));
     await waitFor(() => expect(screen.getByRole("region", { name: "تفاصيل أوزنجول" })).toBeTruthy());
     expect(screen.getByRole("link", { name: /احصل على الاتجاهات/ })).toBeTruthy();
   });
