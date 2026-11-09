@@ -29,6 +29,7 @@ const destinations: MapDestination[] = [
   { name: "مركز سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene Center", category: "cities", label: "أسواق وخدمات", note: "مركز البلدة على الطريق الساحلي؛ استخدم الخريطة للتحقق من الوجهة وساعات العمل.", query: "Surmene merkez Trabzon Turkey", position: { lat: 40.912, lng: 40.116 } },
   { name: "محال سكاكين سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene Knife Shops", category: "culture", label: "حرف محلية وتسوق", note: "تشتهر سورميني بحرفة صناعة السكاكين؛ تحقق من المتجر ومواعيد العمل قبل الزيارة.", query: "Surmene bicak dukkanlari Turkey", position: { lat: 40.912, lng: 40.118 } },
   { name: "شلالات أراكلي", city: "أراكلي", branch: "الساحل والقرى", latin: "Araklı Waterfalls", category: "nature", label: "طبيعة وشلالات", note: "وجهة طبيعية في ريف أراكلي؛ افحص حالة الطريق والطقس قبل الانطلاق.", query: "Arakli waterfalls Trabzon Turkey", position: { lat: 40.73, lng: 40.05 } },
+  { name: "أكواريوم طرابزون", city: "طرابزون", branch: "الأنشطة العائلية", latin: "Trabzon Tunnel Aquarium", category: "family", label: "نفق وأحياء بحرية", note: "أكواريوم نفق في وادي زاغنوس، يضم مسار مشاهدة للأحياء البحرية؛ تحقق من ساعات الزيارة قبل الانطلاق.", query: "Trabzon Tunnel Aquarium Zafer Ortahisar Turkey", position: { lat: 41.00072, lng: 39.720286 } },
   { name: "طرابزون", city: "طرابزون", branch: "المدينة والساحل", latin: "Trabzon", category: "cities", label: "مدينة ساحلية", note: "بوابة البحر الأسود والأسواق والمطاعم والميناء.", query: "Trabzon Turkey", position: { lat: 41.0053, lng: 39.7225 } },
   { name: "فوروم طرابزون مول", city: "طرابزون", branch: "التسوق والأنشطة العائلية", latin: "Forum Trabzon Shopping Mall", category: "family", label: "مركز تسوق كبير", note: "مركز فوروم طرابزون على طريق الساحل، بجوار حديقة إيوف الأولمبية.", query: "Forum Trabzon Shopping Mall Turkey", position: { lat: 40.99981, lng: 39.76129 } },
   { name: "حديقة إيوف ومرافقها", city: "طرابزون", branch: "الحدائق والأنشطة العائلية", latin: "EYOF 2011 Hatıra Parkı", category: "family", label: "حديقة عائلية", note: "حديقة إيوف المقابلة لفوروم؛ تضم مسارات ومسطحات خضراء ومرافق اجتماعية ومطعماً ومقهى ومنطقة ألعاب للأطفال.", query: "EYOF Park Trabzon", position: { lat: 41.00136, lng: 39.761072 } },
@@ -198,6 +199,7 @@ export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpan
     const aliases: Record<string, string[]> = {
       [normalize("ميدان طرابزون والأسواق")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
       [normalize("ميدان طرابزون")]: [normalize("Meydan Trabzon Turkey")],
+      [normalize("أكواريوم طرابزون")]: [normalize("Trabzon Tunnel Aquarium")],
       [normalize("فوروم طرابزون مول")]: [normalize("Forum Trabzon Shopping Mall Turkey")],
       [normalize("مطعم إيوف المجدد")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("مقهى إيوف والجلسات الخارجية")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
