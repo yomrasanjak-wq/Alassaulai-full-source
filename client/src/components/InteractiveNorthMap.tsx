@@ -204,6 +204,7 @@ export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpan
       [normalize("مطعم إيوف المجدد")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("مقهى إيوف والجلسات الخارجية")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("ألعاب الأطفال في حديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      // Keep every Forum-side EYOF gallery/city-guide label routed to the same verified park pin.
       [normalize("ممشى وحديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("حديقة الفورم")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("حديقة إيوف الأولمبية بجوار فوروم")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
