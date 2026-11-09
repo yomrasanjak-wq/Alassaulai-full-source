@@ -30,6 +30,8 @@ const destinations: MapDestination[] = [
   { name: "محال سكاكين سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene Knife Shops", category: "culture", label: "حرف محلية وتسوق", note: "تشتهر سورميني بحرفة صناعة السكاكين؛ تحقق من المتجر ومواعيد العمل قبل الزيارة.", query: "Surmene bicak dukkanlari Turkey", position: { lat: 40.912, lng: 40.118 } },
   { name: "شلالات أراكلي", city: "أراكلي", branch: "الساحل والقرى", latin: "Araklı Waterfalls", category: "nature", label: "طبيعة وشلالات", note: "وجهة طبيعية في ريف أراكلي؛ افحص حالة الطريق والطقس قبل الانطلاق.", query: "Arakli waterfalls Trabzon Turkey", position: { lat: 40.73, lng: 40.05 } },
   { name: "طرابزون", city: "طرابزون", branch: "المدينة والساحل", latin: "Trabzon", category: "cities", label: "مدينة ساحلية", note: "بوابة البحر الأسود والأسواق والمطاعم والميناء.", query: "Trabzon Turkey", position: { lat: 41.0053, lng: 39.7225 } },
+  { name: "فوروم طرابزون مول", city: "طرابزون", branch: "التسوق والأنشطة العائلية", latin: "Forum Trabzon Shopping Mall", category: "family", label: "مركز تسوق كبير", note: "مركز فوروم طرابزون على طريق الساحل، بجوار حديقة إيوف الأولمبية.", query: "Forum Trabzon Shopping Mall Turkey", position: { lat: 40.99981, lng: 39.76129 } },
+  { name: "حديقة إيوف ومرافقها", city: "طرابزون", branch: "الحدائق والأنشطة العائلية", latin: "EYOF 2011 Hatıra Parkı", category: "family", label: "حديقة عائلية", note: "حديقة إيوف المقابلة لفوروم؛ تضم مسارات ومسطحات خضراء ومرافق اجتماعية ومطعماً ومقهى ومنطقة ألعاب للأطفال.", query: "EYOF Park Trabzon", position: { lat: 41.00136, lng: 39.761072 } },
   { name: "أوزنجول", city: "طرابزون", branch: "سلطان مراد · أوزنجول · ديمركابي", latin: "Uzungöl", category: "nature", label: "بحيرة وقرية", note: "بحيرة جبلية ومسارات هادئة وإطلالات لا تنسى.", query: "Uzungol Trabzon Turkey", position: { lat: 40.6197, lng: 40.2958 } },
   { name: "ريزا", city: "ريزا", branch: "المدينة والساحل", latin: "Rize", category: "cities", label: "مدينة الشاي", note: "مزارع الشاي والمرتفعات والهواء البحري.", query: "Rize Turkey", position: { lat: 41.0201, lng: 40.5234 } },
   { name: "برج كأس الشاي العملاق", city: "ريزا", branch: "معالم الشاي والثقافة", latin: "Rize Çay Çarşısı – Bardak Kule", category: "culture", label: "برج الشاي ومنصة مشاهدة", note: "برج كأس الشاي في مجمع Çay Çarşısı وسط ريزا، ويضم منصة مشاهدة بانورامية.", query: "Rize Çay Çarşısı Bardak Kule, Eminettin Mahallesi, Rize, Turkey", position: { lat: 41.02878, lng: 40.51844 } },
@@ -196,6 +198,11 @@ export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpan
     const aliases: Record<string, string[]> = {
       [normalize("ميدان طرابزون والأسواق")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
       [normalize("ميدان طرابزون")]: [normalize("Meydan Trabzon Turkey")],
+      [normalize("فوروم طرابزون مول")]: [normalize("Forum Trabzon Shopping Mall Turkey")],
+      [normalize("مطعم إيوف المجدد")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("مقهى إيوف والجلسات الخارجية")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("ألعاب الأطفال في حديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("ممشى وحديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("ميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
       // Gallery labels that intentionally differ from the curated map-pin names.
       // These aliases reuse existing map records only; they do not create coordinates.
