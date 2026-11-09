@@ -3260,3 +3260,28 @@ img { display: block; max-width: 100%; }
 .uzungol-gallery-grid img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 9px; }
 .uzungol-gallery-source { display: inline-block; margin-top: 9px; color: #456b5b; font-size: 11px; text-decoration: underline; }
 @media (max-width: 480px) { .uzungol-recent-gallery { padding: 10px; } .uzungol-gallery-grid { gap: 6px; } .uzungol-gallery-grid img { aspect-ratio: 1 / 1; } }
+
+
+/* Global search integrated with the prayer ticker */
+.global-search-dock {
+  width: 100% !important; max-width: none !important; margin: 0 !important;
+  padding: 5px max(20px, calc((100% - 1180px) / 2)) 8px !important;
+  background: linear-gradient(90deg, #123f37, #0e332e 52%, #123f37);
+  border-bottom: 1px solid rgb(200 169 107 / 34%);
+}
+.global-search-dock .search-box {
+  min-height: 39px !important; max-width: 1180px; margin: 0 auto; gap: 9px;
+  padding: 0 10px 0 14px; border: 1px solid rgb(217 187 120 / 40%);
+  border-radius: 9px; background: rgb(255 253 248 / 96%); box-shadow: none;
+}
+.global-search-dock .search-box > svg { width: 17px; height: 17px; flex: 0 0 auto; }
+.global-search-dock .search-box input { min-height: 35px; font-size: 12px; }
+.global-search-dock .search-box button { min-height: 30px; padding: 0 13px; border-radius: 7px; font-size: 10px; }
+.global-search-dock .search-hint { display: none; }
+.global-search-dock .search-results { z-index: 30; }
+@media (max-width: 700px) {
+  .global-search-dock { padding: 4px 10px 6px !important; }
+  .global-search-dock .search-box { min-height: 37px !important; gap: 6px; padding-inline: 8px; border-radius: 8px; }
+  .global-search-dock .search-box input { min-height: 33px; font-size: 11px; }
+  .global-search-dock .search-box button { min-height: 28px; padding-inline: 8px; font-size: 9px; }
+}
