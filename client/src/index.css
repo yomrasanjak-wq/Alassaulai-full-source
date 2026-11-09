@@ -3249,3 +3249,14 @@ img { display: block; max-width: 100%; }
     outline-offset: -2px;
   }
 }
+
+
+/* Uzungöl recent editorial photo gallery */
+.uzungol-recent-gallery { margin: 18px 0 20px; padding: 14px; border: 1px solid #d8e4dd; background: #f5f8f4; border-radius: 14px; }
+.uzungol-gallery-heading { display: flex; flex-direction: column; gap: 4px; margin-bottom: 11px; }
+.uzungol-gallery-heading strong { color: #214b3d; font-size: 15px; }
+.uzungol-gallery-heading small { color: #64766d; font-size: 11px; }
+.uzungol-gallery-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.uzungol-gallery-grid img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 9px; }
+.uzungol-gallery-source { display: inline-block; margin-top: 9px; color: #456b5b; font-size: 11px; text-decoration: underline; }
+@media (max-width: 480px) { .uzungol-recent-gallery { padding: 10px; } .uzungol-gallery-grid { gap: 6px; } .uzungol-gallery-grid img { aspect-ratio: 1 / 1; } }
