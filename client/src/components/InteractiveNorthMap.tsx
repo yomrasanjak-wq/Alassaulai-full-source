@@ -205,6 +205,8 @@ export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpan
       [normalize("مقهى إيوف والجلسات الخارجية")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("ألعاب الأطفال في حديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("ممشى وحديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("حديقة الفورم")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("حديقة إيوف الأولمبية بجوار فوروم")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("ميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
       // Gallery labels that intentionally differ from the curated map-pin names.
       // These aliases reuse existing map records only; they do not create coordinates.
