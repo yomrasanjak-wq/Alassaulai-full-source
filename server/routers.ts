@@ -558,7 +558,7 @@ export const appRouter = router({
   }),
   discovery: router({
     list: publicProcedure.query(() => listMediaItems("discovery")),
-    upload: adminProcedure
+    upload: ownerProcedure
       .input(z.object({ name: z.string().trim().min(1).max(255), mimeType: z.string().regex(/^image\//), dataBase64: z.string().min(16).max(70_000_000) }))
       .mutation(async ({ input }) => {
         const safeName = input.name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-120) || "discovery-image";
