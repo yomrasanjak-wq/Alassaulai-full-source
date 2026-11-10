@@ -13,6 +13,8 @@ vi.mock("./db", async importOriginal => {
   return {
     ...actual,
     createControlRequest: vi.fn().mockResolvedValue({ id: 77, status: "pending" }),
+    listControlRequests: vi.fn().mockResolvedValue([]),
+    updateControlRequest: vi.fn().mockResolvedValue({ id: 1, status: "reviewed" }),
   };
 });
 
@@ -20,7 +22,15 @@ import { createControlRequest } from "./db";
 
 function createPublicContext(): TrpcContext {
   return {
-    user: undefined,
+    user: null,
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: {} as TrpcContext["res"],
+  };
+}
+
+function createUserContext(openId: string, role: "user" | "admin" = "user"): TrpcContext {
+  return {
+    user: { id: 1, openId, role } as NonNullable<TrpcContext["user"]>,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
     res: {} as TrpcContext["res"],
   };
@@ -41,6 +51,42 @@ describe("brain governance", () => {
       decision: "approve",
       note: "اختبار رفض الموافقة دون هوية مالك المنصة.",
     })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.control.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.control.update({ id: 1, status: "reviewed" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.discovery.upload({ name: "test.jpg", mimeType: "image/jpeg", dataBase64: "YWJjZGVmZ2hpamtsbW5vcA==" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.discovery.update({ id: 1, name: "غير مصرح" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.discovery.delete({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("denies regular and admin accounts owner-only control actions", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    try {
+      for (const context of [
+        createUserContext("ordinary-user-open-id", "user"),
+        createUserContext("admin-user-open-id", "admin"),
+      ]) {
+        const caller = appRouter.createCaller(context);
+        await expect(caller.control.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(caller.control.update({ id: 1, status: "reviewed" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(caller.discovery.upload({ name: "test.jpg", mimeType: "image/jpeg", dataBase64: "YWJjZGVmZ2hpamtsbW5vcA==" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(caller.discovery.update({ id: 1, name: "غير مصرح" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(caller.discovery.delete({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+      }
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
+  });
+
+  it("allows only the configured owner identity into the control room", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    try {
+      const caller = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      await expect(caller.control.list()).resolves.toEqual([]);
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
   });
 
   it("forces public control requests to be recorded as visitors", async () => {
