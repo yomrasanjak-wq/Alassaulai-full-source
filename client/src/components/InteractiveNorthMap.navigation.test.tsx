@@ -69,6 +69,6 @@ describe("InteractiveNorthMap return navigation", () => {
     const destinations = screen.getAllByRole("button", { name: /اختيار وجهة الخريطة رقم/ });
     expect(destinations.length).toBeGreaterThan(1);
     fireEvent.click(destinations[1]!);
-    expect(screen.getByRole("region", { name: /تفاصيل واجهة كاشستوس البحرية/ })).toBeTruthy();
+    expect(screen.getByRole("region", { name: /تفاصيل حديقة الجمهورية وممشى كاش أوستو/ })).toBeTruthy();
   });
 });
