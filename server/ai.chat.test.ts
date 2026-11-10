@@ -41,6 +41,9 @@ describe("brain governance", () => {
       decision: "approve",
       note: "اختبار رفض الموافقة دون هوية مالك المنصة.",
     })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.control.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.control.update({ id: 1, status: "reviewed" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.discovery.upload({ name: "test.jpg", mimeType: "image/jpeg", dataBase64: "YWJjZGVmZ2hpamtsbW5vcA==" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("forces public control requests to be recorded as visitors", async () => {
