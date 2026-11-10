@@ -212,6 +212,7 @@ export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpan
       // Gallery labels that intentionally differ from the curated map-pin names.
       // These aliases reuse existing map records only; they do not create coordinates.
       [normalize("الممشى الجديد بجوار حديقة الجمهورية")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
+      [normalize("حديقة الجمهورية في كاش أوستو")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
       [normalize("ممشى كاشوستو البحري الجديد")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
       [normalize("واجهة كاشستوس البحرية")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
       [normalize("السلطان مراد")]: [normalize("مرتفعات سلطان مراد"), normalize("Sultan Murat Plateau Trabzon Turkey")],
