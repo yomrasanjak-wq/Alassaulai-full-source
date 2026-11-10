@@ -22,7 +22,7 @@ const destinations: MapDestination[] = [
   { name: "أرسين", city: "أرسين", branch: "الساحل والخدمات", latin: "Arsin", category: "cities", label: "ساحل البحر الأسود", note: "بلدة ساحلية شرقي طرابزون؛ تحقق من ساعات عمل الخدمات قبل التوجه.", query: "Arsin Trabzon Turkey", position: { lat: 40.952, lng: 39.93 } },
   { name: "سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene", category: "cities", label: "بلدة ساحلية", note: "بلدة على ساحل البحر الأسود شرقي طرابزون، على الطريق باتجاه ريزا.", query: "Surmene Trabzon Turkey", position: { lat: 40.906, lng: 40.116 } },
   { name: "أراكلي", city: "أراكلي", branch: "الساحل والقرى", latin: "Araklı", category: "cities", label: "ساحل وبلدة", note: "بلدة ساحلية شرقي طرابزون ضمن مسار الطريق الساحلي إلى ريزا.", query: "Arakli Trabzon Turkey", position: { lat: 40.939, lng: 40.058 } },
-  { name: "واجهة كاشستوس البحرية", city: "يومرا", branch: "الساحل والخدمات", latin: "Kaşüstü Waterfront", category: "family", label: "واجهة بحرية", note: "منطقة ساحلية قرب يومرا؛ تحقق من المداخل والخدمات المتاحة قبل الزيارة.", query: "Kasustu Yomra Trabzon Turkey", position: { lat: 40.958, lng: 39.856 } },
+  { name: "حديقة الجمهورية وممشى كاش أوستو", city: "يومرا", branch: "الحدائق والمماشي العائلية", latin: "Kaşüstü Cumhuriyet Parkı & Promenade", category: "family", label: "حديقة وممشى بحري", note: "حديقة الجمهورية في كاش أوستو، قرب مبنى المحكمة وعلى الواجهة البحرية؛ تضم مساحات خضراء ومرافق عائلية ومسارات مشي ودراجات. أُضيف الممشى الحديث المجاور بناءً على توثيق الزائر؛ موضع الدبوس تقريبي داخل نطاق الحديقة.", query: "Kaşüstü Cumhuriyet Parkı Ongun Caddesi Yomra Trabzon", position: { lat: 40.958, lng: 39.856 } },
   { name: "مركز جواهر طرابزون", city: "يومرا", branch: "الساحل والخدمات", latin: "Cevahir Outlet Trabzon", category: "family", label: "تسوق ومطاعم", note: "مركز تسوق في منطقة يومرا؛ تحقق من ساعات العمل والفعاليات قبل الانطلاق.", query: "Cevahir Outlet Trabzon Yomra Turkey", position: { lat: 40.957, lng: 39.862 } },
   { name: "زلاجة فورابارك الجبلية في يومرا", city: "يومرا", branch: "الأنشطة والمغامرات", latin: "Forapark Dağ Kızağı ve Restoran", category: "family", label: "زلاجة جبلية ومغامرات", note: "فورابارك في كاشستوس، يومرا؛ عنوانها İskenderoğlu Sokak No:17. تحقق من مواعيد التشغيل والأسعار قبل الزيارة.", query: "Forapark Dağ Kızağı Merkezi Kaşüstü Yomra Trabzon Turkey", position: { lat: 40.949145, lng: 39.805972 } },
   { name: "حديقة ساحل أرسين", city: "أرسين", branch: "الساحل والخدمات", latin: "Arsin Sahil Parkı", category: "family", label: "حديقة ساحلية", note: "مساحة ساحلية للتنزه؛ قد تتغير الخدمات المتاحة حسب الموسم والطقس.", query: "Arsin Sahil Parki Trabzon Turkey", position: { lat: 40.953, lng: 39.927 } },
@@ -211,7 +211,9 @@ export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpan
       [normalize("ميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
       // Gallery labels that intentionally differ from the curated map-pin names.
       // These aliases reuse existing map records only; they do not create coordinates.
-      [normalize("ممشى كاشوستو البحري الجديد")]: [normalize("واجهة كاشستوس البحرية"), normalize("Kaşüstü Waterfront")],
+      [normalize("الممشى الجديد بجوار حديقة الجمهورية")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
+      [normalize("ممشى كاشوستو البحري الجديد")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
+      [normalize("واجهة كاشستوس البحرية")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
       [normalize("السلطان مراد")]: [normalize("مرتفعات سلطان مراد"), normalize("Sultan Murat Plateau Trabzon Turkey")],
       [normalize("حيدر نبي")]: [normalize("مرتفعات حيدر نبي"), normalize("Hidirnebi Plateau Trabzon Turkey")],
       [normalize("دير صوميلا")]: [normalize("دير سوميلا"), normalize("Sumela Monastery Turkey")],
