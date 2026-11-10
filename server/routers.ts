@@ -528,8 +528,8 @@ export const appRouter = router({
         const request = await createControlRequest({ ...input, requesterType: "visitor" });
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
       }),
-    list: adminProcedure.query(() => listControlRequests()),
-    update: adminProcedure
+    list: ownerProcedure.query(() => listControlRequests()),
+    update: ownerProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
       .mutation(({ input }) => updateControlRequest(input.id, { status: input.status, assignee: input.assignee, decisionNote: input.decisionNote })),
   }),
@@ -568,10 +568,10 @@ export const appRouter = router({
         const item = await createMediaItem({ name: input.name, url: stored.url, mimeType: input.mimeType, category: "discovery" });
         return { success: true as const, item };
       }),
-    update: adminProcedure
+    update: ownerProcedure
       .input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(1).max(255) }))
       .mutation(({ input }) => updateMediaItem(input.id, input.name)),
-    delete: adminProcedure
+    delete: ownerProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(({ input }) => deleteMediaItem(input.id)),
   }),
