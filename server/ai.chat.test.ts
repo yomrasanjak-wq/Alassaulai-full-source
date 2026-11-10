@@ -54,6 +54,8 @@ describe("brain governance", () => {
     await expect(caller.control.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.control.update({ id: 1, status: "reviewed" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.discovery.upload({ name: "test.jpg", mimeType: "image/jpeg", dataBase64: "YWJjZGVmZ2hpamtsbW5vcA==" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.discovery.update({ id: 1, name: "غير مصرح" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.discovery.delete({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("denies regular and admin accounts owner-only control actions", async () => {
@@ -67,6 +69,9 @@ describe("brain governance", () => {
         const caller = appRouter.createCaller(context);
         await expect(caller.control.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
         await expect(caller.control.update({ id: 1, status: "reviewed" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(caller.discovery.upload({ name: "test.jpg", mimeType: "image/jpeg", dataBase64: "YWJjZGVmZ2hpamtsbW5vcA==" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(caller.discovery.update({ id: 1, name: "غير مصرح" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(caller.discovery.delete({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
       }
     } finally {
       ENV.ownerOpenId = previousOwnerId;
