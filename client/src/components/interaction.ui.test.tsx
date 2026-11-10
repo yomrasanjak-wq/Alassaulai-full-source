@@ -63,7 +63,7 @@ describe("Interactive North map destination matching", () => {
 
   it("resolves the Kaşüstü gallery label to the existing waterfront pin", () => {
     render(<InteractiveNorthMap destinationRequest={{ name: "ممشى كاشوستو البحري الجديد", city: "يومرا", query: "Kaşüstü Cumhuriyet Parkı deniz manzaralı yürüyüş yolu" }} />);
-    expect(screen.getByRole("region", { name: "تفاصيل واجهة كاشستوس البحرية" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "تفاصيل حديقة الجمهورية وممشى كاش أوستو" })).toBeTruthy();
   });
 
   it("resolves Yomra highlands in the Yomra city filter", () => {
@@ -178,7 +178,7 @@ describe("City-first map and discovery flow", () => {
     render(<InteractiveNorthMap />);
     fireEvent.click(screen.getByRole("tab", { name: "يومرا" }));
     expect(screen.getByText("يومرا · الوجهات")).toBeTruthy();
-    expect(screen.getByText("واجهة كاشستوس البحرية")).toBeTruthy();
+    expect(screen.getByText("حديقة الجمهورية وممشى كاش أوستو")).toBeTruthy();
     expect(screen.getByText("مركز جواهر طرابزون")).toBeTruthy();
     expect(screen.queryByText("ميدان طرابزون")).toBeNull();
   });
@@ -223,7 +223,8 @@ describe("City-first map and discovery flow", () => {
     for (const category of ["قرى ومرتفعات", "تاريخ وثقافة", "تسوق وأسواق", "مقاهٍ ومطاعم", "حدائق وشواطئ", "تلفريك وثلج", "أنشطة ومغامرات"]) {
       expect(screen.getByRole("heading", { name: category, level: 4 })).toBeTruthy();
     }
-    for (const placeName of ["مغارة تشال", "كاياباشا", "بحيرة سيراجول", "أطول زحليقة سيراجول", "الطيران الشراعي في سيراجول", "شاطئ قانيتا", "شاطئ يلنجك", "شارع العرب في بليتلي", "همشِكوي وممشى القرية", "سانتا خراباط", "سلطان مراد", "مول جواهر طرابزون", "ممشى كاشستوس", "مرسى القوارب في يومرا", "حديقة يومرا", "أكبر وأحدث زحليقة في يومرا", "ممشى أكشابات", "تاريخ أكشابات ومعالمها", "حاجي مصطفى فوق همشِكوي", "سوق موللوز", "مسجد غلبهار خاتون (خانتون)", "أكواريوم طرابزون", "سوق القلعة القديم / بدستان", "الحديقة النباتية", "حديقة الفورم", "حديقة الفورميرجي"]) {
+    // Keep the city-guide test aligned with the canonical EYOF park title shown to visitors.
+    for (const placeName of ["مغارة تشال", "كاياباشا", "بحيرة سيراجول", "أطول زحليقة سيراجول", "الطيران الشراعي في سيراجول", "شاطئ قانيتا", "شاطئ يلنجك", "شارع العرب في بليتلي", "همشِكوي وممشى القرية", "سانتا خراباط", "سلطان مراد", "مول جواهر طرابزون", "ممشى كاشستوس", "مرسى القوارب في يومرا", "حديقة يومرا", "حديقة الجمهورية في كاش أوستو", "أكبر وأحدث زحليقة في يومرا", "ممشى أكشابات", "تاريخ أكشابات ومعالمها", "حاجي مصطفى فوق همشِكوي", "سوق موللوز", "مسجد غلبهار خاتون (خانتون)", "أكواريوم طرابزون", "سوق القلعة القديم / بدستان", "الحديقة النباتية", "حديقة الفورم", "حديقة إيوف الأولمبية بجوار فوروم"]) {
       expect(screen.getAllByRole("button", { name: `عرض ${placeName} على خريطة ALASSAUL` }).length).toBeGreaterThan(0);
     }
   });
