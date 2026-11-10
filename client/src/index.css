@@ -3432,3 +3432,32 @@ img { display: block; max-width: 100%; }
   .site-shell .resident-services-launcher-copy strong { font-size: 17px; }
   .site-shell .resident-services-launcher-copy small { font-size: 12px; line-height: 1.7; }
 }
+
+
+/* Readability pass: larger Arabic labels and descriptions on dark surfaces. */
+.site-shell .section-eyebrow { color: #e4c17c; font-size: 11px; letter-spacing: .08em; }
+.site-shell .section-heading h2 { color: #fff8eb; font-size: clamp(28px, 3.2vw, 41px); line-height: 1.45; }
+.site-shell .section-heading p { color: #d9e3d9; font-size: 15px; line-height: 2; }
+.site-shell .hero-copy p { color: #e4ebe2; font-size: 16px; line-height: 2; }
+.site-shell .hero-proof { color: #d6e1d7; font-size: 12px; }
+.site-shell .main-nav button { font-size: 14px; }
+.site-shell .resident-service-copy strong,
+.site-shell .destination-link strong,
+.site-shell .featured-destination-card strong { font-size: 13px; }
+.site-shell .resident-service-copy small,
+.site-shell .destination-link small,
+.site-shell .featured-destination-card small { font-size: 11px; line-height: 1.8; }
+.site-shell .hero-entry-only strong { font-size: 13px; }
+.site-shell .hero-entry-only small { color: #d8e3d9; font-size: 11px; line-height: 1.6; }
+.site-shell .gallery-disclaimer,
+.site-shell .search-hint { font-size: 12px; line-height: 1.8; }
+@media (max-width: 640px) {
+  .site-shell .section-heading h2 { font-size: 27px; line-height: 1.55; }
+  .site-shell .section-heading p { font-size: 14px; line-height: 1.95; }
+  .site-shell .hero-copy p { font-size: 15px; }
+  .site-shell .main-nav button { font-size: 15px; padding-block: 15px; }
+  .site-shell .resident-service-copy strong,
+  .site-shell .destination-link strong { font-size: 13px; }
+  .site-shell .resident-service-copy small,
+  .site-shell .destination-link small { font-size: 11px; }
+}
