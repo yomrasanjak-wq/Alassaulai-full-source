@@ -63,7 +63,7 @@ describe("Interactive North map destination matching", () => {
 
   it("resolves the Kaşüstü gallery label to the existing waterfront pin", () => {
     render(<InteractiveNorthMap destinationRequest={{ name: "ممشى كاشوستو البحري الجديد", city: "يومرا", query: "Kaşüstü Cumhuriyet Parkı deniz manzaralı yürüyüş yolu" }} />);
-    expect(screen.getByRole("region", { name: "تفاصيل واجهة كاشستوس البحرية" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "تفاصيل حديقة الجمهورية وممشى كاش أوستو" })).toBeTruthy();
   });
 
   it("resolves Yomra highlands in the Yomra city filter", () => {
@@ -178,7 +178,7 @@ describe("City-first map and discovery flow", () => {
     render(<InteractiveNorthMap />);
     fireEvent.click(screen.getByRole("tab", { name: "يومرا" }));
     expect(screen.getByText("يومرا · الوجهات")).toBeTruthy();
-    expect(screen.getByText("واجهة كاشستوس البحرية")).toBeTruthy();
+    expect(screen.getByText("حديقة الجمهورية وممشى كاش أوستو")).toBeTruthy();
     expect(screen.getByText("مركز جواهر طرابزون")).toBeTruthy();
     expect(screen.queryByText("ميدان طرابزون")).toBeNull();
   });
