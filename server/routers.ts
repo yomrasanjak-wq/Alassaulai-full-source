@@ -1,6 +1,6 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlRequest, createGuestMemory, createMediaItem, deleteGuestMemory, deleteMediaItem, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
+import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteGuestMemory, deleteMediaItem, getSystemHealth, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
@@ -524,17 +524,19 @@ export const appRouter = router({
     list: ownerProcedure.query(() => listControlTeamMembers()),
     assignRole: ownerProcedure
       .input(z.object({ email: z.string().trim().email().max(320), role: z.enum(["user", "secretary", "assistant", "it"]) }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const member = await updateUserRoleByEmail(input.email.toLowerCase(), input.role);
         if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "لم نجد حساباً بهذا البريد. يجب على الموظف تسجيل الدخول مرة واحدة أولاً." });
+        await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "team.role_assigned", targetType: "user", targetId: String(member.id), details: JSON.stringify({ email: member.email, role: member.role }) });
         return { success: true as const, member };
       }),
   }),
   control: router({
     createTask: ownerProcedure
       .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"), assignee: z.enum(["CEO", "السكرتير", "المساعد", "IT"]) }))
-      .mutation(async ({ input }) => {
+       .mutation(async ({ ctx, input }) => {
         const request = await createControlRequest({ ...input, requesterType: "owner" });
+        if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "task.created", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ assignee: input.assignee, category: input.category, priority: input.priority }) });
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
       }),
     submit: publicProcedure
@@ -563,8 +565,12 @@ export const appRouter = router({
             throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة ليست ضمن مهام قسمك." });
           }
         }
-        return updateControlRequest(input.id, { status: input.status, assignee: isOwner ? input.assignee : undefined, decisionNote: isOwner ? input.decisionNote : undefined });
+        const updated = await updateControlRequest(input.id, { status: input.status, assignee: isOwner ? input.assignee : undefined, decisionNote: isOwner ? input.decisionNote : undefined });
+        if (updated) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "task.status_updated", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ status: input.status, assignee: updated.assignee }) });
+        return updated;
       }),
+    health: controlStaffProcedure.query(() => getSystemHealth()),
+    auditList: ownerProcedure.query(() => listControlAuditLogs()),
   }),
   media: router({
     list: publicProcedure.query(() => listMediaItems()),
