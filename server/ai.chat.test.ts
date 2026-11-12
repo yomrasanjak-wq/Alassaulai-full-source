@@ -131,11 +131,26 @@ describe("brain governance", () => {
     expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(42, expect.objectContaining({ status: "in_progress" }));
   });
 
-  it("prevents staff from editing another department's tasks or assigning work", async () => {
-    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([]);
+  it("allows IT to submit its assigned work for CEO review but never approve completion", async () => {
+    const task = { id: 99, assignee: "IT", status: "in_progress" };
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
     const caller = appRouter.createCaller(createUserContext("it-open-id", "it"));
+    await caller.control.update({ id: 99, status: "ready_for_review" });
+    expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(99, expect.objectContaining({ status: "ready_for_review" }));
     await expect(caller.control.update({ id: 99, status: "completed" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.control.update({ id: 99, status: "in_progress", assignee: "IT" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("prevents the CEO from completing a task that has not entered review", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    vi.mocked(listControlRequests).mockResolvedValue([{ id: 101, status: "in_progress" } as never]);
+    try {
+      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      await expect(owner.control.update({ id: 101, status: "completed" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
   });
 
   it("applies the additive control-room schema only through the owner team view", async () => {
