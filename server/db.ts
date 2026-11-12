@@ -5,6 +5,7 @@ import {
   ControlRequest,
   GuestMemory,
   InsertUser,
+  User,
   MediaItem,
   controlRequests,
   guestMemories,
@@ -85,6 +86,26 @@ export async function getUserByOpenId(openId: string) {
   }
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result[0];
+}
+
+export async function listControlRequestsForAssignee(assignee: string): Promise<ControlRequest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(controlRequests).where(eq(controlRequests.assignee, assignee)).orderBy(desc(controlRequests.createdAt)).limit(100);
+}
+
+export async function listControlTeamMembers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: users.id, name: users.name, email: users.email, role: users.role, lastSignedIn: users.lastSignedIn })
+    .from(users).orderBy(desc(users.lastSignedIn)).limit(100);
+}
+
+export async function updateUserRoleByEmail(email: string, role: User["role"]) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.email, email)).returning({ id: users.id, name: users.name, email: users.email, role: users.role });
+  return rows[0];
 }
 
 export async function countRegisteredVisitors(): Promise<number> {
