@@ -3634,39 +3634,39 @@ img { display: block; max-width: 100%; }
 }
 
 
-/* Resident services contrast fix — prevent pale mobile panel behind light text. */
+/* Resident services contrast fix — keep the exact forest palette of the selected site theme. */
 #resident-services .resident-services-launcher {
-  color: #fff8e9 !important;
-  background: linear-gradient(115deg, #155044, #0b352d) !important;
-  border-color: rgb(225 194 127 / 72%) !important;
+  color: #fff4dc !important;
+  background: linear-gradient(110deg, #10483d, #0a332c) !important;
+  border-color: rgb(218 184 111 / 58%) !important;
   opacity: 1 !important;
   filter: none !important;
   backdrop-filter: none !important;
 }
 #resident-services .resident-services-launcher-copy strong {
-  color: #fff8e9 !important;
+  color: #fff6e4 !important;
   opacity: 1 !important;
   text-shadow: 0 1px 1px rgb(0 0 0 / 18%);
 }
 #resident-services .resident-services-launcher-copy small {
-  color: #e5eee6 !important;
+  color: #d8e2d8 !important;
   opacity: 1 !important;
 }
 #resident-services .resident-services-launcher-copy em {
-  color: #f0d18f !important;
+  color: #e5c47e !important;
   opacity: 1 !important;
 }
 #resident-services .resident-accordion-trigger {
-  color: #fff5df !important;
+  color: #fff3d8 !important;
   background: #12483d !important;
-  border: 1px solid rgb(225 194 127 / 48%) !important;
+  border: 1px solid rgb(219 188 123 / 42%) !important;
   opacity: 1 !important;
   filter: none !important;
   backdrop-filter: none !important;
 }
 #resident-services .resident-accordion-trigger > span {
-  color: #fff5df !important;
+  color: #fff3d8 !important;
 }
 #resident-services .resident-accordion-trigger > svg {
-  color: #f0d18f !important;
+  color: #e5c47e !important;
 }
