@@ -17,6 +17,35 @@ import * as schema from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _controlRoomSchemaReady: Promise<void> | null = null;
+
+/**
+ * Apply the small additive control-room schema extension on the first owner-only
+ * team read. This uses the already-configured Vercel DATABASE_URL, so no database
+ * credential is copied into GitHub Actions or exposed to the browser.
+ */
+export async function ensureControlRoomSchema(): Promise<void> {
+  if (_controlRoomSchemaReady) return _controlRoomSchemaReady;
+  _controlRoomSchemaReady = (async () => {
+    if (!ENV.databaseUrl) throw new Error("قاعدة البيانات غير مهيأة على الخادم.");
+    const sql = neon(ENV.databaseUrl);
+    const statements = [
+      "ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'secretary'",
+      "ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'assistant'",
+      "ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'it'",
+      'CREATE INDEX IF NOT EXISTS control_requests_assignee_created_idx ON public."controlRequests" (assignee, "createdAt" DESC)',
+      'CREATE TABLE IF NOT EXISTS public."controlAuditLogs" (id serial PRIMARY KEY, "actorOpenId" varchar(64) NOT NULL, action varchar(80) NOT NULL, "targetType" varchar(40) NOT NULL, "targetId" varchar(80), details text, "createdAt" timestamptz NOT NULL DEFAULT now())',
+      'CREATE INDEX IF NOT EXISTS control_audit_logs_created_idx ON public."controlAuditLogs" ("createdAt" DESC)',
+    ];
+    for (const statement of statements) await sql.query(statement, []);
+  })();
+  try {
+    await _controlRoomSchemaReady;
+  } catch (error) {
+    _controlRoomSchemaReady = null;
+    throw error;
+  }
+}
 
 // Neon HTTP avoids opening TCP connections from short-lived Vercel functions.
 export async function getDb() {
