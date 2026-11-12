@@ -3632,3 +3632,41 @@ img { display: block; max-width: 100%; }
   .site-shell .north-map-fallback-actions { align-items: stretch; flex-direction: column; }
   .site-shell .north-map-fallback-actions .north-map-directions { width: 100%; justify-content: center; min-height: 48px; }
 }
+
+
+/* Resident services contrast fix — prevent pale mobile panel behind light text. */
+#resident-services .resident-services-launcher {
+  color: #fff8e9 !important;
+  background: linear-gradient(115deg, #155044, #0b352d) !important;
+  border-color: rgb(225 194 127 / 72%) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+#resident-services .resident-services-launcher-copy strong {
+  color: #fff8e9 !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 18%);
+}
+#resident-services .resident-services-launcher-copy small {
+  color: #e5eee6 !important;
+  opacity: 1 !important;
+}
+#resident-services .resident-services-launcher-copy em {
+  color: #f0d18f !important;
+  opacity: 1 !important;
+}
+#resident-services .resident-accordion-trigger {
+  color: #fff5df !important;
+  background: #12483d !important;
+  border: 1px solid rgb(225 194 127 / 48%) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+#resident-services .resident-accordion-trigger > span {
+  color: #fff5df !important;
+}
+#resident-services .resident-accordion-trigger > svg {
+  color: #f0d18f !important;
+}
