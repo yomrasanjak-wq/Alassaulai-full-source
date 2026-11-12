@@ -13,6 +13,7 @@ vi.mock("./db", async importOriginal => {
   return {
     ...actual,
     createControlRequest: vi.fn().mockResolvedValue({ id: 77, status: "pending" }),
+    createControlAuditLog: vi.fn().mockResolvedValue({ id: 1 }),
     listControlRequests: vi.fn().mockResolvedValue([]),
     listControlRequestsForAssignee: vi.fn().mockResolvedValue([]),
     listControlTeamMembers: vi.fn().mockResolvedValue([]),
@@ -120,6 +121,30 @@ describe("brain governance", () => {
     } finally {
       ENV.ownerOpenId = previousOwnerId;
     }
+  });
+
+  it("allows IT to escalate a security incident to the CEO", async () => {
+    const caller = appRouter.createCaller(createUserContext("it-open-id", "it"));
+    await caller.control.reportIncident({
+      title: "محاولة دخول مشبوهة",
+      description: "رُصدت محاولات دخول متكررة على لوحة التحكم.",
+      severity: "high",
+    });
+    expect(vi.mocked(createControlRequest)).toHaveBeenCalledWith(expect.objectContaining({
+      requesterType: "it",
+      category: "security",
+      assignee: "CEO",
+      priority: "high",
+    }));
+  });
+
+  it("does not allow the secretary role to submit IT security incidents", async () => {
+    const caller = appRouter.createCaller(createUserContext("secretary-open-id", "secretary"));
+    await expect(caller.control.reportIncident({
+      title: "بلاغ غير مصرح",
+      description: "محاولة اختبار صلاحية غير متاحة.",
+      severity: "normal",
+    })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("forces public control requests to be recorded as visitors", async () => {
