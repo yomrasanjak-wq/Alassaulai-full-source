@@ -7,7 +7,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-export const userRole = pgEnum("user_role", ["user", "admin"]);
+export const userRole = pgEnum("user_role", ["user", "admin", "secretary", "assistant", "it"]);
 export const controlRequestStatus = pgEnum("control_request_status", [
   "pending",
   "reviewed",
