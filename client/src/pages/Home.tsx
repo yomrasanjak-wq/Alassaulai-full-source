@@ -879,7 +879,7 @@ export default function Home() {
   const controlUpdateMutation = trpc.control.update.useMutation({ onSuccess: () => void controlRequestsQuery.refetch() });
   const [teamEmail, setTeamEmail] = useState("");
   const [teamRole, setTeamRole] = useState<"secretary" | "assistant" | "it">("secretary");
-  const teamMembersQuery = trpc.team.list.useQuery(undefined, { staleTime: 15_000, enabled: modal === "control" && auth.user?.role === "admin" });
+  const teamMembersQuery = trpc.team.list.useQuery(undefined, { staleTime: 15_000, enabled: modal === "control" && Boolean(auth.user) });
   const teamRoleMutation = trpc.team.assignRole.useMutation({ onSuccess: () => { void teamMembersQuery.refetch(); setTeamEmail(""); } });
   const isControlOwner = teamMembersQuery.isSuccess;
   const mediaUploadMutation = trpc.media.upload.useMutation();
