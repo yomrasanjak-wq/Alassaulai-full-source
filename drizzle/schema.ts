@@ -12,6 +12,7 @@ export const controlRequestStatus = pgEnum("control_request_status", [
   "pending",
   "reviewed",
   "in_progress",
+  "ready_for_review",
   "completed",
   "rejected",
 ]);
