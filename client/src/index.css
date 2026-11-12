@@ -3461,3 +3461,135 @@ img { display: block; max-width: 100%; }
   .site-shell .resident-service-copy small,
   .site-shell .destination-link small { font-size: 11px; }
 }
+
+
+/* Legacy North Turkey guide revival — homepage hero and one-glance discovery. */
+.site-shell .hero-section {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgb(3 31 26 / 94%) 0%, rgb(5 43 36 / 88%) 46%, rgb(5 40 34 / 74%) 100%),
+    linear-gradient(0deg, rgb(3 28 24 / 42%), rgb(3 28 24 / 42%)),
+    url("/images/hero.webp") center 48% / cover no-repeat,
+    #082f29;
+}
+.site-shell .hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 78% 35%, rgb(212 181 112 / 13%), transparent 42%);
+}
+.site-shell .hero-grid {
+  position: relative;
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+}
+.site-shell .hero-copy {
+  padding-block: clamp(26px, 4vw, 52px);
+}
+.site-shell .hero-copy h1 {
+  max-width: 680px;
+  color: #fff8e9;
+  text-wrap: balance;
+  text-shadow: 0 3px 22px rgb(0 0 0 / 32%);
+}
+.site-shell .hero-copy p {
+  max-width: 590px;
+  color: #f0eee3;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 35%);
+}
+.site-shell .hero-visual.hero-map-replacement {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgb(224 195 129 / 62%);
+  border-radius: 22px;
+  background: rgb(4 38 32 / 70%);
+  box-shadow: 0 22px 58px rgb(0 0 0 / 32%), inset 0 1px 0 rgb(255 255 255 / 9%);
+  backdrop-filter: blur(9px);
+}
+.site-shell .hero-entry-only {
+  position: relative;
+  margin-top: 8px;
+}
+.site-shell .hero-entry-only button,
+.site-shell .hero-entry-only a {
+  min-height: 66px;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 14%);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.site-shell .hero-entry-only button:hover,
+.site-shell .hero-entry-only a:hover {
+  transform: translateY(-2px);
+  border-color: rgb(232 201 135 / 82%);
+  background: #155044;
+}
+.site-shell .hero-proof {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+.site-shell .featured-destination-card,
+.site-shell .destination-link,
+.site-shell .resident-service-card {
+  border-radius: 12px;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.site-shell .featured-destination-card:hover,
+.site-shell .destination-link:hover,
+.site-shell .resident-service-card:hover {
+  transform: translateY(-2px);
+  border-color: rgb(226 194 125 / 78%);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 18%);
+}
+.site-shell .section-heading {
+  max-width: 820px;
+}
+.site-shell .section-heading p {
+  max-width: 720px;
+}
+@media (max-width: 820px) {
+  .site-shell .hero-section {
+    background-position: 58% center;
+  }
+  .site-shell .hero-grid {
+    gap: 18px;
+  }
+  .site-shell .hero-copy {
+    padding-block: 26px 8px;
+  }
+  .site-shell .hero-visual.hero-map-replacement {
+    padding: 7px;
+    border-radius: 16px;
+  }
+  .site-shell .hero-entry-only {
+    gap: 8px;
+  }
+  .site-shell .hero-entry-only button,
+  .site-shell .hero-entry-only a {
+    min-height: 58px;
+  }
+}
+@media (max-width: 480px) {
+  .site-shell .hero-section {
+    background-image:
+      linear-gradient(180deg, rgb(3 31 26 / 88%) 0%, rgb(5 43 36 / 92%) 55%, rgb(5 40 34 / 96%) 100%),
+      url("/images/hero.webp");
+    background-position: 60% top;
+  }
+  .site-shell .hero-copy h1 {
+    font-size: clamp(27px, 8vw, 35px);
+    line-height: 1.5;
+  }
+  .site-shell .hero-copy p {
+    font-size: 14px;
+    line-height: 1.9;
+  }
+  .site-shell .hero-entry-only button,
+  .site-shell .hero-entry-only a {
+    min-width: 0;
+    padding-inline: 8px;
+  }
+}
