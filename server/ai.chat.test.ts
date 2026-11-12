@@ -23,7 +23,7 @@ vi.mock("./db", async importOriginal => {
   };
 });
 
-import { createControlRequest, ensureControlRoomSchema, listControlRequestsForAssignee, updateControlRequest, updateUserRoleByEmail } from "./db";
+import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, updateControlRequest, updateUserRoleByEmail } from "./db";
 
 function createPublicContext(): TrpcContext {
   return {
