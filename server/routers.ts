@@ -1,6 +1,6 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteGuestMemory, deleteMediaItem, getSystemHealth, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
+import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteGuestMemory, deleteMediaItem, ensureControlRoomSchema, getSystemHealth, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
@@ -521,7 +521,12 @@ export const appRouter = router({
       }),
   }),
   team: router({
-    list: ownerProcedure.query(() => listControlTeamMembers()),
+    // The first owner-only team read also applies the additive role/audit schema
+    // using the server-side DATABASE_URL. Staff and visitors cannot invoke it.
+    list: ownerProcedure.query(async () => {
+      await ensureControlRoomSchema();
+      return listControlTeamMembers();
+    }),
     assignRole: ownerProcedure
       .input(z.object({ email: z.string().trim().email().max(320), role: z.enum(["user", "secretary", "assistant", "it"]) }))
       .mutation(async ({ ctx, input }) => {
