@@ -116,7 +116,7 @@ export async function countRegisteredVisitors(): Promise<number> {
 }
 
 export async function createControlRequest(
-  input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority">,
+  input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority"> & { assignee?: string },
 ): Promise<ControlRequest | undefined> {
   const db = await getDb();
   if (!db) return undefined;
