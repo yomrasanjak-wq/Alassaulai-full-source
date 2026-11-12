@@ -1,4 +1,4 @@
-import { count, desc, eq, sql } from "drizzle-orm";
+import { count, desc, eq, ilike, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
@@ -105,7 +105,9 @@ export async function listControlTeamMembers() {
 export async function updateUserRoleByEmail(email: string, role: User["role"]) {
   const db = await getDb();
   if (!db) return undefined;
-  const rows = await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.email, email)).returning({ id: users.id, name: users.name, email: users.email, role: users.role });
+  const existing = await db.select({ id: users.id }).from(users).where(ilike(users.email, email)).limit(1);
+  if (!existing[0]) return undefined;
+  const rows = await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, existing[0].id)).returning({ id: users.id, name: users.name, email: users.email, role: users.role });
   return rows[0];
 }
 
