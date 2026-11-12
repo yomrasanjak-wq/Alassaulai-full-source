@@ -1730,7 +1730,7 @@ export default function Home() {
           <button onClick={() => scrollTo("map")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>ابدأ من المدينة المناسبة</small></span><ArrowLeft size={13} /></button>
           <button type="button" onClick={() => scrollTo("map")} aria-label="افتح خريطة يومك"><Navigation size={14} /><span><strong>خريطة يومك</strong><small>اختر وجهتك وشاهدها على الخريطة</small></span><ArrowLeft size={13} /></button>
           <button onClick={() => setChatOpen(true)}><span className="assistant-button-avatar assistant-button-avatar-small"><img src={ASSETS.officialRobot} alt="" /></span><span><strong>مساعد الرحلة</strong><small>اسأل عن الطريق والمكان</small></span><ArrowLeft size={13} /></button>
-          <a className="gmail-shortcut" href="https://mail.google.com/mail/u/0/" target="_blank" rel="noreferrer" aria-label="فتح Gmail في تبويب جديد"><span className="gmail-shortcut-icon"><Mail size={18} /></span><span><strong>Gmail</strong><small>افتح بريدك بأمان</small></span><ExternalLink size={13} /></a>
+          <button type="button" onClick={() => { setPhotoBookPage(0); setPhotoBookOpen(true); }} aria-label="افتح دفتر صور الشمال التركي"><ImageIcon size={17} /><span><strong>دفتر الصور</strong><small>اكتشف أجمل مشاهد الشمال</small></span><ArrowLeft size={13} /></button>
         </div>
 
       </section>
