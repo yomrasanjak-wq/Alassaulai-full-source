@@ -4,6 +4,7 @@
  * asymmetric content columns, concise operational statuses, and calm motion.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { trpc } from "@/lib/trpc";
 import { buildGlobalSearchUrl, buildNearbySearchUrl } from "@/lib/globalSearch";
 import { ChatComposer } from "@/components/ChatComposer";
@@ -734,6 +735,14 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState(cities[0]);
   const [galleryFilter, setGalleryFilter] = useState<(typeof GALLERY_FILTERS)[number]>("الكل");
   const [photoBookOpen, setPhotoBookOpen] = useState(false);
+  useEffect(() => {
+    if (!photoBookOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [photoBookOpen]);
   const [residentServicesOpen, setResidentServicesOpen] = useState(false);
   const [residentGroupOpen, setResidentGroupOpen] = useState<Record<string, boolean>>({});
   const [residentPhrasebookOpen, setResidentPhrasebookOpen] = useState(false);
@@ -1754,7 +1763,7 @@ export default function Home() {
             </button>
             <p className="gallery-disclaimer">اضغط على الغلاف لفتح الدفتر، ثم قلّب الصفحات أو افتح موقع أي وجهة على الخريطة.</p>
           </div>
-          {photoBookOpen && <div className="photo-book-overlay" role="dialog" aria-modal="true" aria-label="دفتر صور الشمال التركي" onClick={(event) => { if (event.target === event.currentTarget) setPhotoBookOpen(false); }}>
+          {photoBookOpen && createPortal(<div className="photo-book-overlay" role="dialog" aria-modal="true" aria-label="دفتر صور الشمال التركي" onClick={(event) => { if (event.target === event.currentTarget) setPhotoBookOpen(false); }}>
             <div className="photo-book-dialog">
               <button type="button" className="photo-book-close" onClick={() => setPhotoBookOpen(false)} aria-label="إغلاق دفتر الصور"><X size={22} /></button>
               <div className="photo-book-heading"><span>ALASSAUL PHOTO JOURNAL</span><strong>دفتر الشمال التركي</strong><small>صفحة {photoBookPage + 1} من {DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length}</small></div>
@@ -1767,7 +1776,7 @@ export default function Home() {
               </article> : <p className="media-empty">لا توجد صور في هذا التصنيف.</p>; })()}
               <div className="photo-book-controls"><button type="button" className="button button-quiet" onClick={() => setPhotoBookPage((page) => Math.max(0, page - 1))} disabled={photoBookPage === 0}><ArrowRight size={16} /> الصفحة السابقة</button><span>{photoBookPage + 1} / {DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length}</span><button type="button" className="button button-primary" onClick={() => setPhotoBookPage((page) => Math.min(DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length - 1, page + 1))} disabled={photoBookPage >= DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length - 1}>الصفحة التالية <ArrowLeft size={16} /></button></div>
             </div>
-          </div>}
+          </div>, document.body)}
         </div>
       </section>
 
