@@ -11,6 +11,7 @@ if (!connectionString) {
 const migrationFiles = [
   "drizzle/neon/0001_application_schema.sql",
   "drizzle/neon/0002_control_room_roles.sql",
+  "drizzle/neon/0003_control_room_audit.sql",
 ];
 
 const sql = neon(connectionString);
