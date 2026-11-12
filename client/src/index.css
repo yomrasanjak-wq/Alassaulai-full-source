@@ -3622,3 +3622,13 @@ img { display: block; max-width: 100%; }
   .site-shell .resident-accordion-trigger { min-height: 52px; padding-inline: 12px; }
   .site-shell .resident-service-card { min-height: 72px; padding: 12px 10px; }
 }
+
+
+/* Clear next action when a requested place has no curated pin yet. */
+.site-shell .north-map-fallback-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; }
+.site-shell .north-map-fallback-actions > a:not(.north-map-directions) { color: #e7c77f; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+.site-shell .north-map-fallback-actions .north-map-directions { min-height: 44px; padding-inline: 14px; font-size: 12px; }
+@media (max-width: 640px) {
+  .site-shell .north-map-fallback-actions { align-items: stretch; flex-direction: column; }
+  .site-shell .north-map-fallback-actions .north-map-directions { width: 100%; justify-content: center; min-height: 48px; }
+}
