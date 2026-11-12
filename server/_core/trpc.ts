@@ -47,8 +47,6 @@ export const adminProcedure = t.procedure.use(
 );
 
 
-// Owner-only procedure for consequential governance decisions. Fail closed if the
-// deployment has not configured the platform owner's stable identity.
 // Control-room staff may see only work assigned to their own role.
 // The platform owner is admitted explicitly; ordinary admin accounts are not CEOs.
 export const controlStaffProcedure = t.procedure.use(
@@ -63,6 +61,7 @@ export const controlStaffProcedure = t.procedure.use(
   }),
 );
 
+// Owner-only procedure for consequential governance decisions. Fail closed if the configured owner identity is missing.
 export const ownerProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
