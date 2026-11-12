@@ -33,6 +33,7 @@ export async function ensureControlRoomSchema(): Promise<void> {
       "ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'secretary'",
       "ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'assistant'",
       "ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'it'",
+      "ALTER TYPE public.control_request_status ADD VALUE IF NOT EXISTS 'ready_for_review'",
       'CREATE INDEX IF NOT EXISTS control_requests_assignee_created_idx ON public."controlRequests" (assignee, "createdAt" DESC)',
       'CREATE TABLE IF NOT EXISTS public."controlAuditLogs" (id serial PRIMARY KEY, "actorOpenId" varchar(64) NOT NULL, action varchar(80) NOT NULL, "targetType" varchar(40) NOT NULL, "targetId" varchar(80), details text, "createdAt" timestamptz NOT NULL DEFAULT now())',
       'CREATE INDEX IF NOT EXISTS control_audit_logs_created_idx ON public."controlAuditLogs" ("createdAt" DESC)',
