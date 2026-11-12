@@ -3593,3 +3593,32 @@ img { display: block; max-width: 100%; }
     padding-inline: 8px;
   }
 }
+
+
+/* One-glance guide polish: keep the photo journal and resident entry clear on phones. */
+.site-shell .destination-gallery-section { background: linear-gradient(180deg, #0b3029 0%, #103d34 100%); border-block: 1px solid rgb(220 190 129 / 18%); }
+.site-shell .photo-book-cover-wrap { width: 100%; margin: 30px auto 0; }
+.site-shell .photo-book-cover { width: min(100%, 900px); min-height: 340px; aspect-ratio: 16 / 6.8; border-color: rgb(226 198 137 / 78%); box-shadow: 0 24px 56px rgb(0 0 0 / 28%), inset 8px 0 0 rgb(212 175 55 / 20%); }
+.site-shell .photo-book-cover-shade { background: linear-gradient(90deg, rgb(3 29 25 / 94%), rgb(4 39 32 / 72%) 52%, rgb(4 39 32 / 15%)), linear-gradient(0deg, rgb(3 29 25 / 46%), transparent 60%); }
+.site-shell .gallery-disclaimer { color: #d5e1d7; text-align: center; }
+.site-shell .resident-services-section { background: linear-gradient(180deg, #0c332c, #092a25); border-block-color: rgb(218 190 132 / 20%); }
+.site-shell .resident-services-launcher { max-width: 980px; margin-inline: auto; border-radius: 14px; background: linear-gradient(115deg, #155044, #0d392f); }
+.site-shell .resident-services-launcher:hover { background: linear-gradient(115deg, #195b4e, #104438); }
+.site-shell .resident-services-content { max-width: 1080px; margin: 26px auto 0; }
+.site-shell .resident-accordion-group { margin-top: 12px; }
+.site-shell .resident-accordion-trigger { border-radius: 10px; min-height: 54px; padding-inline: 18px; }
+.site-shell .resident-services-grid { gap: 12px; }
+.site-shell .resident-service-card { min-height: 76px; padding: 14px; }
+@media (max-width: 640px) {
+  .site-shell .section-pad { padding-block: 54px; }
+  .site-shell .photo-book-cover-wrap { margin-top: 22px; gap: 11px; }
+  .site-shell .photo-book-cover { min-height: 270px; aspect-ratio: 4 / 3; padding: 22px 18px; border-radius: 6px 15px 15px 6px; }
+  .site-shell .photo-book-cover-mark { font-size: 9px; margin-bottom: 10px; }
+  .site-shell .photo-book-cover-title { font-size: clamp(25px, 7vw, 34px); line-height: 1.55; }
+  .site-shell .photo-book-cover-subtitle { font-size: 12px; }
+  .site-shell .photo-book-cover-cta { font-size: 12px; }
+  .site-shell .photo-book-cover-count { font-size: 10px; }
+  .site-shell .resident-services-content { margin-top: 18px; }
+  .site-shell .resident-accordion-trigger { min-height: 52px; padding-inline: 12px; }
+  .site-shell .resident-service-card { min-height: 72px; padding: 12px 10px; }
+}
