@@ -14,11 +14,14 @@ vi.mock("./db", async importOriginal => {
     ...actual,
     createControlRequest: vi.fn().mockResolvedValue({ id: 77, status: "pending" }),
     listControlRequests: vi.fn().mockResolvedValue([]),
+    listControlRequestsForAssignee: vi.fn().mockResolvedValue([]),
+    listControlTeamMembers: vi.fn().mockResolvedValue([]),
+    updateUserRoleByEmail: vi.fn().mockResolvedValue({ id: 2, email: "staff@example.com", role: "secretary" }),
     updateControlRequest: vi.fn().mockResolvedValue({ id: 1, status: "reviewed" }),
   };
 });
 
-import { createControlRequest } from "./db";
+import { createControlRequest, listControlRequestsForAssignee, updateControlRequest, updateUserRoleByEmail } from "./db";
 
 function createPublicContext(): TrpcContext {
   return {
@@ -28,7 +31,7 @@ function createPublicContext(): TrpcContext {
   };
 }
 
-function createUserContext(openId: string, role: "user" | "admin" = "user"): TrpcContext {
+function createUserContext(openId: string, role: "user" | "admin" | "secretary" | "assistant" | "it" = "user"): TrpcContext {
   return {
     user: { id: 1, openId, role } as NonNullable<TrpcContext["user"]>,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
@@ -84,6 +87,36 @@ describe("brain governance", () => {
     try {
       const caller = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
       await expect(caller.control.list()).resolves.toEqual([]);
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
+  });
+
+  it("allows a secretary to see and update only secretary-assigned tasks", async () => {
+    const task = { id: 42, assignee: "السكرتير", status: "pending" };
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValueOnce([task as never]);
+    const caller = appRouter.createCaller(createUserContext("secretary-open-id", "secretary"));
+    await expect(caller.control.list()).resolves.toEqual([task]);
+    await caller.control.update({ id: 42, status: "in_progress" });
+    expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(42, expect.objectContaining({ status: "in_progress" }));
+  });
+
+  it("prevents staff from editing another department's tasks or assigning work", async () => {
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValueOnce([]);
+    const caller = appRouter.createCaller(createUserContext("it-open-id", "it"));
+    await expect(caller.control.update({ id: 99, status: "completed" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.control.update({ id: 99, status: "in_progress", assignee: "IT" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("allows only the owner to assign staff roles", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    try {
+      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      await owner.team.assignRole({ email: "staff@example.com", role: "secretary" });
+      expect(vi.mocked(updateUserRoleByEmail)).toHaveBeenCalledWith("staff@example.com", "secretary");
+      const ordinaryUser = appRouter.createCaller(createUserContext("ordinary-user", "user"));
+      await expect(ordinaryUser.team.assignRole({ email: "staff@example.com", role: "it" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     } finally {
       ENV.ownerOpenId = previousOwnerId;
     }
