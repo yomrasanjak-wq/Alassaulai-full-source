@@ -562,12 +562,17 @@ export const appRouter = router({
         const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
         if (!isOwner) {
           const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : ctx.user.role === "it" ? "IT" : null;
-          if (!assignee || input.assignee !== undefined || input.decisionNote !== undefined || !["in_progress", "completed"].includes(input.status ?? "")) {
+          if (!assignee || input.assignee !== undefined || input.decisionNote !== undefined || !["in_progress", "ready_for_review"].includes(input.status ?? "")) {
             throw new TRPCError({ code: "FORBIDDEN", message: "يمكنك تحديث حالة المهام المسندة إلى قسمك فقط." });
           }
           const assignedTasks = await listControlRequestsForAssignee(assignee);
           if (!assignedTasks.some((task) => task.id === input.id)) {
             throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة ليست ضمن مهام قسمك." });
+          }
+        } else if (input.status === "completed") {
+          const allTasks = await listControlRequests();
+          if (!allTasks.some((task) => task.id === input.id && task.status === "ready_for_review")) {
+            throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكن اعتماد الإكمال قبل أن يرفع فريق التنفيذ المهمة للمراجعة." });
           }
         }
         const updated = await updateControlRequest(input.id, { status: input.status, assignee: isOwner ? input.assignee : undefined, decisionNote: isOwner ? input.decisionNote : undefined });
