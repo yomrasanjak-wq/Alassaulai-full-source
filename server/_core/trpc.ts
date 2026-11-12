@@ -49,6 +49,20 @@ export const adminProcedure = t.procedure.use(
 
 // Owner-only procedure for consequential governance decisions. Fail closed if the
 // deployment has not configured the platform owner's stable identity.
+// Control-room staff may see only work assigned to their own role.
+// The platform owner is admitted explicitly; ordinary admin accounts are not CEOs.
+export const controlStaffProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+    const allowedRoles = ["secretary", "assistant", "it"];
+    const isOwner = Boolean(ENV.ownerOpenId && ctx.user?.openId === ENV.ownerOpenId);
+    if (!ctx.user || (!isOwner && !allowedRoles.includes(ctx.user.role))) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة مخصصة لفريق غرفة التحكم." });
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  }),
+);
+
 export const ownerProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
