@@ -8,16 +8,21 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is required to apply the Neon PostgreSQL schema.");
 }
 
-const migrationPath = resolve(process.cwd(), "drizzle/neon/0001_application_schema.sql");
-const migration = await readFile(migrationPath, "utf8");
-const statements = migration
-  .split("--> statement-breakpoint")
-  .map((statement) => statement.trim())
-  .filter(Boolean);
+const migrationFiles = [
+  "drizzle/neon/0001_application_schema.sql",
+  "drizzle/neon/0002_control_room_roles.sql",
+];
 
 const sql = neon(connectionString);
-for (const statement of statements) {
-  await sql.query(statement, []);
+for (const migrationFile of migrationFiles) {
+  const migration = await readFile(resolve(process.cwd(), migrationFile), "utf8");
+  const statements = migration
+    .split("--> statement-breakpoint")
+    .map((statement) => statement.trim())
+    .filter(Boolean);
+  for (const statement of statements) {
+    await sql.query(statement, []);
+  }
 }
 
 const tables = await sql`
