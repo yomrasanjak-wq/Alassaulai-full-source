@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer, getNextSaudiWeekdayDate } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -7,6 +7,14 @@ import type { TrpcContext } from "./_core/context";
 vi.mock("./_core/llm", () => ({
   invokeLLM: vi.fn(),
 }));
+
+describe("Saudi weekday interpretation", () => {
+  it("resolves Thursday using the Asia/Riyadh calendar date, including UTC day-boundary differences", () => {
+    expect(getNextSaudiWeekdayDate(4, new Date("2026-11-04T22:30:00.000Z"))).toBe("2026-11-05");
+    expect(getNextSaudiWeekdayDate(4, new Date("2026-11-05T01:00:00.000Z"))).toBe("2026-11-05");
+    expect(getNextSaudiWeekdayDate(4, new Date("2026-11-06T01:00:00.000Z"))).toBe("2026-11-12");
+  });
+});
 
 vi.mock("./db", async importOriginal => {
   const actual = await importOriginal<typeof import("./db")>();
