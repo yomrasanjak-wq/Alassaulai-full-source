@@ -2850,6 +2850,26 @@ img { display: block; max-width: 100%; }
 }
 
 
+/* Photo journal: fully cover the page behind the dialog on mobile and desktop. */
+.photo-book-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 100vh !important;
+  box-sizing: border-box !important;
+  z-index: 2147483000 !important;
+  background: #07231d !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.photo-book-dialog {
+  box-sizing: border-box !important;
+  max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom))) !important;
+}
+
 /* ALASSAUL mobile UX — phase 2: keep photo-book controls reachable above the phone edge. */
 @media (max-width: 640px) {
   .photo-book-overlay {
