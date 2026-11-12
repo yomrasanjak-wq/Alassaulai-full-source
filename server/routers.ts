@@ -27,9 +27,15 @@ const languageSchema = z.enum(["AR", "TR", "EN"]).default("AR");
 const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام وشامل داخل منصة ALASSAUL-AI، ولست محصوراً في السفر أو بيانات المنصة. أجب عن أي سؤال عام آمن: المعرفة العامة، التعليم، العلوم، التاريخ، الجغرافيا، التقنية، الكتابة، الترجمة، التخطيط، السفر، الرياضة، الثقافة، السيارات، والخدمات اليومية. استخدم بيانات المنصة أولاً عندما يكون السؤال عن مدن الشمال التركي أو خدمات ALASSAUL، ثم استخدم معرفتك العامة الكاملة لبقية الأسئلة. افهم المقصود حتى مع اللهجة الخليجية والأخطاء الإملائية والصياغة المختصرة، ولا تجعل عدم وجود السؤال في قاعدة بيانات محلية سبباً للرفض. أجب بالعربية الطبيعية الواضحة ما لم يطلب المستخدم لغة أخرى. كن ودوداً ومحترماً وابدأ بجواب مباشر مفيد. لا تقل «أنا متخصص فقط» ولا «لا أستطيع مساعدتك لأن السؤال خارج نطاقي»، ولا تعتذر اعتذاراً آلياً؛ إذا كانت المعلومة متغيرة أو تحتاج تاريخاً فاذكر ذلك واطلب التفاصيل اللازمة، وإذا لم تكن متأكداً فصرّح بعدم اليقين بدل اختلاق معلومة. في الطلبات الطبية والقانونية والمالية قدّم معلومات عامة عملية مع تنبيه مختصر لمختص عند الحاجة. في الإجراءات الحكومية والرسوم والمواعيد، لا تسرد متطلبات أو خطوات محددة على أنها مؤكدة إلا إذا دعمتها نتيجة موثوقة من مصدر رسمي؛ وإلا وجّه المستخدم إلى القناة الرسمية ووضّح ما يحتاج إلى تحقق. ارفض فقط الطلبات الضارة أو غير القانونية مع اقتراح بديل آمن.
 
 قواعد السرعة والجودة:
-- اجعل الإجابة مباشرة ومناسبة لصندوق محادثة: عادةً 2 إلى 5 جمل قصيرة وبحدود 140 كلمة. لا تحوّل سؤالاً بسيطاً إلى دليل طويل؛ استخدم نقاطاً قليلة فقط عندما يطلب المستخدم خطة أو خطوات، وتجنب الجداول الطويلة.
+- اجعل الإجابة على قدر السؤال: السؤال البسيط يأخذ جواباً مباشراً واضحاً، والسؤال الذي يحتاج شرحاً أو تفصيلاً يأخذ جواباً وافياً ومترابطاً لا تختصره اختصاراً يضيّع المعلومة. لا تفرض حداً ثابتاً للكلمات أو الجمل. ابدأ بالخلاصة، ثم اشرح الأسباب والتفاصيل المهمة والأمثلة عند الحاجة، واختم بنتيجة أو خطوة عملية. استخدم عناوين ونقاطاً منظمة في الموضوعات الطويلة، وتجنب الحشو والتكرار.
+- أعطِ جواباً معرفياً حقيقياً لا مجرد كلام عام: عرّف المصطلح بدقة، واذكر الأسماء والتواريخ والأسباب والنتائج ذات الصلة عندما تكون معروفة وموثوقة. لا تتجنب الإجابة المباشرة بسلسلة أسئلة توضيحية إذا كان المقصود واضحاً.
+- في المسائل الدينية والتاريخية: تعرّف على المصطلح أو القصة المشهورة أولاً، واذكر القول المعتمد أو الأشهر مع نسبته لأهله عند وجود خلاف معتبر، وافصل بين النص الثابت والرواية المختلف فيها والمعلومة التاريخية. لا تنسب حديثاً أو قولاً إلى النبي ﷺ أو إلى عالم دون تحقق، ولا تخترع أنساباً أو قبائل أو أحداثاً. إذا تعددت الأقوال فاشرح الخلاف بإيجاز وبيّن ما عليه جمهور أهل العلم دون ادعاء إجماع غير ثابت.
+- في كل المجالات: ميّز بوضوح بين الحقيقة المؤكدة والاستنتاج والرأي والاحتمال. إذا لم تعرف، فقل ما الذي لا تعرفه تحديداً ولا تملأ الفراغ بتخمين. لا تستخدم لغة واثقة لتغطية نقص الدليل.
 - افهم نية المستخدم: إن كان يريد تعريفاً فعرّف، وإن كان يريد مقارنة فقارن، وإن كان يريد خطة فاقترح خطوات عملية، وإن كان يريد رأياً فاذكر المزايا والقيود بوضوح.
+- كن سريع البديهة: التقط المقصود حتى لو كان الكلام مختصراً أو باللهجة أو فيه خطأ إملائي، واربط السؤال بآخر سياق المحادثة بدلاً من مطالبة المستخدم بإعادة ما قاله.
+- لا تكتفِ بإجابة حرفية إذا كانت نية المستخدم واضحة؛ قدّم الخطوة العملية التالية أو تنبيهاً مفيداً واحداً يتوقعه خبير، من دون إغراقه باقتراحات جانبية.
 - إذا كان السؤال غامضاً، قدم أفضل تفسير معقول أولاً ثم اسأل سؤال توضيح واحداً فقط.
+- لا تكرر التحية أو المقدمة في كل رد، ولا تعِد شرح ما سبق إلا إذا طلب المستخدم ذلك.
 - في الأخبار والسياسة والأحداث المتغيرة، نبّه إلى الحاجة للتحقق الحديث ولا تخترع أرقاماً أو مصادر. إذا لم تتوفر أداة بحث حي في الطلب الحالي، قل بوضوح إنك لا تستطيع تأكيد آخر الأخبار الآن، واذكر التاريخ المرجعي عند اللزوم.
 - إذا أرفق المستخدم صورة، حلّل العناصر الظاهرة بدقة، وميّز بين ما تراه فعلاً وما تستنتجه. لا تجزم بهوية شخص أو مكان من صورة وحدها، ولا تستنتج صفات حساسة. إذا كانت الصورة غير واضحة فاطلب لقطة أوضح.
 - في الدين ميّز بين المعلومة العامة والفتوى المتخصصة، وفي الطب والقانون والمال قدّم معلومات عامة فقط مع تنبيه لمختص.
@@ -60,7 +66,7 @@ export function getAdaptiveTaskInstruction(message: string): string {
     return "نمط معالجة مشكلة: حدّد الاحتمال الأقرب دون الجزم، ثم أعطِ خطوات تشخيص مرتبة من الأبسط والأكثر أماناً إلى المتقدم. اذكر ما ينبغي عدم فعله، واسأل عن معلومة واحدة فقط إذا كانت ضرورية.";
   }
   if (/(رتب لي|برنامج|خطة|جدول|خطط|نظم|نظّم|رحلة|بكج|ميزانية|خلال \d+ أيام)/i.test(text)) {
-    const itinerary = "نمط التخطيط: قدّم خطة قابلة للتنفيذ بترتيب زمني واضح، وراعِ المسافات والوقت والتكلفة التقريبية والبدائل. إذا ذكر المستخدم عدد الأشخاص والمدن وترتيبها ومدة كل محطة، التزم بها كما هي، واحسب الأيام بوضوح ولا تضف مدناً غير مطلوبة. اجمع الوجهات المتقاربة في اليوم نفسه، وتجنب وضع زيارات بعيدة في اليوم نفسه. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، وبيّن الافتراضات المهمة.";
+    const itinerary = "نمط السكرتير ومنظّم الرحلات: قدّم خطة قابلة للتنفيذ، وتعامل مع الطلب كتكليف عملي لا كسؤال معلومات فقط. ابنِ برنامجاً يومياً واضحاً من اليوم الأول إلى الأخير، ووزّع الصباح والظهر والمساء عند ملاءمة ذلك. ينطبق التخطيط على أي مدينة أو دولة في العالم، ولا تفترض أن الوجهة شمال تركيا. التزم بالوجهة والمدة والمدن التي ذكرها المستخدم، ولا تضف مدينة بعيدة لمجرد زيادة الخيارات. اجمع المواقع المتقاربة جغرافياً في اليوم نفسه، وراعِ أوقات القيادة والراحة والازدحام بصورة تقديرية لا مؤكدة، واترك وقتاً احتياطياً. خصّص الخطة للعائلة أو الأطفال أو كبار السن أو الشباب والميزانية فقط إذا ذكر المستخدم ذلك؛ وإذا غابت معلومة أساسية تمنع التخطيط فاسأل سؤالاً واحداً محدداً، وإلا ابدأ بخطة عملية مع توضيح افتراضاتك. اذكر أسماء الأماكن بوضوح، وقدم رابط بحث خرائط لكل وجهة أو رابط مسار يومي عندما تكون أسماء المحطات محددة، من دون الادعاء بأنك تحققت من ساعات العمل أو التوافر. لا تخترع أسماء فنادق أو مطاعم أو منتزهات أو معالم، ولا تصف فندقاً بأنه قريب أو مناسب أو متاح ما لم تستند إلى نتيجة بحث موثوقة تعرض اسمه وموقعه؛ عند غياب البحث قل ذلك واطلب الحي أو اعرض طريقة بحث خرائط بدلاً من التخمين. لا تعطِ اتجاهاً جغرافياً أو مسافة أو زمناً أو وصفاً للطريق أو أنشطة خاصة بموقع إلا إذا كانت مدعومة بمصدر خرائط/مصدر موثوق؛ لا تستنتج أن جبلين متجاوران أو أن طريقاً معيناً يصل إليهما من الذاكرة وحدها. تحقّق من الطقس والمواسم والإغلاقات والأسعار وساعات العمل من مصادر حديثة إذا كانت أداة البحث متاحة؛ وإذا لم تتوفر، ميّز بوضوح بين اقتراحك والمعلومة المؤكدة واطلب التحقق قبل الانطلاق. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، وأنهِ الخطة بملخص عملي لما يحتاج المستخدم إلى تأكيده قبل السفر.";
     if (/(طرابزون|ترابزون|أوزنجول|اوزنجول|أيدر|ايدر|ريزه|سامسون|أوردو|جيرسون|إسطنبول|اسطنبول|شمال تركيا|سورميني|أراكلي)/i.test(text)) {
       return `${itinerary} خصّص الخطة لشمال تركيا: اجمع الوجهات المتقاربة في اليوم نفسه، وراعِ وقت القيادة والطقس الجبلي، وضمّن عند ملاءمة المسار سامسون وأوردو وجيرسون وأرسين وسورميني وأراكلي وإسطنبول، ولا تضعها كلها في مسار واحد إن كان الوقت لا يسمح.`;
     }
@@ -68,6 +74,10 @@ export function getAdaptiveTaskInstruction(message: string): string {
   }
   if (/(قارن|الفرق بين|أيهما أفضل|ايهما افضل|وش الأفضل|ما الأفضل|مميزات|عيوب)/i.test(text)) {
     return "نمط المقارنة: قارن الخيارات على معايير واضحة، واذكر المزايا والقيود، ثم أعطِ توصية مشروطة بحسب حاجة المستخدم بدلاً من إعلان فائز مطلق.";
+  }
+
+  if (/(?:فندق|فنادق|سكن|إقامة|اقامة|غرفة|سعر الليلة|كم الليلة|حجز|booking|hotel|accommodation|room rate)/i.test(text)) {
+    return "نمط الفنادق والأسعار: لا تخترع اسم فندق أو موقعه أو قربه من معلم، ولا تعطِ سعراً تقديرياً كأنه سعر حقيقي. السعر والتوافر يتغيران بحسب تاريخ الدخول والخروج وعدد النزلاء ونوع الغرفة؛ إذا لم تتوفر نتيجة بحث حية موثوقة فقل إن السعر غير متحقق واطلب تاريخ الإقامة، أو أعطِ رابط بحث واضحاً دون نسبة سعر إلى الفندق. ميّز بين السعر المنشور والسعر النهائي بعد الضرائب والرسوم، ولا تدّعِ أنك تحققت من التوافر.";
   }
   if (/(اشرح|فسر|فسّر|لماذا|ليش|كيف يحدث|ما معنى|ما هو|ماهي|ما هي|عرّف|عرف)/i.test(text)) {
     return "نمط الشرح: ابدأ بالخلاصة البسيطة، ثم اشرح السبب أو الآلية بمثال ملموس. عرّف المصطلحات الضرورية فقط ولا تملأ الإجابة بحشو.";
@@ -93,13 +103,188 @@ export function getAdaptiveTaskInstruction(message: string): string {
   return "نمط الإجابة العامة: حدّد المطلوب بدقة، أجب مباشرة، واذكر أهم معلومة أو خطوات عملية. إذا كانت الإجابة تعتمد على بيانات حديثة غير متاحة في هذه المحادثة فقل ذلك بوضوح ولا تخترع مصدراً أو نتيجة.";
 }
 
+/** Collapse an exact phrase repeated by incremental speech recognition.
+ * Only removes 3+ consecutive copies of a substantial (6+ word) opening phrase;
+ * ordinary repetition and the rest of the user's sentence are preserved. */
+export function collapseRepeatedSpeechText(value: string): string {
+  const tokens = value.trim().split(/\s+/).filter(Boolean);
+  const maxBlockLength = Math.floor(tokens.length / 3);
+  // Prefer the shortest repeated unit so six copies of a phrase are not
+  // mistaken for three copies of a two-phrase block.
+  for (let blockLength = 6; blockLength <= maxBlockLength; blockLength += 1) {
+    let repetitions = 1;
+    while (repetitions < Math.floor(tokens.length / blockLength)
+      && tokens.slice(0, blockLength).every((token, index) => token === tokens[repetitions * blockLength + index])) {
+      repetitions += 1;
+    }
+    if (repetitions >= 3) {
+      return [...tokens.slice(0, blockLength), ...tokens.slice(repetitions * blockLength)].join(" ");
+    }
+  }
+  return value.trim();
+}
+
+/** Recover the previous user task when the newest message is a brief follow-up.
+ * The full history is still sent to the model; this helper keeps task guidance aligned too. */
+export function getContextualTaskMessage(messages: Array<{ role: "user" | "assistant"; content: string }>): string | undefined {
+  const latest = messages[messages.length - 1];
+  if (!latest || latest.role !== "user") return undefined;
+  const current = collapseRepeatedSpeechText(latest.content).trim();
+  const shortFollowUp = /^(?:نعم|ايه|أيوه|طيب|تمام|اكمل|كمل|والثاني|والثانية|طيب والثاني|كم يبعد|كم تبعد|كم سعره|كم سعرها|وش الأفضل|ما الأفضل|وضح|تابع|موافق|لا|yes|okay|ok|continue|and the other one|how far)\s*[؟?!،.]*$/i.test(current);
+  if (!shortFollowUp) return undefined;
+  for (let index = messages.length - 2; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === "user" && message.content.trim()) return collapseRepeatedSpeechText(message.content).slice(-MAX_CHAT_MESSAGE_CHARS);
+  }
+  return undefined;
+}
+
 export function compactChatHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
   return messages.slice(-MAX_CHAT_HISTORY).map((message) => ({
     role: message.role,
-    content: message.content.slice(-MAX_CHAT_MESSAGE_CHARS),
+    content: (message.role === "user" ? collapseRepeatedSpeechText(message.content) : message.content).slice(-MAX_CHAT_MESSAGE_CHARS),
   }));
 }
 
+
+/** Discover named attractions around a resolved destination using OpenStreetMap data.
+ * Results are candidates only; this does not verify opening hours, prices or suitability. */
+export function extractTripDestination(message: string): string | undefined {
+  if (!/(رتب لي|برنامج|خطة|خطط|رحلة|جدول سياحي|itinerary|trip plan|travel plan)/i.test(message)) return undefined;
+  const normalized = message.normalize("NFKC").replace(/[؟?!،,؛;]+/g, " ").trim();
+  const match = normalized.match(/(?:في|إلى|الى|بمدينة|بمدينه|in|to)\s+(.+?)(?=\s+(?:لمدة|مدتها|خلال|لمده|مدة|مده|لـ)?\s*[0-9٠-٩]+|$)/i);
+  const destination = match?.[1]?.trim().replace(/\s+/g, " ");
+  if (!destination || destination.length < 2) return undefined;
+  return destination.slice(0, 80);
+}
+
+type PhotonFeature = {
+  properties?: Record<string, unknown>;
+  geometry?: { coordinates?: unknown[] };
+};
+
+type OverpassElement = {
+  type?: string;
+  id?: number;
+  lat?: number;
+  lon?: number;
+  center?: { lat?: number; lon?: number };
+  tags?: Record<string, string>;
+};
+
+export type TripPlace = { name: string; lat: number; lon: number; kind?: string; type?: string; id?: number };
+
+export function haversineKm(a: Pick<TripPlace, "lat" | "lon">, b: Pick<TripPlace, "lat" | "lon">): number {
+  const radians = (degrees: number) => degrees * Math.PI / 180;
+  const dLat = radians(b.lat - a.lat);
+  const dLon = radians(b.lon - a.lon);
+  const lat1 = radians(a.lat);
+  const lat2 = radians(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** Groups valid mapped places around nearby anchors. Radius is straight-line distance, not driving distance. */
+export function groupTripPlaces(places: TripPlace[], radiusKm = 4): TripPlace[][] {
+  const remaining = places.filter((place) => Number.isFinite(place.lat) && Number.isFinite(place.lon)
+    && Math.abs(place.lat) <= 90 && Math.abs(place.lon) <= 180);
+  const groups: TripPlace[][] = [];
+  while (remaining.length) {
+    const anchor = remaining.shift()!;
+    const group = [anchor];
+    for (let index = remaining.length - 1; index >= 0; index -= 1) {
+      if (haversineKm(anchor, remaining[index]!) <= radiusKm) group.push(...remaining.splice(index, 1));
+    }
+    groups.push(group);
+  }
+  return groups;
+}
+
+export function buildTripGroupDirectionsUrl(group: TripPlace[]): string | undefined {
+  if (!group.length) return undefined;
+  const point = (place: TripPlace) => `${place.lat},${place.lon}`;
+  const url = new URL("https://www.google.com/maps/dir/");
+  url.search = new URLSearchParams({
+    api: "1",
+    origin: point(group[0]!),
+    destination: point(group[group.length - 1]!),
+    ...(group.length > 2 ? { waypoints: group.slice(1, -1).map(point).join("|") } : {}),
+    travelmode: "driving",
+  }).toString();
+  return url.toString();
+}
+
+export async function getLiveTripPlacesAnswer(message: string): Promise<string | undefined> {
+  const destination = extractTripDestination(message);
+  if (!destination) return undefined;
+
+  try {
+    const geocodeUrl = new URL("https://photon.komoot.io/api/");
+    geocodeUrl.search = new URLSearchParams({ q: destination, limit: "5", lang: "en" }).toString();
+    const geocodeResponse = await fetch(geocodeUrl, {
+      headers: { Accept: "application/json", "User-Agent": "ALASSAUL-AI/1.0 (travel place discovery)" },
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!geocodeResponse.ok) throw new Error(`Photon HTTP ${geocodeResponse.status}`);
+    const geocode = await geocodeResponse.json() as { features?: PhotonFeature[] };
+    const resolved = (geocode.features ?? []).find((feature) => {
+      const coords = feature.geometry?.coordinates;
+      return typeof feature.properties?.name === "string"
+        && Number.isFinite(Number(coords?.[0])) && Number.isFinite(Number(coords?.[1]));
+    });
+    if (!resolved) {
+      return `لم أتمكن من تحديد موقع جغرافي موثوق لوجهة «${destination}». حدّد الدولة أو المنطقة حتى لا نبحث في مدينة تحمل الاسم نفسه في مكان آخر.`;
+    }
+
+    const properties = resolved.properties ?? {};
+    const coordinates = resolved.geometry?.coordinates ?? [];
+    const lon = Number(coordinates[0]);
+    const lat = Number(coordinates[1]);
+    const resolvedName = String(properties.name);
+    const locality = [properties.city, properties.state, properties.country]
+      .filter((part): part is string => typeof part === "string" && Boolean(part)).join("، ");
+
+    const overpassQuery = `[out:json][timeout:12];(nwr(around:25000,${lat},${lon})["name"]["tourism"~"attraction|museum|viewpoint|zoo|theme_park|gallery|artwork"];nwr(around:25000,${lat},${lon})["name"]["historic"];nwr(around:25000,${lat},${lon})["name"]["leisure"~"park|garden"];nwr(around:25000,${lat},${lon})["name"]["natural"~"beach|waterfall|cave"];);out center 50;`;
+    const placesResponse = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "ALASSAUL-AI/1.0 (travel place discovery)" },
+      body: new URLSearchParams({ data: overpassQuery }).toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!placesResponse.ok) throw new Error(`Overpass HTTP ${placesResponse.status}`);
+    const placesData = await placesResponse.json() as { elements?: OverpassElement[] };
+    const places = (placesData.elements ?? []).flatMap((element) => {
+      const name = element.tags?.name?.trim();
+      const placeLat = Number(element.lat ?? element.center?.lat);
+      const placeLon = Number(element.lon ?? element.center?.lon);
+      if (!name || !Number.isFinite(placeLat) || !Number.isFinite(placeLon)) return [];
+      const kind = element.tags?.tourism ?? element.tags?.historic ?? element.tags?.leisure ?? element.tags?.natural ?? "place";
+      return [{ name, lat: placeLat, lon: placeLon, kind, type: element.type ?? "node", id: element.id ?? 0 }];
+    }).filter((place, index, all) => all.findIndex((candidate) => candidate.type === place.type && candidate.id === place.id) === index);
+
+    const mapSearch = new URL("https://www.google.com/maps/search/");
+    mapSearch.searchParams.set("api", "1");
+    mapSearch.searchParams.set("query", `tourist attractions near ${resolvedName}${locality ? `, ${locality}` : ""}`);
+    if (!places.length) {
+      return `تم تحديد الوجهة جغرافياً: ${resolvedName}${locality ? `، ${locality}` : ""}، لكن قاعدة OpenStreetMap لم تُرجع معالم مسماة كافية ضمن 25 كم. لن أضع أسماء غير متحققة؛ يمكنك فتح [بحث المعالم على الخريطة](${mapSearch.toString()}) أو تحديد نوع الأماكن المطلوبة.`;
+    }
+
+    const selectedPlaces = places.slice(0, 12);
+    const groups = groupTripPlaces(selectedPlaces, 4);
+    const itinerary = groups.map((group, index) => {
+      const routeUrl = buildTripGroupDirectionsUrl(group);
+      const names = group.map((place) => {
+        const map = new URL(`https://www.openstreetmap.org/${place.type}/${place.id}`);
+        return `${place.name} (${place.kind}) — ${map.toString()}`;
+      }).join("\\n   • ");
+      return `مجموعة ${index + 1} — أماكن متقاربة جغرافياً:\\n   • ${names}${routeUrl ? `\\n   افتح ترتيب هذه المجموعة في خرائط Google: ${routeUrl}` : ""}`;
+    }).join("\\n\\n");
+    return `تم تحديد الوجهة عبر Photon: ${resolvedName}${locality ? `، ${locality}` : ""}. جمعت ${selectedPlaces.length} معلماً مسمى من OpenStreetMap ضمن نطاق 25 كم إلى مجموعات متقاربة لتسهيل توزيعها على الأيام:\\n${itinerary}\\n\\nالمجموعات مبنية على مسافة خط مستقيم تقريبية (نطاق 4 كم من نقطة الارتكاز)، وليست مسافة طريق أو زمن قيادة. روابط الخرائط تساعدك على فتح المسار، لكن وقت القيادة وحالة المرور يحتاجان إلى التحقق داخل تطبيق الخرائط. هذه نتائج جغرافية مرشحة وليست تأكيداً لساعات العمل أو الأسعار أو جودة المكان؛ وزّع مجموعة واحدة أو أكثر في اليوم بحسب مدة الرحلة ووقت الزيارة وراحة المسافر.`;
+  } catch (error) {
+    console.warn("[ALASSAUL places] live place search unavailable", error);
+    return `تعذر إكمال البحث الجغرافي الحي عن ${destination} الآن. لا تخترع أسماء أماكن أو مواقع؛ اطلب إعادة المحاولة أو قدّم رابط بحث خرائط واضحاً مع التنبيه إلى أنه لم يتم التحقق من النتائج.`;
+  }
+}
 
 function weatherDescription(code: number) {
   if (code === 0) return "الجو صافٍ";
@@ -616,7 +801,9 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const latestMessage = input.messages[input.messages.length - 1];
-        const latestText = latestMessage?.content ?? "";
+        const latestText = latestMessage?.role === "user"
+          ? collapseRepeatedSpeechText(latestMessage.content ?? "")
+          : latestMessage?.content ?? "";
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
@@ -683,6 +870,10 @@ export const appRouter = router({
           if (weatherContext) liveContext.push(`سياق من مصدر الطقس الحي:
 ${weatherContext}`);
 
+          const tripPlacesContext = await getLiveTripPlacesAnswer(latestText);
+          if (tripPlacesContext) liveContext.push(`نتائج البحث الجغرافي للأماكن والوجهات:
+${tripPlacesContext}`);
+
           let grounded = false;
           if (isGoogleMapsQuestion(latestText) && process.env.GEMINI_API_KEY?.trim() && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true") {
             try {
@@ -737,9 +928,12 @@ ${newsContext}`);
           : input.language === "TR"
             ? "Türkçe yanıt ver ve kısa, doğal cümleler kullan."
             : "Answer in clear, concise English.";
+        const contextualTaskMessage = getContextualTaskMessage(input.messages);
         const taskInstruction = latestMessage?.imageDataUrl
           ? "نمط تحليل صورة: صف العناصر الواضحة أولاً، ثم اشرح ما يمكن استنتاجه وما لا يمكن الجزم به. إذا طلب المستخدم التعرف على شيء، اذكر الاحتمالات وعلامات التمييز، ولا تخترع تفاصيل غير ظاهرة."
-          : getAdaptiveTaskInstruction(latestText);
+          : getAdaptiveTaskInstruction(latestText) + (contextualTaskMessage
+            ? `\\n\\nهذه رسالة متابعة قصيرة مرتبطة بطلب المستخدم السابق: «${contextualTaskMessage}». أجب عن المتابعة ضمن هذا السياق، ولا تبدأ موضوعاً جديداً ولا تطلب إعادة التفاصيل التي ذكرها.`
+            : "");
         const sourceInstruction = liveContext.length
           ? `\n\nبيانات داعمة من الأدوات الحية (ليست جواباً بديلاً عنك):\n${liveContext.join("\n\n")}\nاستخدم هذه البيانات عند صلتها بالسؤال، وانسب المصدر ووقت القراءة إن وُجدا، ولا تضف حقائق آنية غير موجودة فيها.`
           : "\n\nأجب بصفتك نموذجاً لغوياً عن السؤال الجديد مباشرة. لا تستبدل الإجابة بترحيب عام أو نص محفوظ أو رد مبني على مطابقة كلمات. في المعلومات الآنية لا تخترع؛ اذكر بوضوح إن لم يتوفر مصدر حي.";
@@ -758,9 +952,11 @@ ${newsContext}`);
             ],
           };
         }
+        const isDetailedPlan = /(?:رتب لي|برنامج|خطة|جدول|خطط|نظم|نظّم|رحلة|itinerary|trip plan)/i.test(latestText);
         const llmRequest = {
           model: ENV.primaryModel,
-          max_completion_tokens: 512,
+          // Keep ordinary replies quick; allow enough room for a useful multi-day plan.
+          max_completion_tokens: isDetailedPlan ? 1100 : 512,
           reasoning: { effort: "minimal" },
           messages: llmMessages,
         };
