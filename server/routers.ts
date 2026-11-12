@@ -459,6 +459,9 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    capabilities: publicProcedure.query(({ ctx }) => ({
+      canManageMedia: Boolean(ctx.user && (ctx.user.role === "admin" || (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId))),
+    })),
     visitorCount: publicProcedure.query(() => countRegisteredVisitors()),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
