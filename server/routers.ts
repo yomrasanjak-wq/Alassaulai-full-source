@@ -1,13 +1,13 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlRequest, createGuestMemory, createMediaItem, deleteGuestMemory, deleteMediaItem, listControlRequests, listGuestMemories, listMediaItems, updateControlRequest, updateMediaItem } from "./db";
+import { countRegisteredVisitors, createControlRequest, createGuestMemory, createMediaItem, deleteGuestMemory, deleteMediaItem, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
 import { synthesizeSpeech } from "./_core/textToSpeech";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, controlStaffProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
@@ -520,6 +520,16 @@ export const appRouter = router({
         return { success: Boolean(request), id: request?.id ?? input.id, status: request?.status ?? status, executed: false as const };
       }),
   }),
+  team: router({
+    list: ownerProcedure.query(() => listControlTeamMembers()),
+    assignRole: ownerProcedure
+      .input(z.object({ email: z.string().trim().email().max(320), role: z.enum(["user", "secretary", "assistant", "it"]) }))
+      .mutation(async ({ input }) => {
+        const member = await updateUserRoleByEmail(input.email.toLowerCase(), input.role);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "لم نجد حساباً بهذا البريد. يجب على الموظف تسجيل الدخول مرة واحدة أولاً." });
+        return { success: true as const, member };
+      }),
+  }),
   control: router({
     submit: publicProcedure
       .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal") }))
@@ -528,10 +538,27 @@ export const appRouter = router({
         const request = await createControlRequest({ ...input, requesterType: "visitor" });
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
       }),
-    list: ownerProcedure.query(() => listControlRequests()),
-    update: ownerProcedure
+    list: controlStaffProcedure.query(async ({ ctx }) => {
+      if (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) return listControlRequests();
+      const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : "IT";
+      return listControlRequestsForAssignee(assignee);
+    }),
+    update: controlStaffProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
-      .mutation(({ input }) => updateControlRequest(input.id, { status: input.status, assignee: input.assignee, decisionNote: input.decisionNote })),
+      .mutation(async ({ ctx, input }) => {
+        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        if (!isOwner) {
+          const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : ctx.user.role === "it" ? "IT" : null;
+          if (!assignee || input.assignee !== undefined || input.decisionNote !== undefined || !["in_progress", "completed"].includes(input.status ?? "")) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "يمكنك تحديث حالة المهام المسندة إلى قسمك فقط." });
+          }
+          const assignedTasks = await listControlRequestsForAssignee(assignee);
+          if (!assignedTasks.some((task) => task.id === input.id)) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة ليست ضمن مهام قسمك." });
+          }
+        }
+        return updateControlRequest(input.id, { status: input.status, assignee: isOwner ? input.assignee : undefined, decisionNote: isOwner ? input.decisionNote : undefined });
+      }),
   }),
   media: router({
     list: publicProcedure.query(() => listMediaItems()),
