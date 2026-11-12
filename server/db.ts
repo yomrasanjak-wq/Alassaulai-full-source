@@ -1,12 +1,14 @@
-import { count, desc, eq } from "drizzle-orm";
+import { count, desc, eq, ilike, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
   ControlRequest,
   GuestMemory,
   InsertUser,
+  User,
   MediaItem,
   controlRequests,
+  controlAuditLogs,
   guestMemories,
   mediaItems,
   users,
@@ -15,6 +17,35 @@ import * as schema from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _controlRoomSchemaReady: Promise<void> | null = null;
+
+/**
+ * Apply the small additive control-room schema extension on the first owner-only
+ * team read. This uses the already-configured Vercel DATABASE_URL, so no database
+ * credential is copied into GitHub Actions or exposed to the browser.
+ */
+export async function ensureControlRoomSchema(): Promise<void> {
+  if (_controlRoomSchemaReady) return _controlRoomSchemaReady;
+  _controlRoomSchemaReady = (async () => {
+    if (!ENV.databaseUrl) throw new Error("قاعدة البيانات غير مهيأة على الخادم.");
+    const sql = neon(ENV.databaseUrl);
+    const statements = [
+      "ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'secretary'",
+      "ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'assistant'",
+      "ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'it'",
+      'CREATE INDEX IF NOT EXISTS control_requests_assignee_created_idx ON public."controlRequests" (assignee, "createdAt" DESC)',
+      'CREATE TABLE IF NOT EXISTS public."controlAuditLogs" (id serial PRIMARY KEY, "actorOpenId" varchar(64) NOT NULL, action varchar(80) NOT NULL, "targetType" varchar(40) NOT NULL, "targetId" varchar(80), details text, "createdAt" timestamptz NOT NULL DEFAULT now())',
+      'CREATE INDEX IF NOT EXISTS control_audit_logs_created_idx ON public."controlAuditLogs" ("createdAt" DESC)',
+    ];
+    for (const statement of statements) await sql.query(statement, []);
+  })();
+  try {
+    await _controlRoomSchemaReady;
+  } catch (error) {
+    _controlRoomSchemaReady = null;
+    throw error;
+  }
+}
 
 // Neon HTTP avoids opening TCP connections from short-lived Vercel functions.
 export async function getDb() {
@@ -87,6 +118,53 @@ export async function getUserByOpenId(openId: string) {
   return result[0];
 }
 
+export async function listControlRequestsForAssignee(assignee: string): Promise<ControlRequest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(controlRequests).where(eq(controlRequests.assignee, assignee)).orderBy(desc(controlRequests.createdAt)).limit(100);
+}
+
+export async function listControlTeamMembers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: users.id, name: users.name, email: users.email, role: users.role, lastSignedIn: users.lastSignedIn })
+    .from(users).orderBy(desc(users.lastSignedIn)).limit(100);
+}
+
+export async function updateUserRoleByEmail(email: string, role: User["role"]) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const existing = await db.select({ id: users.id }).from(users).where(ilike(users.email, email)).limit(1);
+  if (!existing[0]) return undefined;
+  const rows = await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, existing[0].id)).returning({ id: users.id, name: users.name, email: users.email, role: users.role });
+  return rows[0];
+}
+
+export async function createControlAuditLog(input: { actorOpenId: string; action: string; targetType: string; targetId?: string; details?: string; }) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.insert(controlAuditLogs).values(input).returning();
+  return rows[0];
+}
+
+export async function listControlAuditLogs() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(controlAuditLogs).orderBy(desc(controlAuditLogs.createdAt)).limit(50);
+}
+
+export async function getSystemHealth() {
+  const checkedAt = new Date();
+  const db = await getDb();
+  if (!db) return { application: "healthy" as const, database: "down" as const, checkedAt };
+  try {
+    await db.execute(sql.raw("select 1 as ok"));
+    return { application: "healthy" as const, database: "healthy" as const, checkedAt };
+  } catch {
+    return { application: "healthy" as const, database: "down" as const, checkedAt };
+  }
+}
+
 export async function countRegisteredVisitors(): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
@@ -95,7 +173,7 @@ export async function countRegisteredVisitors(): Promise<number> {
 }
 
 export async function createControlRequest(
-  input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority">,
+  input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority"> & { assignee?: string },
 ): Promise<ControlRequest | undefined> {
   const db = await getDb();
   if (!db) return undefined;

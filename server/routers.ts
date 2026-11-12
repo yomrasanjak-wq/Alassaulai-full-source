@@ -1,13 +1,13 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlRequest, createGuestMemory, createMediaItem, deleteGuestMemory, deleteMediaItem, listControlRequests, listGuestMemories, listMediaItems, updateControlRequest, updateMediaItem } from "./db";
+import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteGuestMemory, deleteMediaItem, ensureControlRoomSchema, getSystemHealth, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
 import { synthesizeSpeech } from "./_core/textToSpeech";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, controlStaffProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
@@ -520,7 +520,30 @@ export const appRouter = router({
         return { success: Boolean(request), id: request?.id ?? input.id, status: request?.status ?? status, executed: false as const };
       }),
   }),
+  team: router({
+    // The first owner-only team read also applies the additive role/audit schema
+    // using the server-side DATABASE_URL. Staff and visitors cannot invoke it.
+    list: ownerProcedure.query(async () => {
+      await ensureControlRoomSchema();
+      return listControlTeamMembers();
+    }),
+    assignRole: ownerProcedure
+      .input(z.object({ email: z.string().trim().email().max(320), role: z.enum(["user", "secretary", "assistant", "it"]) }))
+      .mutation(async ({ ctx, input }) => {
+        const member = await updateUserRoleByEmail(input.email.toLowerCase(), input.role);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "لم نجد حساباً بهذا البريد. يجب على الموظف تسجيل الدخول مرة واحدة أولاً." });
+        await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "team.role_assigned", targetType: "user", targetId: String(member.id), details: JSON.stringify({ email: member.email, role: member.role }) });
+        return { success: true as const, member };
+      }),
+  }),
   control: router({
+    createTask: ownerProcedure
+      .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"), assignee: z.enum(["CEO", "السكرتير", "المساعد", "IT"]) }))
+       .mutation(async ({ ctx, input }) => {
+        const request = await createControlRequest({ ...input, requesterType: "owner" });
+        if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "task.created", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ assignee: input.assignee, category: input.category, priority: input.priority }) });
+        return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
+      }),
     submit: publicProcedure
       .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal") }))
       .mutation(async ({ input }) => {
@@ -528,10 +551,40 @@ export const appRouter = router({
         const request = await createControlRequest({ ...input, requesterType: "visitor" });
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
       }),
-    list: ownerProcedure.query(() => listControlRequests()),
-    update: ownerProcedure
+    list: controlStaffProcedure.query(async ({ ctx }) => {
+      if (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) return listControlRequests();
+      const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : "IT";
+      return listControlRequestsForAssignee(assignee);
+    }),
+    update: controlStaffProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
-      .mutation(({ input }) => updateControlRequest(input.id, { status: input.status, assignee: input.assignee, decisionNote: input.decisionNote })),
+      .mutation(async ({ ctx, input }) => {
+        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        if (!isOwner) {
+          const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : ctx.user.role === "it" ? "IT" : null;
+          if (!assignee || input.assignee !== undefined || input.decisionNote !== undefined || !["in_progress", "completed"].includes(input.status ?? "")) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "يمكنك تحديث حالة المهام المسندة إلى قسمك فقط." });
+          }
+          const assignedTasks = await listControlRequestsForAssignee(assignee);
+          if (!assignedTasks.some((task) => task.id === input.id)) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة ليست ضمن مهام قسمك." });
+          }
+        }
+        const updated = await updateControlRequest(input.id, { status: input.status, assignee: isOwner ? input.assignee : undefined, decisionNote: isOwner ? input.decisionNote : undefined });
+        if (updated) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "task.status_updated", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ status: input.status, assignee: updated.assignee }) });
+        return updated;
+      }),
+    reportIncident: controlStaffProcedure
+      .input(z.object({ title: z.string().trim().min(4).max(180), description: z.string().trim().min(10).max(2000), severity: z.enum(["normal", "high", "urgent"]).default("high") }))
+      .mutation(async ({ ctx, input }) => {
+        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        if (ctx.user.role !== "it" && !isOwner) throw new TRPCError({ code: "FORBIDDEN", message: "تسجيل الحوادث التقنية متاح لفريق IT فقط." });
+        const request = await createControlRequest({ title: input.title, command: input.description, requesterType: "it", category: "security", priority: input.severity, assignee: "CEO" });
+        if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_reported", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ severity: input.severity }) });
+        return { success: Boolean(request), id: request?.id ?? null };
+      }),
+    health: controlStaffProcedure.query(() => getSystemHealth()),
+    auditList: ownerProcedure.query(() => listControlAuditLogs()),
   }),
   media: router({
     list: publicProcedure.query(() => listMediaItems()),

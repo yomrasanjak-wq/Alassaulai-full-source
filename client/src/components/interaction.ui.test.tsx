@@ -18,8 +18,16 @@ vi.mock("@/lib/trpc", () => ({
     },
     control: {
       submit: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
-      list: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) },
+      createTask: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
+      list: { useQuery: () => ({ data: [], isLoading: false, isSuccess: true, refetch: vi.fn() }) },
       update: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
+      reportIncident: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
+      health: { useQuery: () => ({ data: { application: "healthy", database: "healthy" }, isLoading: false, refetch: vi.fn() }) },
+      auditList: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) },
+    },
+    team: {
+      list: { useQuery: () => ({ data: [], isLoading: false, isSuccess: true, refetch: vi.fn() }) },
+      assignRole: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
     },
     media: { list: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) }, upload: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, update: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, delete: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) } },
     discovery: { list: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) }, upload: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, update: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) }, delete: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) } },
@@ -481,9 +489,6 @@ describe("Redesign entry points and notifications", () => {
     fireEvent.click(screen.getByRole("button", { name: "افتح خريطة يومك" }));
     expect(mapTarget.scrollIntoView).toHaveBeenCalled();
     expect(screen.queryByRole("textbox", { name: "سؤال المساعد" })).toBeNull();
-    const gmailEntry = screen.getByRole("link", { name: /فتح Gmail في تبويب جديد/ }) as HTMLAnchorElement;
-    expect(gmailEntry.getAttribute("href")).toBe("https://mail.google.com/mail/u/0/");
-    expect(gmailEntry.getAttribute("target")).toBe("_blank");
     expect(screen.getByRole("button", { name: /اسأل المساعد/ })).toBeTruthy();
     const cameraEntry = screen.getByRole("button", { name: /شاهد الكاميرات/ });
     expect(cameraEntry.querySelector(".camera-cta-thumb img")).toBeTruthy();

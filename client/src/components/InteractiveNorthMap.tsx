@@ -201,6 +201,9 @@ export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpan
       [normalize("ميدان طرابزون")]: [normalize("Meydan Trabzon Turkey")],
       [normalize("أكواريوم طرابزون")]: [normalize("Trabzon Tunnel Aquarium")],
       [normalize("فوروم طرابزون مول")]: [normalize("Forum Trabzon Shopping Mall Turkey")],
+      [normalize("مول فوروم طرابزون")]: [normalize("فوروم طرابزون مول"), normalize("Forum Trabzon Shopping Mall Turkey")],
+      [normalize("حديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("حديقة إيوف المجددة")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("مطعم إيوف المجدد")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("مقهى إيوف والجلسات الخارجية")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
       [normalize("ألعاب الأطفال في حديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
@@ -356,7 +359,7 @@ export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpan
               <span><strong>{destination.name}</strong><small>{destination.latin} · {destination.label}</small></span>
               <MapPin size={15} />
             </button>)}</div>) : <p className="north-map-empty">اختر مدينة من الأعلى لتظهر وجهاتها هنا.</p>}
-            {!visible.length && selectedCity && (query.trim() || destinationRequest) && <div className="north-map-empty"><p>لم نعثر على نقطة موثقة لهذا الاسم داخل دليل الخريطة حتى الآن، لذلك لن نضع دبوسًا تخمينيًا.</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinationRequest?.query ?? query)}`} target="_blank" rel="noreferrer">ابحث عن الموقع على Google Maps <ExternalLink size={14} /></a><button type="button" className="north-map-back" onClick={handleBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button></div>}
+            {!visible.length && selectedCity && (query.trim() || destinationRequest) && <div className="north-map-empty"><p>لم نعثر على نقطة موثقة لهذا الاسم داخل دليل الخريطة حتى الآن، لذلك لن نضع دبوسًا تخمينيًا.</p><div className="north-map-fallback-actions"><a className="north-map-directions" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationRequest?.query ?? query)}&travelmode=driving`} target="_blank" rel="noreferrer"><Navigation size={15} /> ابدأ الطريق إلى الوجهة</a><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinationRequest?.query ?? query)}`} target="_blank" rel="noreferrer">تحقق من الموقع على Google Maps <ExternalLink size={14} /></a></div><button type="button" className="north-map-back" onClick={handleBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button></div>}
           </div>
         </aside>
 

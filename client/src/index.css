@@ -2850,6 +2850,26 @@ img { display: block; max-width: 100%; }
 }
 
 
+/* Photo journal: fully cover the page behind the dialog on mobile and desktop. */
+.photo-book-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 100vh !important;
+  box-sizing: border-box !important;
+  z-index: 2147483000 !important;
+  background: #07231d !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.photo-book-dialog {
+  box-sizing: border-box !important;
+  max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom))) !important;
+}
+
 /* ALASSAUL mobile UX — phase 2: keep photo-book controls reachable above the phone edge. */
 @media (max-width: 640px) {
   .photo-book-overlay {
@@ -3284,4 +3304,389 @@ img { display: block; max-width: 100%; }
   .global-search-dock .search-box { min-height: 33px !important; gap: 5px; padding-inline: 7px; border-radius: 7px; }
   .global-search-dock .search-box input { min-height: 29px; min-width: 0; font-size: 11px; }
   .global-search-dock .search-box button { min-height: 26px; padding-inline: 7px; font-size: 9px; }
+}
+
+
+/* ALASSAUL-AI homepage visual direction — deep Black Sea green + clear ivory/gold type.
+   Scoped to the site shell so maps, photo-book pages, and functional dialogs keep their own surfaces. */
+.site-shell {
+  --season-base: #062b26;
+  --season-paper: #0b3932;
+  --season-section: #082f29;
+  --season-pulse: #10463c;
+  --season-glow-a: rgb(35 104 82 / 22%);
+  --season-glow-b: rgb(24 93 91 / 18%);
+  --season-ridge: rgb(210 180 112 / 9%);
+  --season-orb: rgb(207 177 108 / 12%);
+  background: #062b26;
+  color: #f5f1e7;
+}
+.site-shell::before { opacity: .34; }
+.site-shell::after { opacity: .18; }
+.site-shell .topline { background: #031f1b; color: #f0e8d4; border-bottom: 1px solid rgb(205 174 105 / 22%); }
+.site-shell .topline-note { color: #d4c49d; }
+.site-shell .site-header {
+  background: rgb(4 35 30 / 96%);
+  border-bottom: 1px solid rgb(205 174 105 / 30%);
+}
+.site-shell .brand { color: #f4ead2; }
+.site-shell .brand strong { color: #f5e7c4; }
+.site-shell .brand small { color: #d0c09a; }
+.site-shell .main-nav button { color: #f0eee6; font-size: 13px; }
+.site-shell .main-nav button:hover,
+.site-shell .main-nav button:focus-visible { color: #e4bd70; }
+.site-shell .language-button { color: #f5f1e7; border-color: rgb(226 204 157 / 42%); background: #0c3b33; }
+.site-shell .login-button { color: #092d27; background: #d5b36c; border-color: #d5b36c; }
+.site-shell .mobile-menu-button { color: #f4ead2; }
+.site-shell .hero-section,
+.site-shell .cities-section,
+.site-shell .cameras-section,
+.site-shell .entertainment-section,
+.site-shell .visitors-section,
+.site-shell .control-section,
+.site-shell .destination-gallery-section,
+.site-shell .resident-services-section,
+.site-shell .section-pad {
+  background: #082f29;
+  color: #f5f1e7;
+}
+.site-shell .pulse-section { background: #10463c; color: #fff8e9; }
+.site-shell .hero-copy h1,
+.site-shell .section-heading h2,
+.site-shell .section-heading h3,
+.site-shell .directory-heading h3,
+.site-shell .camera-group-heading h3 { color: #fff8eb; }
+.site-shell .hero-copy p,
+.site-shell .section-heading p,
+.site-shell .camera-group-heading p,
+.site-shell .search-hint,
+.site-shell .gallery-disclaimer { color: #d1ded4; }
+.site-shell .hero-kicker,
+.site-shell .camera-group-kicker { color: #e2bd72; }
+.site-shell .gold-line { background: #d8b56e; }
+.site-shell .button-quiet { color: #f5efdf; border-color: rgb(230 214 174 / 52%); background: rgb(255 255 255 / 5%); }
+.site-shell .button-quiet:hover { color: #fff; background: rgb(255 255 255 / 12%); }
+.site-shell .button-assistant { color: #fff5df; border-color: rgb(211 180 111 / 55%); background: #164d41; }
+.site-shell .button-assistant:hover { background: #1d5c4d; }
+.site-shell .button-primary,
+.site-shell .button-gold { color: #102d26; background: #d9b66e; }
+.site-shell .button-primary:hover,
+.site-shell .button-gold:hover { background: #edcc88; }
+.site-shell .global-search-dock { color: #f7f0df; }
+.site-shell .search-box {
+  background: #f5f0e5;
+  border: 1px solid #d6b66f;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 22%);
+}
+.site-shell .search-box input { color: #183d34; }
+.site-shell .search-box input::placeholder { color: #63766c; opacity: 1; }
+.site-shell .search-box > svg { color: #a17b3d; }
+.site-shell .search-box button { color: #143c32; }
+.site-shell .search-results { background: #f8f4eb; color: #173d36; border-color: #d6c59f; }
+.site-shell .search-results button strong { color: #173d36; }
+.site-shell .search-results button small,
+.site-shell .search-empty small { color: #536b60; }
+.site-shell .prayer-ticker { background: #0b3b32; color: #f5e9cb; border-block: 1px solid rgb(210 178 107 / 26%); }
+.site-shell .prayer-ticker-label { color: #e5bf73; }
+.site-shell .hero-entry-only button,
+.site-shell .hero-entry-only a {
+  color: #f6f0e2;
+  background: #104238;
+  border-color: rgb(211 181 113 / 40%);
+}
+.site-shell .hero-entry-only button strong,
+.site-shell .hero-entry-only a strong { color: #fff4d9; }
+.site-shell .hero-entry-only button small,
+.site-shell .hero-entry-only a small { color: #d3e0d6; }
+.site-shell .photo-book-cover-wrap { color: #f5f1e7; }
+.site-shell .resident-services-launcher {
+  color: #fff4dc;
+  background: linear-gradient(110deg, #10483d, #0a332c);
+  border-color: rgb(218 184 111 / 58%);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 18%);
+}
+.site-shell .resident-services-launcher-copy strong { color: #fff6e4; }
+.site-shell .resident-services-launcher-copy small { color: #d8e2d8; }
+.site-shell .resident-services-launcher-copy em { color: #e5c47e; }
+.site-shell .resident-accordion-trigger {
+  color: #fff3d8;
+  background: #12483d;
+  border-color: rgb(219 188 123 / 42%);
+}
+.site-shell .resident-services-content { color: #f6f1e7; }
+.site-shell .resident-service-card,
+.site-shell .destination-link,
+.site-shell .featured-destination-card {
+  color: #f4f0e5;
+  background: #104037;
+  border-color: rgb(215 185 120 / 35%);
+}
+.site-shell .resident-service-card strong,
+.site-shell .destination-link strong,
+.site-shell .featured-destination-card strong { color: #fff3d9; }
+.site-shell .resident-service-card small,
+.site-shell .destination-link small,
+.site-shell .featured-destination-card small { color: #d2dfd5; }
+.site-shell .destination-directory { border-color: rgb(218 190 132 / 30%); }
+.site-shell .directory-heading h3 { color: #fff4df; }
+.site-shell .directory-count,
+.site-shell .camera-group-count { color: #f0d18f; background: #143f35; border-color: rgb(220 190 129 / 45%); }
+.site-shell .camera-group + .camera-group { border-color: rgb(220 190 129 / 24%); }
+.site-shell .camera-group-card { background: #103b33; border-color: rgb(220 190 129 / 42%); }
+.site-shell .camera-group-card .camera-info strong { color: #fff3dc; }
+.site-shell .camera-group-card .camera-info small { color: #d0ddd2; }
+.site-shell .official-source-card { border: 1px solid rgb(220 190 129 / 38%); }
+.site-shell .footer,
+.site-shell footer { color: #e9e4d8; background: #031f1b; }
+.site-shell footer a,
+.site-shell footer button { color: #f1d18f; }
+.site-shell :focus-visible { outline-color: #f0c875; }
+@media (max-width: 820px) {
+  .site-shell .main-nav { background: #082f29; border: 1px solid rgb(218 190 132 / 35%); box-shadow: 0 18px 36px rgb(0 0 0 / 32%); }
+  .site-shell .main-nav button { color: #fff4df; }
+}
+@media (max-width: 640px) {
+  .site-shell .hero-copy h1 { color: #fff8eb; }
+  .site-shell .hero-copy p { color: #e0e7dc; }
+  .site-shell .search-box { box-shadow: 0 8px 20px rgb(0 0 0 / 24%); }
+  .site-shell .resident-services-launcher-copy strong { font-size: 17px; }
+  .site-shell .resident-services-launcher-copy small { font-size: 12px; line-height: 1.7; }
+}
+
+
+/* Readability pass: larger Arabic labels and descriptions on dark surfaces. */
+.site-shell .section-eyebrow { color: #e4c17c; font-size: 11px; letter-spacing: .08em; }
+.site-shell .section-heading h2 { color: #fff8eb; font-size: clamp(28px, 3.2vw, 41px); line-height: 1.45; }
+.site-shell .section-heading p { color: #d9e3d9; font-size: 15px; line-height: 2; }
+.site-shell .hero-copy p { color: #e4ebe2; font-size: 16px; line-height: 2; }
+.site-shell .hero-proof { color: #d6e1d7; font-size: 12px; }
+.site-shell .main-nav button { font-size: 14px; }
+.site-shell .resident-service-copy strong,
+.site-shell .destination-link strong,
+.site-shell .featured-destination-card strong { font-size: 13px; }
+.site-shell .resident-service-copy small,
+.site-shell .destination-link small,
+.site-shell .featured-destination-card small { font-size: 11px; line-height: 1.8; }
+.site-shell .hero-entry-only strong { font-size: 13px; }
+.site-shell .hero-entry-only small { color: #d8e3d9; font-size: 11px; line-height: 1.6; }
+.site-shell .gallery-disclaimer,
+.site-shell .search-hint { font-size: 12px; line-height: 1.8; }
+@media (max-width: 640px) {
+  .site-shell .section-heading h2 { font-size: 27px; line-height: 1.55; }
+  .site-shell .section-heading p { font-size: 14px; line-height: 1.95; }
+  .site-shell .hero-copy p { font-size: 15px; }
+  .site-shell .main-nav button { font-size: 15px; padding-block: 15px; }
+  .site-shell .resident-service-copy strong,
+  .site-shell .destination-link strong { font-size: 13px; }
+  .site-shell .resident-service-copy small,
+  .site-shell .destination-link small { font-size: 11px; }
+}
+
+
+/* Legacy North Turkey guide revival — homepage hero and one-glance discovery. */
+.site-shell .hero-section {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgb(3 31 26 / 94%) 0%, rgb(5 43 36 / 88%) 46%, rgb(5 40 34 / 74%) 100%),
+    linear-gradient(0deg, rgb(3 28 24 / 42%), rgb(3 28 24 / 42%)),
+    url("/images/hero.webp") center 48% / cover no-repeat,
+    #082f29;
+}
+.site-shell .hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 78% 35%, rgb(212 181 112 / 13%), transparent 42%);
+}
+.site-shell .hero-grid {
+  position: relative;
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+}
+.site-shell .hero-copy {
+  padding-block: clamp(26px, 4vw, 52px);
+}
+.site-shell .hero-copy h1 {
+  max-width: 680px;
+  color: #fff8e9;
+  text-wrap: balance;
+  text-shadow: 0 3px 22px rgb(0 0 0 / 32%);
+}
+.site-shell .hero-copy p {
+  max-width: 590px;
+  color: #f0eee3;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 35%);
+}
+.site-shell .hero-visual.hero-map-replacement {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgb(224 195 129 / 62%);
+  border-radius: 22px;
+  background: rgb(4 38 32 / 70%);
+  box-shadow: 0 22px 58px rgb(0 0 0 / 32%), inset 0 1px 0 rgb(255 255 255 / 9%);
+  backdrop-filter: blur(9px);
+}
+.site-shell .hero-entry-only {
+  position: relative;
+  margin-top: 8px;
+}
+.site-shell .hero-entry-only button,
+.site-shell .hero-entry-only a {
+  min-height: 66px;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 14%);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.site-shell .hero-entry-only button:hover,
+.site-shell .hero-entry-only a:hover {
+  transform: translateY(-2px);
+  border-color: rgb(232 201 135 / 82%);
+  background: #155044;
+}
+.site-shell .hero-proof {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+.site-shell .featured-destination-card,
+.site-shell .destination-link,
+.site-shell .resident-service-card {
+  border-radius: 12px;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.site-shell .featured-destination-card:hover,
+.site-shell .destination-link:hover,
+.site-shell .resident-service-card:hover {
+  transform: translateY(-2px);
+  border-color: rgb(226 194 125 / 78%);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 18%);
+}
+.site-shell .section-heading {
+  max-width: 820px;
+}
+.site-shell .section-heading p {
+  max-width: 720px;
+}
+@media (max-width: 820px) {
+  .site-shell .hero-section {
+    background-position: 58% center;
+  }
+  .site-shell .hero-grid {
+    gap: 18px;
+  }
+  .site-shell .hero-copy {
+    padding-block: 26px 8px;
+  }
+  .site-shell .hero-visual.hero-map-replacement {
+    padding: 7px;
+    border-radius: 16px;
+  }
+  .site-shell .hero-entry-only {
+    gap: 8px;
+  }
+  .site-shell .hero-entry-only button,
+  .site-shell .hero-entry-only a {
+    min-height: 58px;
+  }
+}
+@media (max-width: 480px) {
+  .site-shell .hero-section {
+    background-image:
+      linear-gradient(180deg, rgb(3 31 26 / 88%) 0%, rgb(5 43 36 / 92%) 55%, rgb(5 40 34 / 96%) 100%),
+      url("/images/hero.webp");
+    background-position: 60% top;
+  }
+  .site-shell .hero-copy h1 {
+    font-size: clamp(27px, 8vw, 35px);
+    line-height: 1.5;
+  }
+  .site-shell .hero-copy p {
+    font-size: 14px;
+    line-height: 1.9;
+  }
+  .site-shell .hero-entry-only button,
+  .site-shell .hero-entry-only a {
+    min-width: 0;
+    padding-inline: 8px;
+  }
+}
+
+
+/* One-glance guide polish: keep the photo journal and resident entry clear on phones. */
+.site-shell .destination-gallery-section { background: linear-gradient(180deg, #0b3029 0%, #103d34 100%); border-block: 1px solid rgb(220 190 129 / 18%); }
+.site-shell .photo-book-cover-wrap { width: 100%; margin: 30px auto 0; }
+.site-shell .photo-book-cover { width: min(100%, 900px); min-height: 340px; aspect-ratio: 16 / 6.8; border-color: rgb(226 198 137 / 78%); box-shadow: 0 24px 56px rgb(0 0 0 / 28%), inset 8px 0 0 rgb(212 175 55 / 20%); }
+.site-shell .photo-book-cover-shade { background: linear-gradient(90deg, rgb(3 29 25 / 94%), rgb(4 39 32 / 72%) 52%, rgb(4 39 32 / 15%)), linear-gradient(0deg, rgb(3 29 25 / 46%), transparent 60%); }
+.site-shell .gallery-disclaimer { color: #d5e1d7; text-align: center; }
+.site-shell .resident-services-section { background: linear-gradient(180deg, #0c332c, #092a25); border-block-color: rgb(218 190 132 / 20%); }
+.site-shell .resident-services-launcher { max-width: 980px; margin-inline: auto; border-radius: 14px; background: linear-gradient(115deg, #155044, #0d392f); }
+.site-shell .resident-services-launcher:hover { background: linear-gradient(115deg, #195b4e, #104438); }
+.site-shell .resident-services-content { max-width: 1080px; margin: 26px auto 0; }
+.site-shell .resident-accordion-group { margin-top: 12px; }
+.site-shell .resident-accordion-trigger { border-radius: 10px; min-height: 54px; padding-inline: 18px; }
+.site-shell .resident-services-grid { gap: 12px; }
+.site-shell .resident-service-card { min-height: 76px; padding: 14px; }
+@media (max-width: 640px) {
+  .site-shell .section-pad { padding-block: 54px; }
+  .site-shell .photo-book-cover-wrap { margin-top: 22px; gap: 11px; }
+  .site-shell .photo-book-cover { min-height: 270px; aspect-ratio: 4 / 3; padding: 22px 18px; border-radius: 6px 15px 15px 6px; }
+  .site-shell .photo-book-cover-mark { font-size: 9px; margin-bottom: 10px; }
+  .site-shell .photo-book-cover-title { font-size: clamp(25px, 7vw, 34px); line-height: 1.55; }
+  .site-shell .photo-book-cover-subtitle { font-size: 12px; }
+  .site-shell .photo-book-cover-cta { font-size: 12px; }
+  .site-shell .photo-book-cover-count { font-size: 10px; }
+  .site-shell .resident-services-content { margin-top: 18px; }
+  .site-shell .resident-accordion-trigger { min-height: 52px; padding-inline: 12px; }
+  .site-shell .resident-service-card { min-height: 72px; padding: 12px 10px; }
+}
+
+
+/* Clear next action when a requested place has no curated pin yet. */
+.site-shell .north-map-fallback-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; }
+.site-shell .north-map-fallback-actions > a:not(.north-map-directions) { color: #e7c77f; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+.site-shell .north-map-fallback-actions .north-map-directions { min-height: 44px; padding-inline: 14px; font-size: 12px; }
+@media (max-width: 640px) {
+  .site-shell .north-map-fallback-actions { align-items: stretch; flex-direction: column; }
+  .site-shell .north-map-fallback-actions .north-map-directions { width: 100%; justify-content: center; min-height: 48px; }
+}
+
+
+/* Resident services contrast fix — keep the exact forest palette of the selected site theme. */
+#resident-services .resident-services-launcher {
+  color: #fff4dc !important;
+  background: linear-gradient(110deg, #10483d, #0a332c) !important;
+  border-color: rgb(218 184 111 / 58%) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+#resident-services .resident-services-launcher-copy strong {
+  color: #fff6e4 !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 18%);
+}
+#resident-services .resident-services-launcher-copy small {
+  color: #d8e2d8 !important;
+  opacity: 1 !important;
+}
+#resident-services .resident-services-launcher-copy em {
+  color: #e5c47e !important;
+  opacity: 1 !important;
+}
+#resident-services .resident-accordion-trigger {
+  color: #fff3d8 !important;
+  background: #12483d !important;
+  border: 1px solid rgb(219 188 123 / 42%) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+#resident-services .resident-accordion-trigger > span {
+  color: #fff3d8 !important;
+}
+#resident-services .resident-accordion-trigger > svg {
+  color: #e5c47e !important;
 }
