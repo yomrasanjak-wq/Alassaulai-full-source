@@ -531,6 +531,12 @@ export const appRouter = router({
       }),
   }),
   control: router({
+    createTask: ownerProcedure
+      .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"), assignee: z.enum(["CEO", "السكرتير", "المساعد", "IT"]) }))
+      .mutation(async ({ input }) => {
+        const request = await createControlRequest({ ...input, requesterType: "owner" });
+        return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
+      }),
     submit: publicProcedure
       .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal") }))
       .mutation(async ({ input }) => {
