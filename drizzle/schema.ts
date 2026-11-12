@@ -51,6 +51,18 @@ export const controlRequests = pgTable("controlRequests", {
 
 export type ControlRequest = typeof controlRequests.$inferSelect;
 
+export const controlAuditLogs = pgTable("controlAuditLogs", {
+  id: serial("id").primaryKey(),
+  actorOpenId: varchar("actorOpenId", { length: 64 }).notNull(),
+  action: varchar("action", { length: 80 }).notNull(),
+  targetType: varchar("targetType", { length: 40 }).notNull(),
+  targetId: varchar("targetId", { length: 80 }),
+  details: text("details"),
+  createdAt: createdAt(),
+});
+
+export type ControlAuditLog = typeof controlAuditLogs.$inferSelect;
+
 export const mediaItems = pgTable("mediaItems", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
