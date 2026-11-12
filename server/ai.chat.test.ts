@@ -234,6 +234,28 @@ describe("ai.chat", () => {
     }
   });
 
+  it("routes colloquial broad world-news requests to a general live news search", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "");
+    const rss = `<rss><channel><item><title>تطورات دولية حديثة في عدة دول</title><source>وكالة اختبار</source><link>https://example.com/world</link><pubDate>${new Date(Date.now() - 30 * 60 * 1000).toUTCString()}</pubDate></item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      expect(url.hostname).toBe("news.google.com");
+      expect(url.searchParams.get("q")).toContain("أبرز أخبار العالم");
+      return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
+    });
+    try {
+      const caller = appRouter.createCaller(createPublicContext());
+      const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "وش آخر المستجدات بالعالم؟" }] });
+      expect(result.text).toContain("تطورات دولية حديثة");
+      expect(result.text).toContain("وكالة اختبار");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("uses a distinct backup model after primary failure", async () => {
     const originalPrimary = ENV.primaryModel;
     const originalBackup = ENV.backupModel;
