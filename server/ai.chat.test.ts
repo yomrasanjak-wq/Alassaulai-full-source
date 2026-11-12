@@ -94,7 +94,7 @@ describe("brain governance", () => {
 
   it("allows a secretary to see and update only secretary-assigned tasks", async () => {
     const task = { id: 42, assignee: "السكرتير", status: "pending" };
-    vi.mocked(listControlRequestsForAssignee).mockResolvedValueOnce([task as never]);
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
     const caller = appRouter.createCaller(createUserContext("secretary-open-id", "secretary"));
     await expect(caller.control.list()).resolves.toEqual([task]);
     await caller.control.update({ id: 42, status: "in_progress" });
@@ -102,7 +102,7 @@ describe("brain governance", () => {
   });
 
   it("prevents staff from editing another department's tasks or assigning work", async () => {
-    vi.mocked(listControlRequestsForAssignee).mockResolvedValueOnce([]);
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([]);
     const caller = appRouter.createCaller(createUserContext("it-open-id", "it"));
     await expect(caller.control.update({ id: 99, status: "completed" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.control.update({ id: 99, status: "in_progress", assignee: "IT" })).rejects.toMatchObject({ code: "FORBIDDEN" });
