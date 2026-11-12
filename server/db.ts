@@ -1,4 +1,4 @@
-import { count, desc, eq } from "drizzle-orm";
+import { count, desc, eq, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
@@ -8,6 +8,7 @@ import {
   User,
   MediaItem,
   controlRequests,
+  controlAuditLogs,
   guestMemories,
   mediaItems,
   users,
@@ -106,6 +107,31 @@ export async function updateUserRoleByEmail(email: string, role: User["role"]) {
   if (!db) return undefined;
   const rows = await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.email, email)).returning({ id: users.id, name: users.name, email: users.email, role: users.role });
   return rows[0];
+}
+
+export async function createControlAuditLog(input: { actorOpenId: string; action: string; targetType: string; targetId?: string; details?: string; }) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.insert(controlAuditLogs).values(input).returning();
+  return rows[0];
+}
+
+export async function listControlAuditLogs() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(controlAuditLogs).orderBy(desc(controlAuditLogs.createdAt)).limit(50);
+}
+
+export async function getSystemHealth() {
+  const checkedAt = new Date();
+  const db = await getDb();
+  if (!db) return { application: "healthy" as const, database: "down" as const, checkedAt };
+  try {
+    await db.execute(sql.raw("select 1 as ok"));
+    return { application: "healthy" as const, database: "healthy" as const, checkedAt };
+  } catch {
+    return { application: "healthy" as const, database: "down" as const, checkedAt };
+  }
 }
 
 export async function countRegisteredVisitors(): Promise<number> {
