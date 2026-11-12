@@ -93,6 +93,33 @@ describe("brain governance", () => {
     }
   });
 
+  it("allows only the CEO owner to create assigned department tasks", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    try {
+      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      await owner.control.createTask({
+        title: "متابعة صور الدليل",
+        command: "راجع الصور المضافة وتأكد من ظهورها على الهاتف.",
+        category: "content",
+        priority: "normal",
+        assignee: "المساعد",
+      });
+      expect(vi.mocked(createControlRequest)).toHaveBeenCalledWith(expect.objectContaining({
+        requesterType: "owner",
+        assignee: "المساعد",
+      }));
+      const ordinaryUser = appRouter.createCaller(createUserContext("ordinary-user", "user"));
+      await expect(ordinaryUser.control.createTask({
+        title: "مهمة غير مصرح بها",
+        command: "محاولة إنشاء مهمة دون صلاحية المالك.",
+        assignee: "IT",
+      })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
+  });
+
   it("allows a secretary to see and update only secretary-assigned tasks", async () => {
     const task = { id: 42, assignee: "السكرتير", status: "pending" };
     vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
