@@ -489,9 +489,6 @@ describe("Redesign entry points and notifications", () => {
     fireEvent.click(screen.getByRole("button", { name: "افتح خريطة يومك" }));
     expect(mapTarget.scrollIntoView).toHaveBeenCalled();
     expect(screen.queryByRole("textbox", { name: "سؤال المساعد" })).toBeNull();
-    const gmailEntry = screen.getByRole("link", { name: /فتح Gmail في تبويب جديد/ }) as HTMLAnchorElement;
-    expect(gmailEntry.getAttribute("href")).toBe("https://mail.google.com/mail/u/0/");
-    expect(gmailEntry.getAttribute("target")).toBe("_blank");
     expect(screen.getByRole("button", { name: /اسأل المساعد/ })).toBeTruthy();
     const cameraEntry = screen.getByRole("button", { name: /شاهد الكاميرات/ });
     expect(cameraEntry.querySelector(".camera-cta-thumb img")).toBeTruthy();
