@@ -872,7 +872,7 @@ img { display: block; max-width: 100%; }
 .control-task > p { margin: 7px 0; color: #557269; font-size: 10px; line-height: 1.8; }
 .control-task > small { color: #8a9c91; font-size: 8px; }
 .control-status { flex: 0 0 auto; padding: 4px 6px; background: #e8f0e3; color: #4d7960; font-size: 8px; }
-.control-status-pending { background: #f6ead0; color: #977039; }.control-status-in_progress { background: #e0edf2; color: #4d7180; }.control-status-rejected { background: #f7e9e4; color: #9d5f51; }
+.control-status-pending { background: #f6ead0; color: #977039; }.control-status-in_progress { background: #e0edf2; color: #4d7180; }.control-status-ready_for_review { background: #f2e9d5; color: #8b6a32; }.control-status-rejected { background: #f7e9e4; color: #9d5f51; }
 .control-task-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
 .control-task-actions .button { min-height: 30px; padding: 5px 8px; font-size: 8px; }
 .control-divider { display: flex; align-items: center; gap: 10px; margin: 18px 0 4px; color: #a47d40; font-size: 10px; }.control-divider::before, .control-divider::after { content: ""; height: 1px; background: #dfd4c1; flex: 1; }
