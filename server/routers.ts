@@ -1241,6 +1241,7 @@ export const appRouter = router({
         }
 
         const liveContext: string[] = [];
+        let directTourismAnswer: string | undefined;
 
         // Live tools enrich the model prompt; they never replace the LLM answer.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
@@ -1251,8 +1252,8 @@ export const appRouter = router({
 ${weatherContext}`);
 
           if (isTourismPlacesQuestion(latestText)) {
-            const tourismContext = await getLiveTourismPlacesAnswer(latestText, input.language);
-            if (tourismContext) liveContext.push("نتائج المعالم السياحية من OpenStreetMap:\n" + tourismContext);
+            directTourismAnswer = await getLiveTourismPlacesAnswer(latestText, input.language);
+            if (directTourismAnswer) liveContext.push("نتائج المعالم السياحية من OpenStreetMap:\n" + directTourismAnswer);
           }
 
           let grounded = false;
@@ -1362,7 +1363,7 @@ ${newsContext}`);
           });
           if (!backupModel) {
             const contextualFallback = getContextualFallback(input.messages, input.language);
-            return contextualFallback ? { text: contextualFallback } : fail(primaryError);
+            return directTourismAnswer ? { text: directTourismAnswer } : contextualFallback ? { text: contextualFallback } : fail(primaryError);
           }
           try {
             response = await invokeLLM({ ...llmRequest, model: backupModel, reasoning: undefined });
@@ -1375,7 +1376,7 @@ ${newsContext}`);
               ...safeProviderDiagnostic(backupError),
             });
             const contextualFallback = getContextualFallback(input.messages, input.language);
-            return contextualFallback ? { text: contextualFallback } : fail(backupError);
+            return directTourismAnswer ? { text: directTourismAnswer } : contextualFallback ? { text: contextualFallback } : fail(backupError);
           }
         }
 
@@ -1403,7 +1404,7 @@ ${newsContext}`);
             });
           }
           const contextualFallback = getContextualFallback(input.messages, input.language);
-          return contextualFallback ? { text: contextualFallback } : fail(failure);
+          return directTourismAnswer ? { text: directTourismAnswer } : contextualFallback ? { text: contextualFallback } : fail(failure);
         }
         return { text };
       }),
