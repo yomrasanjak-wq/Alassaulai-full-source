@@ -129,6 +129,166 @@ export function compactChatHistory(messages: Array<{ role: "user" | "assistant";
 }
 
 
+
+/** Discover named tourist attractions from OpenStreetMap after resolving the
+ * requested destination with Photon. Results are candidates, not opening-hour,
+ * price, quality, or accessibility verification. */
+type TourismPhotonFeature = {
+  properties?: { name?: string; city?: string; state?: string; country?: string };
+  geometry?: { coordinates?: unknown[] };
+};
+type TourismOverpassElement = {
+  type?: string; id?: number; lat?: number; lon?: number;
+  center?: { lat?: number; lon?: number }; tags?: Record<string, string>;
+};
+const tourismResultCache = new Map<string, { expiresAt: number; answer: string }>();
+let tourismLastRequestAt = 0;
+let tourismCooldownUntil = 0;
+
+export function isTourismPlacesQuestion(message: string): boolean {
+  return /(?:أماكن سياحية|اماكن سياحية|مكان سياحي|معالم سياحية|معالم سياحيه|وجهات سياحية|وجهات سياحيه|ماذا أزور|ماذا ازور|وش أزور|وين أروح|أين أذهب|tourist attractions|places to visit|things to do)/i.test(message)
+    && !/(?:رتب لي|برنامج|خطة|جدول|رحلة|itinerary|trip plan)/i.test(message);
+}
+
+export function extractTourismDestination(message: string): string | undefined {
+  if (!isTourismPlacesQuestion(message)) return undefined;
+  const normalized = message.normalize("NFKC").replace(/[؟?!،,؛;]+/g, " ").trim();
+  const match = normalized.match(/(?:في|داخل|بمدينة|بمدينه|in|at)\s+(.+)$/i);
+  const destination = match?.[1]?.trim().replace(/\s+/g, " ");
+  if (!destination || destination.length < 2) return undefined;
+  return destination.slice(0, 100);
+}
+
+async function waitForTourismRequestSlot(): Promise<void> {
+  const waitMs = Math.max(0, 1000 - (Date.now() - tourismLastRequestAt));
+  if (waitMs) await new Promise((resolve) => setTimeout(resolve, waitMs));
+  tourismLastRequestAt = Date.now();
+}
+
+function tourismKindLabel(tags: Record<string, string>, language: "AR" | "TR" | "EN"): string {
+  const kind = tags.tourism || tags.historic || tags.leisure || tags.natural || "place";
+  const labels: Record<string, Record<string, string>> = {
+    attraction: { AR: "معلم سياحي", TR: "Turistik yer", EN: "Attraction" },
+    museum: { AR: "متحف", TR: "Müze", EN: "Museum" },
+    viewpoint: { AR: "مطل", TR: "Manzara noktası", EN: "Viewpoint" },
+    zoo: { AR: "حديقة حيوان", TR: "Hayvanat bahçesi", EN: "Zoo" },
+    theme_park: { AR: "مدينة ألعاب", TR: "Tema parkı", EN: "Theme park" },
+    gallery: { AR: "معرض", TR: "Galeri", EN: "Gallery" },
+    artwork: { AR: "عمل فني", TR: "Sanat eseri", EN: "Artwork" },
+    castle: { AR: "قلعة", TR: "Kale", EN: "Castle" },
+    archaeological_site: { AR: "موقع أثري", TR: "Arkeolojik alan", EN: "Archaeological site" },
+    ruins: { AR: "أطلال تاريخية", TR: "Tarihi kalıntılar", EN: "Historic ruins" },
+    park: { AR: "حديقة", TR: "Park", EN: "Park" },
+    garden: { AR: "حديقة", TR: "Bahçe", EN: "Garden" },
+    beach: { AR: "شاطئ", TR: "Plaj", EN: "Beach" },
+    waterfall: { AR: "شلال", TR: "Şelale", EN: "Waterfall" },
+    cave: { AR: "كهف", TR: "Mağara", EN: "Cave" },
+  };
+  return labels[kind]?.[language] ?? (language === "AR" ? "مكان مميز" : language === "TR" ? "Gezilecek yer" : "Place");
+}
+
+export async function getLiveTourismPlacesAnswer(message: string, language: "AR" | "TR" | "EN"): Promise<string | undefined> {
+  const destination = extractTourismDestination(message);
+  if (!destination) return undefined;
+  const cacheKey = language + ":" + destination.toLocaleLowerCase();
+  const cached = tourismResultCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.answer;
+  if (Date.now() < tourismCooldownUntil) {
+    return language === "AR" ? "مصدر الخرائط مزدحم مؤقتاً؛ لم أتمكن من التحقق من المعالم الآن. حاول بعد نصف دقيقة."
+      : language === "TR" ? "Harita kaynağı geçici olarak yoğun. Lütfen yarım dakika sonra tekrar deneyin."
+      : "The map data service is temporarily busy. Please try again in about 30 seconds.";
+  }
+
+  try {
+    await waitForTourismRequestSlot();
+    const geocodeUrl = new URL("https://photon.komoot.io/api/");
+    geocodeUrl.search = new URLSearchParams({ q: destination, limit: "5", lang: language === "AR" ? "ar" : language === "TR" ? "tr" : "en" }).toString();
+    const geocodeResponse = await fetch(geocodeUrl.toString(), {
+      headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!geocodeResponse.ok) throw new Error("Photon HTTP " + geocodeResponse.status);
+    const geocode = await geocodeResponse.json() as { features?: TourismPhotonFeature[] };
+    const resolved = (geocode.features ?? []).find((feature) => {
+      const coords = feature.geometry?.coordinates;
+      return typeof feature.properties?.name === "string"
+        && Number.isFinite(Number(coords?.[0])) && Number.isFinite(Number(coords?.[1]));
+    });
+    if (!resolved) {
+      return language === "AR"
+        ? "لم أتمكن من تحديد «" + destination + "» جغرافياً بشكل موثوق. اذكر المدينة والدولة معاً حتى لا أخلط بين أماكن تحمل الاسم نفسه."
+        : language === "TR" ? "“" + destination + "” konumunu doğrulayamadım. Lütfen şehir ve ülkeyi birlikte belirtin."
+        : "I couldn't reliably locate “" + destination + "”. Please include both the city/region and country.";
+    }
+
+    const properties = resolved.properties ?? {};
+    const coords = resolved.geometry?.coordinates ?? [];
+    const lon = Number(coords[0]);
+    const lat = Number(coords[1]);
+    const resolvedName = properties.name ?? destination;
+    const locality = [properties.city, properties.state, properties.country]
+      .filter((part): part is string => typeof part === "string" && Boolean(part)).join(", ");
+
+    await waitForTourismRequestSlot();
+    const overpassQuery = '[out:json][timeout:12];(nwr(around:18000,' + lat + ',' + lon + ')["name"]["tourism"~"attraction|museum|viewpoint|zoo|theme_park|gallery|artwork"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["historic"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["leisure"~"park|garden"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["natural"~"beach|waterfall|cave"];);out center 80;';
+    const placesResponse = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
+      body: new URLSearchParams({ data: overpassQuery }).toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (placesResponse.status === 429 || placesResponse.status === 406) {
+      tourismCooldownUntil = Date.now() + 30_000;
+      throw new Error("Overpass rate limited (" + placesResponse.status + ")");
+    }
+    if (!placesResponse.ok) throw new Error("Overpass HTTP " + placesResponse.status);
+    const placesData = await placesResponse.json() as { elements?: TourismOverpassElement[] };
+    const seen = new Set<string>();
+    const places = (placesData.elements ?? []).flatMap((element) => {
+      const tags = element.tags ?? {};
+      const name = (language === "AR" ? tags["name:ar"] : language === "TR" ? tags["name:tr"] : undefined) || tags.name;
+      const placeLat = Number(element.lat ?? element.center?.lat);
+      const placeLon = Number(element.lon ?? element.center?.lon);
+      if (!name?.trim() || !Number.isFinite(placeLat) || !Number.isFinite(placeLon)
+        || Math.abs(placeLat) > 90 || Math.abs(placeLon) > 180) return [];
+      const identity = (element.type ?? "node") + ":" + (element.id ?? name + ":" + placeLat + ":" + placeLon);
+      if (seen.has(identity)) return [];
+      seen.add(identity);
+      return [{ name: name.trim(), lat: placeLat, lon: placeLon, type: element.type ?? "node", id: element.id ?? 0, kind: tourismKindLabel(tags, language) }];
+    }).slice(0, 8);
+
+    const mapSearch = new URL("https://www.google.com/maps/search/");
+    mapSearch.searchParams.set("api", "1");
+    mapSearch.searchParams.set("query", "tourist attractions in " + resolvedName + (locality ? ", " + locality : ""));
+    if (!places.length) {
+      return language === "AR"
+        ? "حددت الوجهة: " + resolvedName + (locality ? "، " + locality : "") + "، لكن قاعدة OpenStreetMap لم تُرجع معالم مسماة كافية حولها. لم أضع أسماء غير متحققة. [افتح بحث المعالم على الخريطة](" + mapSearch.toString() + ")."
+        : "The destination " + resolvedName + (locality ? ", " + locality : "") + " was located, but OpenStreetMap returned no sufficiently named attractions nearby. [Open the map search](" + mapSearch.toString() + ").";
+    }
+
+    const items = places.map((place, index) => {
+      const pin = "https://www.openstreetmap.org/" + place.type + "/" + place.id;
+      const directions = "https://www.google.com/maps/dir/?api=1&destination=" + place.lat + "," + place.lon;
+      return (index + 1) + ". **" + place.name + "** — " + place.kind + "\n   "
+        + (language === "AR" ? "[الموقع على OpenStreetMap](" + pin + ") · [الاتجاهات](" + directions + ")"
+          : "[OpenStreetMap pin](" + pin + ") · [Directions](" + directions + ")");
+    }).join("\n\n");
+    const answer = language === "AR"
+      ? "هذه معالم مسماة في بيانات OpenStreetMap حول " + resolvedName + (locality ? "، " + locality : "") + " (ضمن نطاق تقريبي 18 كم):\n\n"
+        + items + "\n\nالمصدر: OpenStreetMap contributors. هذه نتائج جغرافية مرشحة؛ لا تؤكد ساعات العمل أو رسوم الدخول أو حالة الافتتاح."
+      : "Named attractions in OpenStreetMap around " + resolvedName + (locality ? ", " + locality : "") + " (approximately within 18 km):\n\n"
+        + items + "\n\nSource: OpenStreetMap contributors. These are geographic candidates, not confirmation of opening hours, entry fees, or current access.";
+    tourismResultCache.set(cacheKey, { expiresAt: Date.now() + 6 * 60 * 60 * 1000, answer });
+    return answer;
+  } catch (error) {
+    console.warn("[ALASSAUL tourism] live attraction lookup unavailable", error);
+    return language === "AR"
+      ? "تعذر جلب قائمة موثوقة بالمعالم في " + destination + " الآن؛ لن أخمّن أسماء أو مواقع. حاول بعد قليل."
+      : language === "TR" ? destination + " için doğrulanmış turistik yerler şu anda alınamadı; isim veya konum tahmin etmeyeceğim."
+      : "Verified attractions for " + destination + " are unavailable right now; I won't guess names or locations.";
+  }
+}
+
 function weatherDescription(code: number) {
   if (code === 0) return "الجو صافٍ";
   if ([1, 2].includes(code)) return "الجو غائم جزئياً";
@@ -1089,6 +1249,11 @@ export const appRouter = router({
             ?? await getJeddahWeatherAnswer(latestText);
           if (weatherContext) liveContext.push(`سياق من مصدر الطقس الحي:
 ${weatherContext}`);
+
+          if (isTourismPlacesQuestion(latestText)) {
+            const tourismContext = await getLiveTourismPlacesAnswer(latestText, input.language);
+            if (tourismContext) liveContext.push("نتائج المعالم السياحية من OpenStreetMap:\n" + tourismContext);
+          }
 
           let grounded = false;
           if (isGoogleMapsQuestion(latestText) && process.env.GEMINI_API_KEY?.trim() && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true") {
