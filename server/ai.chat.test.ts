@@ -481,7 +481,7 @@ describe("ai.chat", () => {
       const url = new URL(String(input));
       expect(url.hostname).toBe("site.api.espn.com");
       expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
-      expect(url.searchParams.get("dates")).toMatch(/^\\d{8}(?:-\\d{8})?$/);
+      expect(url.searchParams.get("dates")).toMatch(/^\d{8}(?:-\d{8})?$/);
       return new Response(JSON.stringify({
         events: [{
           name: "Al Hilal vs Al Nassr",
@@ -519,7 +519,7 @@ describe("ai.chat", () => {
         messages: [{ role: "user", content: "ما آخر نتائج الدوري السعودي؟" }],
       });
       expect(result.text).toContain("لن أخمّن نتيجة");
-      expect(result.text).not.toMatch(/فاز|خسر|\\d\\s*[-–]\\s*\\d/);
+      expect(result.text).not.toMatch(/فاز|خسر|\d\s*[-–]\s*\d/);
       expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
