@@ -222,14 +222,14 @@ async function getPhotonPlaceSearchAnswer(message: string, language: "AR" | "TR"
   const nearMe = /(?:قريب مني|بالقرب مني|قريب من موقعي(?: الحالي)?|near me|nearby|nearest)/i.test(message);
   const cleaned = message
     .replace(/(?:أقرب|اقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث عن|ابحث|دلني على|أرشدني إلى|قريب مني|بالقرب مني|قريب من موقعي(?: الحالي)?|يقع|عنوان|موقع|كيف أصل إلى|كيف اصل الى|where is|find|show me|best|nearest|nearby|near me|location|address|search for|directions to)/gi, " ")
-    .replace(/(?:مطاعم?|restaurants?|فطور|إفطار|breakfast|مقاهي?|كافيه|قهوة|cafes?|coffee|فنادق?|hotels?|مستشفيات?|مستشفى|hospitals?|صيدليات?|صيدلية|pharmacies?|شواطئ?|شاطئ|beaches?|حدائق?|حديقة|parks?|مول|مركز تجاري|malls?|shopping centers?|متحف|museums?|أكواريوم|aquarium|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/gi, " ")
+    .replace(/(?:مطعماً|مطعما|مطعم|مطاعم|restaurants?|فطور|إفطار|breakfast|مقاهي?|كافيه|قهوة|cafes?|coffee|فنادق?|hotels?|مستشفيات?|مستشفى|hospitals?|صيدليات?|صيدلية|pharmacies?|شواطئ?|شاطئ|beaches?|حدائق?|حديقة|parks?|مول|مركز تجاري|malls?|shopping centers?|متحف|museums?|أكواريوم|aquarium|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/gi, " ")
     .replace(/(?:^|\s)(?:في|بمدينة|بمدينه|داخل|بـ|in|at|near)(?=\s|$)/gi, " ")
     .replace(/[؟?!،,؛;:]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
   const contextMatch = contextText.match(/(?:في|بمدينة|بمدينه|داخل|in)\s+([^؟?!,.;\n]+)/i);
   const contextLocation = (contextMatch?.[1] ?? "")
-    .replace(/(?:أقرب|اقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث عن|ابحث|دلني على|أرشدني إلى|أرغب|ارغب|أريد|اريد)/gi, " ")
+    .replace(/(?:أقرب|اقرب|قريباً|قريبا|قريب|بالقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث عن|ابحث|دلني على|أرشدني إلى|أرغب|ارغب)/gi, " ")
     .replace(/(?:مطاعم?|restaurants?|فطور|إفطار|breakfast|مقاهي?|كافيه|قهوة|cafes?|coffee|فنادق?|hotels?|مستشفيات?|مستشفى|عيادة|عيادات|مركز طبي|طبيب|أطباء|hospitals?|clinics?|doctors?|صيدليات?|صيدلية|pharmacies?|شواطئ?|شاطئ|beaches?|حدائق?|حديقة|parks?|مول|مركز تجاري|malls?|shopping centers?|متحف|museums?|أكواريوم|aquarium|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
