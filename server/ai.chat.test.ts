@@ -328,6 +328,36 @@ describe("live worldwide tourism place lookup", () => {
     }
   });
 
+  it("returns verified attraction results even when the language model provider fails", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.startsWith("https://photon.komoot.io/api/")) {
+        return new Response(JSON.stringify({
+          features: [{
+            properties: { name: "Kyoto", city: "Kyoto", country: "Japan" },
+            geometry: { coordinates: [135.7681, 35.0116] },
+          }],
+        }), { status: 200, headers: { "content-type": "application/geo+json" } });
+      }
+      return new Response(JSON.stringify({
+        elements: [{
+          type: "node", id: 67890, lat: 35.039, lon: 135.729,
+          tags: { name: "Kinkaku-ji", tourism: "attraction" },
+        }],
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "اذكر لي أماكن سياحية في كيوتو اليابان" }],
+      });
+      expect(result.text).toContain("Kinkaku-ji");
+      expect(result.text).toContain("openstreetmap.org/node/67890");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
   it("does not invent attractions when geocoding cannot resolve a destination", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ features: [] }), {
       status: 200, headers: { "content-type": "application/geo+json" },
