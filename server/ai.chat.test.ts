@@ -307,27 +307,27 @@ describe("keyless reference search", () => {
 describe("live news source", () => {
   it.each(["وش صاير بالعالم اليوم؟", "وش آخر المستجدات؟", "عطني آخر الأخبار"]) ("recognizes Gulf Arabic requests for current world news: %s", async (question) => {
     const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
-    const rss = `<rss><channel><item><title>تطور دولي حديث</title><source>وكالة الاختبار</source><link>https://example.com/latest</link><pubDate>${publishedAt}</pubDate></item></channel></rss>`;
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    const rss = \`<rss><channel><item><title>تطور دولي حديث</title><source>وكالة الاختبار</source><link>https://example.com/latest</link><pubDate>\${publishedAt}</pubDate></item></channel></rss>\`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
     try {
       const result = await appRouter.createCaller(createPublicContext()).ai.chat({ language: "AR", messages: [{ role: "user", content: question }] });
       expect(result.text).toContain("تطور دولي حديث");
       expect(result.text).toContain("https://example.com/latest");
       expect(invokeLLM).not.toHaveBeenCalled();
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
     } finally {
       fetchSpy.mockRestore();
     }
   });
 
-  it("removes escaped HTML from publisher excerpts and deduplicates repeated headlines", async () => {
+  it("removes escaped HTML from publisher excerpts and deduplicates repeated headlines across feeds", async () => {
     const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
-    const rss = `<rss><channel>
-      <item><title>خبر دولي مكرر اليوم</title><source>وكالة الاختبار</source><link>https://example.com/story-a</link><pubDate>${publishedAt}</pubDate><description>&lt;p&gt;ملخص نظيف من الناشر &amp;amp; تفاصيل إضافية.&lt;/p&gt;</description></item>
-      <item><title>خبر دولي مكرر اليوم</title><source>مصدر آخر</source><link>https://example.com/story-b</link><pubDate>${publishedAt}</pubDate><description>نسخة مكررة من الخبر.</description></item>
-      <item><title>تطور دولي مستقل</title><source>مصدر مستقل</source><link>https://example.com/story-c</link><pubDate>${publishedAt}</pubDate><description>&lt;div&gt;تفاصيل الخبر المستقل.&lt;/div&gt;</description></item>
-    </channel></rss>`;
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    const rss = \`<rss><channel>
+      <item><title>خبر دولي مكرر اليوم</title><source>وكالة الاختبار</source><link>https://example.com/story-a</link><pubDate>\${publishedAt}</pubDate><description>&lt;p&gt;ملخص نظيف من الناشر &amp;amp; تفاصيل إضافية.&lt;/p&gt;</description></item>
+      <item><title>خبر دولي مكرر اليوم</title><source>مصدر آخر</source><link>https://example.com/story-b</link><pubDate>\${publishedAt}</pubDate><description>نسخة مكررة من الخبر.</description></item>
+      <item><title>تطور دولي مستقل</title><source>مصدر مستقل</source><link>https://example.com/story-c</link><pubDate>\${publishedAt}</pubDate><description>&lt;div&gt;تفاصيل الخبر المستقل.&lt;/div&gt;</description></item>
+    </channel></rss>\`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
     try {
       const result = await appRouter.createCaller(createPublicContext()).ai.chat({
         language: "AR",
@@ -339,7 +339,35 @@ describe("live news source", () => {
       expect(result.text).not.toContain("&lt;");
       expect(result.text.match(/خبر دولي مكرر اليوم/g)).toHaveLength(1);
       expect(result.text).not.toContain("https://example.com/story-b");
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("supplements a narrow topic search with regional top stories to provide a fuller news brief", async () => {
+    const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
+    const topicFeed = \`<rss><channel><item><title>خبر الموضوع المحدد</title><source>مصدر الموضوع</source><link>https://example.com/topic</link><pubDate>\${publishedAt}</pubDate></item></channel></rss>\`;
+    const topFeed = \`<rss><channel>
+      <item><title>خبر إقليمي أول</title><source>وكالة أولى</source><link>https://example.com/one</link><pubDate>\${publishedAt}</pubDate></item>
+      <item><title>خبر إقليمي ثان</title><source>وكالة ثانية</source><link>https://example.com/two</link><pubDate>\${publishedAt}</pubDate></item>
+      <item><title>خبر إقليمي ثالث</title><source>وكالة ثالثة</source><link>https://example.com/three</link><pubDate>\${publishedAt}</pubDate></item>
+      <item><title>خبر إقليمي رابع</title><source>وكالة رابعة</source><link>https://example.com/four</link><pubDate>\${publishedAt}</pubDate></item>
+    </channel></rss>\`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      return new Response(url.pathname.endsWith("/search") ? topicFeed : topFeed, { status: 200, headers: { "content-type": "application/rss+xml" } });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "ما أبرز أخبار العالم اليوم؟" }],
+      });
+      for (const title of ["خبر الموضوع المحدد", "خبر إقليمي أول", "خبر إقليمي ثان", "خبر إقليمي ثالث", "خبر إقليمي رابع"]) {
+        expect(result.text).toContain(title);
+      }
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
       expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
@@ -348,13 +376,13 @@ describe("live news source", () => {
 
   it("includes a short publisher-provided excerpt with each current headline", async () => {
     const publishedAt = new Date(Date.now() - 60 * 60 * 1000).toUTCString();
-    const rss = `<rss><channel><item>
+    const rss = \`<rss><channel><item>
       <title>تطورات دولية مهمة اليوم</title>
       <source>وكالة الاختبار</source>
       <link>https://example.com/world-news</link>
-      <pubDate>${publishedAt}</pubDate>
+      <pubDate>\${publishedAt}</pubDate>
       <description><![CDATA[<p>ملخص من الناشر: أعلنت الجهات المعنية تفاصيل جديدة بشأن التطورات الدولية وأكدت استمرار المشاورات خلال الساعات القادمة.</p>]]></description>
-    </item></channel></rss>`;
+    </item></channel></rss>\`;
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = new URL(String(input));
       expect(url.hostname).toBe("news.google.com");
@@ -370,7 +398,7 @@ describe("live news source", () => {
       expect(result.text).toContain("وكالة الاختبار");
       expect(result.text).toContain("https://example.com/world-news");
       expect(invokeLLM).not.toHaveBeenCalled();
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
     } finally {
       fetchSpy.mockRestore();
     }
