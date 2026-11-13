@@ -168,8 +168,11 @@ export function getContextualWeatherQuestion(messages: Array<{ role: "user" | "a
   for (const previous of previousUserMessages) {
     const match = WEATHER_CITIES.map((city) => {
       const flags = city.names.flags.includes("g") ? city.names.flags : city.names.flags + "g";
-      const mentions = [...previous.content.matchAll(new RegExp(city.names.source, flags))];
-      return { city, index: mentions.at(-1)?.index ?? -1 };
+      const mentionPattern = new RegExp(city.names.source, flags);
+      let lastMentionIndex = -1;
+      let mention: RegExpExecArray | null;
+      while ((mention = mentionPattern.exec(previous.content)) !== null) lastMentionIndex = mention.index;
+      return { city, index: lastMentionIndex };
     }).filter((item) => item.index >= 0).sort((a, b) => b.index - a.index)[0];
     if (match) return `${latestText} في ${match.city.name}`;
   }
