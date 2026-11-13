@@ -1291,10 +1291,11 @@ export default function Home() {
     try {
       const response = await chatMutation.mutateAsync({
         language,
-        messages: nextMessages.map((message, index) => ({
+        // Keep the browser payload aligned with the server's bounded 14-message context.
+        messages: nextMessages.slice(-14).map((message, index, recentMessages) => ({
           role: message.from as "user" | "assistant",
           content: message.text,
-          ...(index === nextMessages.length - 1 && message.imageDataUrl ? { imageDataUrl: message.imageDataUrl } : {}),
+          ...(index === recentMessages.length - 1 && message.imageDataUrl ? { imageDataUrl: message.imageDataUrl } : {}),
         })),
       });
       setChatMessages((messages) => [...messages, { from: "assistant", text: response.text, route: routeRequest }]);
