@@ -674,7 +674,7 @@ describe("ai.chat", () => {
       const url = new URL(String(input));
       expect(url.hostname).toBe("site.api.espn.com");
       requestedDates = url.searchParams.get("dates") ?? "";
-      expect(requestedDates).toMatch(/^\\d{8}-\\d{8}$/);
+      expect(requestedDates).toMatch(/^\d{8}-\d{8}$/);
       const [start, end] = requestedDates.split("-").map((value) =>
         Date.UTC(Number(value.slice(0, 4)), Number(value.slice(4, 6)) - 1, Number(value.slice(6, 8)))
       );
