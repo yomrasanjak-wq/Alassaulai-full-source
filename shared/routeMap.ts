@@ -18,6 +18,7 @@ const places: Place[] = [
   { names: /أراكلي|اراكلي|arakl[iı]/i, position: { lat: 40.939, lng: 40.058 } },
   { names: /جدة|جده|jeddah/i, position: { lat: 21.5433, lng: 39.1728 } },
   { names: /ينبع|yanbu/i, position: { lat: 24.0895, lng: 38.0618 } },
+  { names: /(?:المدينة المنورة|المدينه المنوره|المدينة|المدينه|madinah|medina)/i, position: { lat: 24.4672, lng: 39.6111 } },
 ];
 
 function findPlace(value: string | undefined): Place | undefined {
