@@ -581,15 +581,30 @@ function getContextualFallback(
 
 
 function decodeNewsXml(value: string) {
-  return value
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#(\d+);/g, (_match, code: string) => String.fromCodePoint(Number(code)))
+  let decoded = value.replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, "$1");
+  // Decode entities before stripping markup so escaped publisher HTML never leaks into chat.
+  for (let pass = 0; pass < 2; pass += 1) {
+    decoded = decoded
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;|&apos;/gi, "'")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&#x([0-9a-f]+);/gi, (_match, code: string) => {
+        const point = Number.parseInt(code, 16);
+        return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : " ";
+      })
+      .replace(/&#(\\d+);/g, (_match, code: string) => {
+        const point = Number(code);
+        return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : " ";
+      })
+      .replace(/&amp;/gi, "&");
+  }
+  return decoded
+    .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, " ")
+    .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\\s+/g, " ")
     .trim();
 }
 
@@ -607,19 +622,26 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
     });
     if (!response.ok) throw new Error(`News RSS returned ${response.status}`);
     const xml = await response.text();
-    const items = (xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) ?? []).slice(0, 5).map((itemMarkup) => {
-      const body = itemMarkup.replace(/^<item\b[^>]*>/i, "").replace(/<\/item>$/i, "");
-      const title = decodeNewsXml(body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
-      const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? "Google News");
-      const url = decodeNewsXml(body.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? "");
-      const description = decodeNewsXml(body.split("<description>")[1]?.split("</description>")[0] ?? "").replaceAll("\n", " ").trim();
-      // Keep publisher-provided excerpts brief and distinct from the headline.
-      const snippet = description && description !== title ? description.split(/\s+/).slice(0, 22).join(" ") : "";
-      const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
+    const seenHeadlines = new Set<string>();
+    const items = (xml.match(/<item\\b[^>]*>[\\s\\S]*?<\\/item>/gi) ?? []).map((itemMarkup) => {
+      const body = itemMarkup.replace(/^<item\\b[^>]*>/i, "").replace(/<\\/item>$/i, "");
+      const title = decodeNewsXml(body.match(/<title\\b[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1] ?? "");
+      const source = decodeNewsXml(body.match(/<source\\b[^>]*>([\\s\\S]*?)<\\/source>/i)?.[1] ?? "Google News");
+      const url = decodeNewsXml(body.match(/<link\\b[^>]*>([\\s\\S]*?)<\\/link>/i)?.[1] ?? "");
+      const description = decodeNewsXml(body.match(/<description\\b[^>]*>([\\s\\S]*?)<\\/description>/i)?.[1] ?? "");
+      const snippet = description && description !== title ? description.split(/\\s+/).slice(0, 22).join(" ") : "";
+      const published = decodeNewsXml(body.match(/<pubDate\\b[^>]*>([\\s\\S]*?)<\\/pubDate>/i)?.[1] ?? "");
       const date = published ? new Date(published) : null;
-      const dateText = date && !Number.isNaN(date.getTime()) ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date) : "";
-      return { title, source, snippet, dateText, publishedAt: date && !Number.isNaN(date.getTime()) ? date.getTime() : 0, url: /^https?:\/\//i.test(url) ? url : "" };
-    }).filter((item) => item.title.length > 5 && item.publishedAt > Date.now() - 48 * 60 * 60 * 1000);
+      const publishedAt = date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+      const dateText = publishedAt ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date as Date) : "";
+      return { title, source, snippet, dateText, publishedAt, url: /^https?:\\/\\//i.test(url) ? url : "" };
+    }).filter((item) => {
+      if (item.title.length <= 5 || item.publishedAt <= Date.now() - 48 * 60 * 60 * 1000) return false;
+      const key = item.title.toLocaleLowerCase().replace(/[\\p{P}\\p{S}\\s]+/gu, " ").trim();
+      if (!key || seenHeadlines.has(key)) return false;
+      seenHeadlines.add(key);
+      return true;
+    }).slice(0, 5)
     if (!items.length) throw new Error("News RSS returned no headlines published in the last 48 hours");
     const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
     const footer = language === "AR" ? "المصدر: Google News RSS. هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS. Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS. These are headlines; check the publisher for details and updates.";
