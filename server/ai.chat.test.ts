@@ -274,6 +274,51 @@ describe("adaptive brain response strategy", () => {
 });
 
 
+describe("open map place search", () => {
+  it("returns verified place matches and direct directions without requiring a Gemini key", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      expect(url.hostname).toBe("photon.komoot.io");
+      expect(url.pathname).toBe("/api/");
+      expect(url.searchParams.get("q")).toContain("restaurant");
+      expect(url.searchParams.get("q")).toContain("طرابزون");
+      return new Response(JSON.stringify({
+        type: "FeatureCollection",
+        features: [{
+          type: "Feature",
+          properties: { name: "Meydan Restaurant", city: "Trabzon", country: "Türkiye", osm_value: "restaurant" },
+          geometry: { type: "Point", coordinates: [39.716, 41.001] },
+        }],
+      }), { status: 200, headers: { "content-type": "application/geo+json" } });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "مطاعم في طرابزون" }],
+      });
+      expect(result.text).toContain("Meydan Restaurant");
+      expect(result.text).toContain("Trabzon");
+      expect(result.text).toContain("https://www.google.com/maps/dir/?api=1&destination=41.001,39.716");
+      expect(result.text).toContain("OpenStreetMap");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("asks for a city when a nearby business search has no location context", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "أقرب مطعم" }],
+    });
+    expect(result.text).toContain("اذكر المدينة أو الحي");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+});
+
 describe("live news source", () => {
   it("includes a short publisher-provided excerpt with each current headline", async () => {
     const publishedAt = new Date(Date.now() - 60 * 60 * 1000).toUTCString();
