@@ -303,6 +303,124 @@ async function getSaudiLeagueScoreboardAnswer(
   }
 }
 
+type EuropeanFootballLeague = {
+  slug: string;
+  label: { AR: string; TR: string; EN: string };
+};
+
+function getEuropeanFootballLeague(message: string): EuropeanFootballLeague | undefined {
+  const leagues: Array<{ slug: string; label: EuropeanFootballLeague["label"]; pattern: RegExp }> = [
+    { slug: "eng.1", label: { AR: "الدوري الإنجليزي الممتاز", TR: "İngiltere Premier Lig", EN: "English Premier League" }, pattern: /(?:الدوري الإنجليزي|الدوري الانجليزي|البريميرليغ|البريميرليج|premier league|\bepl\b)/i },
+    { slug: "esp.1", label: { AR: "الدوري الإسباني", TR: "İspanya LaLiga", EN: "Spanish LaLiga" }, pattern: /(?:الدوري الإسباني|الدوري الاسباني|لاليغا|لا ليغا|la liga|\blaliga\b)/i },
+    { slug: "ger.1", label: { AR: "الدوري الألماني", TR: "Almanya Bundesliga", EN: "German Bundesliga" }, pattern: /(?:الدوري الألماني|الدوري الالماني|بوندسليغا|bundesliga)/i },
+    { slug: "ita.1", label: { AR: "الدوري الإيطالي", TR: "İtalya Serie A", EN: "Italian Serie A" }, pattern: /(?:الدوري الإيطالي|الدوري الايطالي|سيري ?آ|serie a)/i },
+    { slug: "fra.1", label: { AR: "الدوري الفرنسي", TR: "Fransa Ligue 1", EN: "French Ligue 1" }, pattern: /(?:الدوري الفرنسي|ليغ ?1|ligue ?1)/i },
+    { slug: "uefa.champions", label: { AR: "دوري أبطال أوروبا", TR: "UEFA Şampiyonlar Ligi", EN: "UEFA Champions League" }, pattern: /(?:دوري أبطال أوروبا|دوري ابطال اوروبا|ابطال اوروبا|champions league|\bucl\b)/i },
+    { slug: "uefa.europa", label: { AR: "الدوري الأوروبي", TR: "UEFA Avrupa Ligi", EN: "UEFA Europa League" }, pattern: /(?:الدوري الأوروبي|الدوري الاوروبي|يوروبا ليغ|europa league|\buel\b)/i },
+  ];
+  return leagues.find((league) => league.pattern.test(message));
+}
+
+function isEuropeanFootballScheduleQuestion(message: string) {
+  const hasNewsIntent = /(?:أخبار|اخبار|news|headlines?)/i.test(message);
+  const hasFixtureIntent = /(?:جدول|مباريات|مواعيد|الجولة|يلعب|نتيجة|نتائج|مباشر|الآن|الان|من فاز|fixtures|schedule|match(?:es)?|live|score|results)/i.test(message);
+  const asksTodayWithoutNews = /(?:اليوم|today)/i.test(message) && !hasNewsIntent;
+  return Boolean(getEuropeanFootballLeague(message)) && (hasFixtureIntent || asksTodayWithoutNews);
+}
+
+async function getEuropeanFootballScoreboardAnswer(
+  language: "AR" | "TR" | "EN",
+  message: string,
+): Promise<string | undefined> {
+  const league = getEuropeanFootballLeague(message);
+  if (!league) return undefined;
+  const scoreQuestion = /(?:نتيجة|نتائج|مباشر|الآن|الان|من فاز|score|scores|results|live)/i.test(message);
+  const hasYesterday = /(?:أمس|امس|البارحة|البارحه|yesterday)/i.test(message);
+  const asksToday = /(?:اليوم|today|الآن|الان|مباشر|live)/i.test(message);
+  const asksUpcoming = /(?:القادمة|القادمه|المقبلة|المقبله|مواعيد|جدول|fixtures|schedule|upcoming|next)/i.test(message);
+  const startOffset = hasYesterday ? -1 : scoreQuestion && !asksToday ? -3 : 0;
+  const endOffset = asksUpcoming && !asksToday ? 7 : 0;
+  const dateKey = (offset: number) => {
+    const date = new Date(Date.now() + offset * 24 * 60 * 60 * 1000);
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
+    }).formatToParts(date);
+    const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+    return `${part("year")}${part("month")}${part("day")}`;
+  };
+  const startDate = dateKey(startOffset);
+  const endDate = dateKey(endOffset);
+  const dates = startDate === endDate ? startDate : `${startDate}-${endDate}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6500);
+  const sourceUrl = `https://www.espn.com/soccer/scoreboard/_/league/${league.slug}`;
+  try {
+    const response = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.slug}/scoreboard?${new URLSearchParams({ dates }).toString()}`,
+      { headers: { accept: "application/json", "user-agent": "ALASSAUL-AI/1.0 (European football scoreboard)" }, signal: controller.signal },
+    );
+    if (!response.ok) throw new Error(`ESPN scoreboard returned ${response.status}`);
+    const data = await response.json() as {
+      events?: Array<{
+        name?: string;
+        date?: string;
+        status?: { type?: { state?: string; completed?: boolean } };
+        competitions?: Array<{ competitors?: Array<{
+          homeAway?: string;
+          score?: string;
+          team?: { displayName?: string; name?: string };
+        }> }>;
+      }>;
+    };
+    if (!Array.isArray(data.events)) throw new Error("ESPN scoreboard response did not include an events list");
+    if (data.events.length === 0) {
+      return language === "AR"
+        ? `لا توجد مباريات مدرجة في ${league.label.AR} خلال الفترة المحددة. لم أعرض نتائج قديمة على أنها مباشرة.\nالمصدر: ESPN — ${sourceUrl}`
+        : language === "TR"
+          ? `${league.label.TR} için seçilen dönemde listelenmiş maç bulunamadı.\nKaynak: ESPN — ${sourceUrl}`
+          : `No matches are listed for ${league.label.EN} in the selected period.\nSource: ESPN — ${sourceUrl}`;
+    }
+    const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
+    const rows = data.events.slice(0, 10).map((event) => {
+      const teams = event.competitions?.[0]?.competitors ?? [];
+      const home = teams.find((team) => team.homeAway === "home") ?? teams[0];
+      const away = teams.find((team) => team.homeAway === "away") ?? teams[1];
+      const homeName = home?.team?.displayName ?? home?.team?.name;
+      const awayName = away?.team?.displayName ?? away?.team?.name;
+      const score = homeName && awayName
+        ? `${homeName} ${home?.score ?? "—"} - ${away?.score ?? "—"} ${awayName}`
+        : event.name ?? league.label[language];
+      const state = event.status?.type?.state;
+      const status = state === "in"
+        ? (language === "AR" ? "مباشرة الآن" : language === "TR" ? "Canlı" : "Live")
+        : event.status?.type?.completed || state === "post"
+          ? (language === "AR" ? "انتهت" : language === "TR" ? "Tamamlandı" : "Final")
+          : (language === "AR" ? "لم تبدأ بعد" : language === "TR" ? "Henüz başlamadı" : "Scheduled");
+      const date = event.date ? new Date(event.date) : null;
+      const dateText = date && !Number.isNaN(date.getTime())
+        ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date)
+        : "";
+      return `• ${score} — ${status}${dateText ? ` · ${dateText}` : ""}`;
+    });
+    const heading = language === "AR"
+      ? `${league.label.AR} — ${scoreQuestion ? "النتائج وحالة المباريات" : "المباريات والمواعيد"}`
+      : language === "TR"
+        ? `${league.label.TR} — ${scoreQuestion ? "Sonuçlar ve maç durumu" : "Maçlar ve fikstür"}`
+        : `${league.label.EN} — ${scoreQuestion ? "Scores and match status" : "Fixtures and schedule"}`;
+    const note = language === "AR"
+      ? "المصدر: ESPN. البيانات حسب لوحة النتائج وقت القراءة وقد تتغير أثناء المباراة."
+      : language === "TR"
+        ? "Kaynak: ESPN. Veriler okuma anındaki skor tablosunu gösterir ve maç sırasında değişebilir."
+        : "Source: ESPN. Scoreboard data is current at retrieval time and may change during a match.";
+    return `${heading}\n${rows.join("\n")}\n\n${note}\n${sourceUrl}`;
+  } catch (error) {
+    console.warn("[ALASSAUL sports] ESPN European football scoreboard unavailable", safeProviderDiagnostic(error));
+    return undefined;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
 async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", message: string) {
   const scheduleQuestion = isSaudiLeagueScheduleQuestion(message);
@@ -837,6 +955,19 @@ export const appRouter = router({
 
           if (isSaudiLeagueQuestion(latestText)) {
             return { text: await getSaudiLeagueScheduleAnswer(input.language, latestText) };
+          }
+
+          if (isEuropeanFootballScheduleQuestion(latestText)) {
+            const scoreboard = await getEuropeanFootballScoreboardAnswer(input.language, latestText);
+            if (scoreboard) return { text: scoreboard };
+            const scoreQuestion = /(?:نتيجة|نتائج|مباشر|الآن|الان|من فاز|score|scores|results|live)/i.test(latestText);
+            if (scoreQuestion) {
+              return { text: input.language === "AR"
+                ? "تعذر جلب نتيجة موثوقة من لوحة النتائج الأوروبية الآن؛ لن أخمّن النتيجة. حاول بعد قليل."
+                : input.language === "TR"
+                  ? "Avrupa futbolu için doğrulanmış skor alınamadı; sonuç tahmin etmeyeceğim. Daha sonra tekrar deneyin."
+                  : "A verified European football score is unavailable right now; I won't guess the result. Please try again shortly." };
+            }
           }
 
           if (isWorldNewsQuestion(latestText)) {
