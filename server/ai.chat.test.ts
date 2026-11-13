@@ -84,6 +84,26 @@ describe("brain governance", () => {
     }
   });
 
+  it("reports brain readiness from the resolved LLM provider instead of storage-only Forge credentials", async () => {
+    const previous = {
+      forgeApiUrl: ENV.forgeApiUrl,
+      forgeApiKey: ENV.forgeApiKey,
+      llmApiUrl: ENV.llmApiUrl,
+      llmApiKey: ENV.llmApiKey,
+    };
+    try {
+      ENV.forgeApiUrl = "";
+      ENV.forgeApiKey = "";
+      ENV.llmApiUrl = "https://api.openai.com/v1";
+      ENV.llmApiKey = "test-provider-key";
+      const caller = appRouter.createCaller(createUserContext("admin-open-id", "admin"));
+      const status = await caller.brain.status();
+      expect(status.configured).toBe(true);
+    } finally {
+      Object.assign(ENV, previous);
+    }
+  });
+
   it("allows only the configured owner identity into the control room", async () => {
     const previousOwnerId = ENV.ownerOpenId;
     ENV.ownerOpenId = "platform-owner-open-id";
