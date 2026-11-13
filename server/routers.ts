@@ -153,6 +153,28 @@ const WEATHER_CITIES = [
   { names: /جدة|جده|jeddah/i, name: "جدة", latitude: 21.5433, longitude: 39.1728, timezone: "Asia/Riyadh" },
 ] as const;
 
+/** Carry a city forward when a visitor asks a short weather follow-up without
+ * repeating the place name (for example: "طيب وكم الحرارة؟"). Only prior user
+ * messages are considered, and an explicit city in the latest question wins. */
+export function getContextualWeatherQuestion(messages: Array<{ role: "user" | "assistant"; content: string }>): string {
+  const latest = messages.at(-1);
+  if (!latest || latest.role !== "user") return latest?.content ?? "";
+  const latestText = latest.content.normalize("NFKC").trim();
+  const asksAboutWeather = /(?:طقس|أجواء|الجو|درجة الحرارة|الحرارة|weather|temperature)/i.test(latestText);
+  if (!asksAboutWeather || WEATHER_CITIES.some((city) => city.names.test(latestText))) return latestText;
+
+  const previousUserMessages = messages.slice(0, -1).filter((message) => message.role === "user").slice(-6).reverse();
+  for (const previous of previousUserMessages) {
+    const match = WEATHER_CITIES.map((city) => {
+      const flags = city.names.flags.includes("g") ? city.names.flags : city.names.flags + "g";
+      const mentions = [...previous.content.matchAll(new RegExp(city.names.source, flags))];
+      return { city, index: mentions.at(-1)?.index ?? -1 };
+    }).filter((item) => item.index >= 0).sort((a, b) => b.index - a.index)[0];
+    if (match) return `${latestText} في ${match.city.name}`;
+  }
+  return latestText;
+}
+
 export async function getLiveWeatherAnswer(content: string): Promise<string | undefined> {
   if (!/(?:طقس|أجواء|الجو|درجة الحرارة|الحرارة|weather|temperature)/i.test(content)) return undefined;
   const city = WEATHER_CITIES.find((candidate) => candidate.names.test(content));
@@ -978,6 +1000,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
+        const contextualWeatherText = getContextualWeatherQuestion(input.messages);
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
@@ -1009,7 +1032,7 @@ export const appRouter = router({
             return { text: "مطار ينبع هو مطار الأمير عبد المحسن بن عبد العزيز (Prince Abdul Mohsin bin Abdulaziz Airport)، ورمز المطار الدولي IATA هو YNB. يخدم مدينة ينبع في منطقة المدينة المنورة بالمملكة العربية السعودية." };
           }
 
-          const directWeather = await getLiveWeatherAnswer(latestText)
+          const directWeather = await getLiveWeatherAnswer(contextualWeatherText)
             ?? await getAyderWeatherAnswer(latestText)
             ?? await getJeddahWeatherAnswer(latestText);
           if (directWeather) return { text: directWeather };
@@ -1051,7 +1074,7 @@ export const appRouter = router({
 
         // Live tools enrich the model prompt; they never replace the LLM answer.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
-          const weatherContext = await getLiveWeatherAnswer(latestText)
+          const weatherContext = await getLiveWeatherAnswer(contextualWeatherText)
             ?? await getAyderWeatherAnswer(latestText)
             ?? await getJeddahWeatherAnswer(latestText);
           if (weatherContext) liveContext.push(`سياق من مصدر الطقس الحي:
