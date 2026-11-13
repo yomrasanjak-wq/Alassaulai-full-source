@@ -57,7 +57,7 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - لا تجعل كل حديث يتحول إلى قائمة أو نصيحة؛ أحياناً يكون المطلوب دردشة قصيرة أو تفاعلاً طبيعياً. لا تفرض سؤالاً في نهاية كل إجابة، ولا تنه الحوار بطريقة تقطعه ما دام الزائر يريد المتابعة.
 `;
 
-const MAX_CHAT_HISTORY = 8;
+const MAX_CHAT_HISTORY = 14;
 const MAX_CHAT_MESSAGE_CHARS = 1200;
 
 /** Return a backup model only when it is genuinely different from the primary.
