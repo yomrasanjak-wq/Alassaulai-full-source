@@ -99,7 +99,7 @@ describe("real-brain regression scenarios", () => {
       model: ENV.primaryModel,
       choices: [{ message: { content: "لا أستطيع تأكيد عناوين اليوم لأن مصدر الأخبار الحي غير متاح." } }],
     } as never);
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network unavailable"));
     try {
       const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "ما آخر أخبار كرة القدم اليوم؟" }] });
       expect(result.text).toContain("تعذر جلب عناوين الأخبار الحية");
@@ -130,7 +130,7 @@ describe("real-brain regression scenarios", () => {
 
   it("does not present old RSS articles as today's world news", async () => {
     const staleFeed = `<?xml version="1.0"?><rss><channel><item><title>Old world headline</title><source>Example News</source><link>https://example.com/old</link><pubDate>Tue, 01 Jan 2019 10:00:00 GMT</pubDate></item></channel></rss>`;
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
       new Response(staleFeed, { status: 200, headers: { "content-type": "application/rss+xml" } }),
     );
     try {

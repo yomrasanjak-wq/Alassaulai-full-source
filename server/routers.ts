@@ -612,39 +612,61 @@ function decodeNewsXml(value: string) {
  * unreachable, return a clear status instead of letting the model invent news. */
 async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN") {
   if (!isWorldNewsQuestion(message)) return undefined;
-  const params = new URLSearchParams({ q: message.slice(0, 160), hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US", gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US", ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en" });
+  const locale = {
+    hl: language === "AR" ? "ar" : language === "TR" ? "tr" : "en-US",
+    gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US",
+    ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en",
+  };
+  const searchParams = new URLSearchParams({ q: message.slice(0, 160), ...locale });
+  const topParams = new URLSearchParams(locale);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   try {
-    const response = await fetch(`https://news.google.com/rss/search?${params.toString()}`, {
-      headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`News RSS returned ${response.status}`);
-    const xml = await response.text();
+    // Search the user's topic and the regional top-stories feed together.
+    // This prevents a narrow query from leaving the visitor with only one headline.
+    const feeds = await Promise.allSettled([
+      fetch(`https://news.google.com/rss/search?${searchParams.toString()}`, {
+        headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
+        signal: controller.signal,
+      }),
+      fetch(`https://news.google.com/rss?${topParams.toString()}`, {
+        headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
+        signal: controller.signal,
+      }),
+    ]);
+    const xmlResults = await Promise.allSettled(feeds.map(async (feed) => {
+      if (feed.status !== "fulfilled" || !feed.value.ok) return "";
+      return feed.value.text();
+    }));
+    const xmlFeeds = xmlResults.map((result) => result.status === "fulfilled" ? result.value : "");
+    if (!xmlFeeds.some(Boolean)) throw new Error("All Google News RSS feeds were unavailable");
+
     const seenHeadlines = new Set<string>();
-    const items = (xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) ?? []).map((itemMarkup) => {
-      const body = itemMarkup.replace(/^<item\b[^>]*>/i, "").replace(/<\/item>$/i, "");
-      const title = decodeNewsXml(body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
-      const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? "Google News");
-      const url = decodeNewsXml(body.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? "");
-      const description = decodeNewsXml(body.match(/<description\b[^>]*>([\s\S]*?)<\/description>/i)?.[1] ?? "");
-      const snippet = description && description !== title ? description.split(/\s+/).slice(0, 22).join(" ") : "";
-      const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
-      const date = published ? new Date(published) : null;
-      const publishedAt = date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
-      const dateText = publishedAt ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date as Date) : "";
-      return { title, source, snippet, dateText, publishedAt, url: /^https?:\/\//i.test(url) ? url : "" };
+    const items = xmlFeeds.flatMap((xml) => {
+      if (!xml) return [];
+      return (xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) ?? []).map((itemMarkup) => {
+        const body = itemMarkup.replace(/^<item\b[^>]*>/i, "").replace(/<\/item>$/i, "");
+        const title = decodeNewsXml(body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
+        const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? "Google News");
+        const url = decodeNewsXml(body.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? "");
+        const description = decodeNewsXml(body.match(/<description\b[^>]*>([\s\S]*?)<\/description>/i)?.[1] ?? "");
+        const snippet = description && description !== title ? description.split(/\s+/).slice(0, 22).join(" ") : "";
+        const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
+        const date = published ? new Date(published) : null;
+        const publishedAt = date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+        const dateText = publishedAt ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date as Date) : "";
+        return { title, source, snippet, dateText, publishedAt, url: /^https?:\/\//i.test(url) ? url : "" };
+      });
     }).filter((item) => {
       if (item.title.length <= 5 || item.publishedAt <= Date.now() - 48 * 60 * 60 * 1000) return false;
       const key = item.title.toLocaleLowerCase().replace(/[\s.,،؛:!?؟"'()\-_/]+/g, " ").trim();
       if (!key || seenHeadlines.has(key)) return false;
       seenHeadlines.add(key);
       return true;
-    }).slice(0, 5);
-    if (!items.length) throw new Error("News RSS returned no headlines published in the last 48 hours");
+    }).sort((a, b) => b.publishedAt - a.publishedAt).slice(0, 5);
+    if (!items.length) throw new Error("Google News RSS returned no headlines published in the last 48 hours");
     const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
-    const footer = language === "AR" ? "المصدر: Google News RSS. هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS. Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS. These are headlines; check the publisher for details and updates.";
+    const footer = language === "AR" ? "المصدر: Google News RSS (بحث الموضوع والأخبار الإقليمية). هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS (konu araması ve bölgesel manşetler). Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS (topic search and regional top stories). These are headlines; check the publisher for details and updates.";
     return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.snippet ? `\n   ${item.snippet}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
   } catch (error) {
     console.warn("[ALASSAUL news] live feed unavailable", error);
@@ -657,7 +679,6 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
     clearTimeout(timer);
   }
 }
-
 
 
 export function classifyModelProviderFailure(error: unknown): "configuration" | "credentials" | "rate_limit" | "timeout" | "unavailable" | "empty_response" {
