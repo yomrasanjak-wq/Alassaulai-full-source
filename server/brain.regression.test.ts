@@ -26,7 +26,7 @@ function mockPhotonPlace(name: string) {
       }],
     }), { status: 200, headers: { "content-type": "application/geo+json" } });
   });
-});
+}
 
 beforeEach(() => {
   vi.mocked(invokeLLM).mockReset().mockRejectedValue(new Error("provider unavailable"));
