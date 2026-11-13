@@ -161,7 +161,8 @@ export function getContextualWeatherQuestion(messages: Array<{ role: "user" | "a
   if (!latest || latest.role !== "user") return latest?.content ?? "";
   const latestText = latest.content.normalize("NFKC").trim();
   const asksAboutWeather = /(?:طقس|أجواء|الجو|درجة الحرارة|الحرارة|weather|temperature)/i.test(latestText);
-  if (!asksAboutWeather || WEATHER_CITIES.some((city) => city.names.test(latestText))) return latestText;
+  const asksForDefinition = /(?:ما معنى|معنى كلمة|تعريف|اشرح|ما هو مفهوم|what is|meaning of)/i.test(latestText);
+  if (!asksAboutWeather || asksForDefinition || WEATHER_CITIES.some((city) => city.names.test(latestText))) return latestText;
 
   const previousUserMessages = messages.slice(0, -1).filter((message) => message.role === "user").slice(-6).reverse();
   for (const previous of previousUserMessages) {
