@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveWeatherAnswer, getVisitorIdentityInstruction } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
+import { extractTourismDestination, getLiveTourismPlacesAnswer, isTourismPlacesQuestion } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -286,6 +287,60 @@ describe("adaptive brain response strategy", () => {
   });
 });
 
+
+
+describe("live worldwide tourism place lookup", () => {
+  it("recognizes a country or region tourism request and extracts its destination", () => {
+    const question = "اذكر لي أماكن سياحية في كيوتو اليابان";
+    expect(isTourismPlacesQuestion(question)).toBe(true);
+    expect(extractTourismDestination(question)).toBe("كيوتو اليابان");
+    expect(isTourismPlacesQuestion("رتب لي رحلة إلى كيوتو اليابان")).toBe(false);
+  });
+
+  it("returns only named mapped attractions with direct map pins and directions", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.startsWith("https://photon.komoot.io/api/")) {
+        return new Response(JSON.stringify({
+          features: [{
+            properties: { name: "Kyoto", city: "Kyoto", state: "Kyoto", country: "Japan" },
+            geometry: { coordinates: [135.7681, 35.0116] },
+          }],
+        }), { status: 200, headers: { "content-type": "application/geo+json" } });
+      }
+      expect(url).toBe("https://overpass-api.de/api/interpreter");
+      return new Response(JSON.stringify({
+        elements: [{
+          type: "node", id: 12345, lat: 35.039, lon: 135.729,
+          tags: { name: "Kinkaku-ji", tourism: "attraction" },
+        }],
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    try {
+      const result = await getLiveTourismPlacesAnswer("اذكر لي أماكن سياحية في كيوتو اليابان", "AR");
+      expect(result).toContain("Kinkaku-ji");
+      expect(result).toContain("openstreetmap.org/node/12345");
+      expect(result).toContain("google.com/maps/dir/");
+      expect(result).toContain("OpenStreetMap contributors");
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not invent attractions when geocoding cannot resolve a destination", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ features: [] }), {
+      status: 200, headers: { "content-type": "application/geo+json" },
+    }));
+    try {
+      const result = await getLiveTourismPlacesAnswer("أماكن سياحية في مكان غير معروف", "AR");
+      expect(result).toContain("لم أتمكن من تحديد");
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+});
 
 describe("keyless reference search", () => {
   it("recognizes stable informational questions", () => {
