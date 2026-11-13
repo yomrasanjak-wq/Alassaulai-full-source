@@ -334,8 +334,8 @@ describe("live worldwide tourism place lookup", () => {
       if (url.startsWith("https://photon.komoot.io/api/")) {
         return new Response(JSON.stringify({
           features: [{
-            properties: { name: "Kyoto", city: "Kyoto", country: "Japan" },
-            geometry: { coordinates: [135.7681, 35.0116] },
+            properties: { name: "Osaka", city: "Osaka", country: "Japan" },
+            geometry: { coordinates: [135.5023, 34.6937] },
           }],
         }), { status: 200, headers: { "content-type": "application/geo+json" } });
       }
@@ -349,7 +349,7 @@ describe("live worldwide tourism place lookup", () => {
     try {
       const result = await appRouter.createCaller(createPublicContext()).ai.chat({
         language: "AR",
-        messages: [{ role: "user", content: "اذكر لي أماكن سياحية في كيوتو اليابان" }],
+        messages: [{ role: "user", content: "اذكر لي أماكن سياحية في أوساكا اليابان" }],
       });
       expect(result.text).toContain("Kinkaku-ji");
       expect(result.text).toContain("openstreetmap.org/node/67890");
