@@ -204,7 +204,7 @@ function isExplicitPlaceLookupQuestion(message: string) {
 const photonPlaceCache = new Map<string, { expiresAt: number; answer: string }>();
 let photonLastRequestAt = 0;
 
-async function getPhotonPlaceSearchAnswer(message: string, language: "AR" | "TR" | "EN"): Promise<string> {
+async function getPhotonPlaceSearchAnswer(message: string, language: "AR" | "TR" | "EN", contextText = ""): Promise<string> {
   const categories: Array<{ pattern: RegExp; term: string }> = [
     { pattern: /(?:مطاعم?|restaurants?|فطور|إفطار|breakfast)/i, term: "restaurant" },
     { pattern: /(?:مقاهي?|كافيه|قهوة|cafes?|coffee)/i, term: "cafe" },
@@ -227,13 +227,20 @@ async function getPhotonPlaceSearchAnswer(message: string, language: "AR" | "TR"
     .replace(/[؟?!،,؛;:]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-  if (nearMe && !cleaned) {
+  const contextMatch = contextText.match(/(?:في|بمدينة|بمدينه|داخل|in)\\s+([^؟?!,.;\\n]+)/i);
+  const contextLocation = (contextMatch?.[1] ?? "")
+    .replace(/(?:أقرب|اقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث عن|ابحث|دلني على|أرشدني إلى|أرغب|ارغب|أريد|اريد)/gi, " ")
+    .replace(/(?:مطاعم?|restaurants?|فطور|إفطار|breakfast|مقاهي?|كافيه|قهوة|cafes?|coffee|فنادق?|hotels?|مستشفيات?|مستشفى|عيادة|عيادات|مركز طبي|طبيب|أطباء|hospitals?|clinics?|doctors?|صيدليات?|صيدلية|pharmacies?|شواطئ?|شاطئ|beaches?|حدائق?|حديقة|parks?|مول|مركز تجاري|malls?|shopping centers?|متحف|museums?|أكواريوم|aquarium|سوبر\\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/gi, " ")
+    .replace(/\\s+/g, " ")
+    .trim();
+  const locationText = cleaned || contextLocation;
+  if (nearMe && !locationText) {
     return language === "AR"
       ? "أحتاج اسم المدينة أو الحي لأحدد الأماكن القريبة بدقة؛ لا أملك إحداثيات موقعك في هذه المحادثة."
       : language === "TR" ? "Yakındaki yerleri doğru bulabilmem için şehir veya mahalle adını yazın." : "Please provide a city or neighborhood so I can find nearby places accurately.";
   }
-  const query = [category?.term, cleaned].filter(Boolean).join(" ").trim();
-  if (!query || (category && !cleaned)) {
+  const query = [category?.term, locationText].filter(Boolean).join(" ").trim();
+  if (!query || (category && !locationText)) {
     return language === "AR"
       ? "اذكر المدينة أو الحي مع نوع المكان، مثل: مطاعم في طرابزون أو صيدليات في يومرا."
       : language === "TR" ? "Lütfen yer türüyle birlikte şehir veya mahalleyi belirtin." : "Please include a city or neighborhood with the place type.";
@@ -1066,7 +1073,7 @@ export const appRouter = router({
             && !isHealthAdviceQuestion(latestText)
             && (isLocalBusinessSearchQuestion(latestText) || isExplicitPlaceLookupQuestion(latestText))
           ) {
-            return { text: await getPhotonPlaceSearchAnswer(latestText, input.language) };
+            return { text: await getPhotonPlaceSearchAnswer(latestText, input.language, input.messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ")) };
           }
 
           if (isSaudiLeagueQuestion(latestText)) {
