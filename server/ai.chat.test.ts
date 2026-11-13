@@ -524,7 +524,7 @@ describe("ai.chat", () => {
       const url = new URL(String(input));
       expect(url.hostname).toBe("site.api.espn.com");
       expect(url.pathname).toContain("/soccer/eng.1/scoreboard");
-      expect(url.searchParams.get("dates")).toMatch(/^\\d{8}(?:-\\d{8})?$/);
+      expect(url.searchParams.get("dates")).toMatch(/^\d{8}(?:-\d{8})?$/);
       return new Response(JSON.stringify({
         events: [{
           name: "Liverpool vs Arsenal",
