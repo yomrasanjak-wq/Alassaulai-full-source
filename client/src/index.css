@@ -3702,3 +3702,9 @@ img { display: block; max-width: 100%; }
   .control-audit-entry { flex-direction: column; gap: 5px; }
   .control-audit-entry > small { white-space: normal; }
 }
+
+/* Chat image actions: keep gallery selection explicit and visible on mobile. */
+.chat-compose .chat-gallery-button { width: auto; min-width: 76px; height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 9px; border: 1px solid rgb(212 175 55 / 55%); border-radius: 10px; background: #f0eadc; color: #0f3d2e; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.chat-compose .chat-gallery-button:hover:not(:disabled) { background: #e7dfcd; }
+.chat-compose .chat-camera-button { width: 42px; min-width: 42px; height: 42px; border-radius: 10px; }
+@media (max-width: 480px) { .chat-compose { gap: 5px; padding: 8px; } .chat-compose .chat-gallery-button { min-width: 70px; padding: 0 7px; font-size: 10px; } .chat-compose .chat-camera-button { width: 38px; min-width: 38px; } }
