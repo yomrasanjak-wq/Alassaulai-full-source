@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer, getVisitorIdentityInstruction } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveWeatherAnswer, getVisitorIdentityInstruction } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
@@ -402,6 +402,35 @@ describe("live news source", () => {
     } finally {
       fetchSpy.mockRestore();
     }
+  });
+});
+
+describe("context-aware weather follow-ups", () => {
+  it("reuses the most recently mentioned city when a short follow-up omits it", () => {
+    const messages = [
+      { role: "user" as const, content: "ما طقس طرابزون الآن؟" },
+      { role: "assistant" as const, content: "الجو بارد اليوم." },
+      { role: "user" as const, content: "طيب وكم درجة الحرارة؟" },
+    ];
+    expect(getContextualWeatherQuestion(messages)).toBe("طيب وكم درجة الحرارة؟ في طرابزون");
+  });
+
+  it("honors a new city named in the latest weather question", () => {
+    const messages = [
+      { role: "user" as const, content: "ما طقس طرابزون الآن؟" },
+      { role: "assistant" as const, content: "الجو بارد اليوم." },
+      { role: "user" as const, content: "وكيف الجو في ريزه؟" },
+    ];
+    expect(getContextualWeatherQuestion(messages)).toBe("وكيف الجو في ريزه؟");
+  });
+
+  it("does not infer a city from assistant text or unrelated user history", () => {
+    const messages = [
+      { role: "user" as const, content: "شكراً على اقتراح طرابزون" },
+      { role: "assistant" as const, content: "يمكنك أيضاً زيارة ريزه." },
+      { role: "user" as const, content: "ما معنى كلمة الطقس؟" },
+    ];
+    expect(getContextualWeatherQuestion(messages)).toBe("ما معنى كلمة الطقس؟ في طرابزون");
   });
 });
 
