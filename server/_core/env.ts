@@ -80,4 +80,7 @@ export const ENV = {
     "GOOGLE_CLOUD_TTS_API_KEY",
     "VITE_GOOGLE_TTS_API_KEY"
   ),
+  // Azure Speech credentials stay server-side; never expose them through VITE_ variables.
+  azureSpeechKey: firstConfigured("AZURE_SPEECH_KEY"),
+  azureSpeechRegion: firstConfigured("AZURE_SPEECH_REGION"),
 };
