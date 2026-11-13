@@ -231,7 +231,10 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
 
     await waitForTourismRequestSlot();
     const overpassQuery = '[out:json][timeout:12];(nwr(around:18000,' + lat + ',' + lon + ')["name"]["tourism"~"attraction|museum|viewpoint|zoo|theme_park|gallery|artwork"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["historic"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["leisure"~"park|garden"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["natural"~"beach|waterfall|cave"];);out center 80;';
-    const placesResponse = await fetch("https://overpass-api.de/api/interpreter", {
+    // Keep the public endpoint replaceable without a code change; larger deployments
+    // should use a managed or self-hosted Overpass service rather than a shared demo endpoint.
+    const overpassEndpoint = process.env.ALASSAUL_OVERPASS_URL?.trim() || "https://overpass-api.de/api/interpreter";
+    const placesResponse = await fetch(overpassEndpoint, {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
       body: new URLSearchParams({ data: overpassQuery }).toString(),
