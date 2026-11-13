@@ -189,7 +189,7 @@ const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|ا�
 
 function isLocalBusinessSearchQuestion(message: string) {
   const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|مقهى|مقاهي|كافيه|قهوة|فندق|فنادق|مستشفى|مستشفيات|صيدلية|صيدليات|شاطئ|شواطئ|حديقة|حدائق|مول|مركز تجاري|متحف|أكواريوم|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast|cafe|coffee|hotel|hospital|pharmacy|beach|park|mall|museum|aquarium)/i.test(message);
-  const asksForPlace = /(?:أقرب|اقرب|قريب|بالقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث|يقع|عنوان|موقع|nearby|nearest|near me|best|where|location|address|search)/i.test(message);
+  const asksForPlace = /(?:أقرب|اقرب|قريب|بالقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث|يقع|عنوان|موقع|في|in|nearby|nearest|near me|best|where|location|address|search)/i.test(message);
   return mentionsBusiness && asksForPlace;
 }
 
