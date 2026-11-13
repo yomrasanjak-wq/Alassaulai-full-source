@@ -308,7 +308,7 @@ describe("live news source", () => {
   it.each(["وش صاير بالعالم اليوم؟", "وش آخر المستجدات؟", "عطني آخر الأخبار"]) ("recognizes Gulf Arabic requests for current world news: %s", async (question) => {
     const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
     const rss = `<rss><channel><item><title>تطور دولي حديث</title><source>وكالة الاختبار</source><link>https://example.com/latest</link><pubDate>${publishedAt}</pubDate></item></channel></rss>`;
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
     try {
       const result = await appRouter.createCaller(createPublicContext()).ai.chat({ language: "AR", messages: [{ role: "user", content: question }] });
       expect(result.text).toContain("تطور دولي حديث");
@@ -488,13 +488,13 @@ describe("ai.chat", () => {
       choices: [{ message: { content: "ملخص صاغه النموذج اعتماداً على العناوين الحية." } }],
     } as never);
     const rss = `<rss><channel><item><title>عنوان تجريبي لأخبار اليوم</title><source>وكالة اختبار</source><link>https://example.com/story</link><pubDate>${new Date(Date.now() - 60 * 60 * 1000).toUTCString()}</pubDate></item></channel></rss>`;
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
     try {
       const caller = appRouter.createCaller(createPublicContext());
       const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "ما أبرز أخبار العالم اليوم؟" }] });
       expect(result.text).toContain("عنوان تجريبي لأخبار اليوم");
       expect(invokeLLM).not.toHaveBeenCalled();
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
     } finally {
       fetchSpy.mockRestore();
       vi.unstubAllEnvs();
