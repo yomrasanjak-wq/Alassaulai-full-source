@@ -294,7 +294,7 @@ describe("open map place search", () => {
     try {
       const result = await appRouter.createCaller(createPublicContext()).ai.chat({
         language: "AR",
-        messages: [{ role: "user", content: "أفضل مطاعم في طرابزون" }],
+        messages: [{ role: "user", content: "مطاعم في طرابزون" }],
       });
       expect(result.text).toContain("Meydan Restaurant");
       expect(result.text).toContain("Trabzon");
