@@ -424,13 +424,14 @@ describe("context-aware weather follow-ups", () => {
     expect(getContextualWeatherQuestion(messages)).toBe("وكيف الجو في ريزه؟");
   });
 
-  it("does not infer a city from assistant text or unrelated user history", () => {
+  it("does not infer a city from assistant text or turn a definition into a weather lookup", () => {
     const messages = [
-      { role: "user" as const, content: "شكراً على اقتراح طرابزون" },
-      { role: "assistant" as const, content: "يمكنك أيضاً زيارة ريزه." },
-      { role: "user" as const, content: "ما معنى كلمة الطقس؟" },
+      { role: "user" as const, content: "اقترح لي رحلة جميلة" },
+      { role: "assistant" as const, content: "يمكنك زيارة طرابزون، والطقس فيها معتدل." },
+      { role: "user" as const, content: "كم درجة الحرارة؟" },
     ];
-    expect(getContextualWeatherQuestion(messages)).toBe("ما معنى كلمة الطقس؟ في طرابزون");
+    expect(getContextualWeatherQuestion(messages)).toBe("كم درجة الحرارة؟");
+    expect(getContextualWeatherQuestion([{ role: "user", content: "ما معنى كلمة الطقس؟" }])).toBe("ما معنى كلمة الطقس؟");
   });
 });
 
