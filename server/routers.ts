@@ -310,13 +310,13 @@ type EuropeanFootballLeague = {
 
 function getEuropeanFootballLeague(message: string): EuropeanFootballLeague | undefined {
   const leagues: Array<{ slug: string; label: EuropeanFootballLeague["label"]; pattern: RegExp }> = [
-    { slug: "eng.1", label: { AR: "الدوري الإنجليزي الممتاز", TR: "İngiltere Premier Lig", EN: "English Premier League" }, pattern: /(?:الدوري الإنجليزي|الدوري الانجليزي|البريميرليغ|البريميرليج|premier league|\\bepl\\b)/i },
-    { slug: "esp.1", label: { AR: "الدوري الإسباني", TR: "İspanya LaLiga", EN: "Spanish LaLiga" }, pattern: /(?:الدوري الإسباني|الدوري الاسباني|لاليغا|لا ليغا|la liga|\\blaliga\\b)/i },
+    { slug: "eng.1", label: { AR: "الدوري الإنجليزي الممتاز", TR: "İngiltere Premier Lig", EN: "English Premier League" }, pattern: /(?:الدوري الإنجليزي|الدوري الانجليزي|البريميرليغ|البريميرليج|premier league|\bepl\b)/i },
+    { slug: "esp.1", label: { AR: "الدوري الإسباني", TR: "İspanya LaLiga", EN: "Spanish LaLiga" }, pattern: /(?:الدوري الإسباني|الدوري الاسباني|لاليغا|لا ليغا|la liga|\blaliga\b)/i },
     { slug: "ger.1", label: { AR: "الدوري الألماني", TR: "Almanya Bundesliga", EN: "German Bundesliga" }, pattern: /(?:الدوري الألماني|الدوري الالماني|بوندسليغا|bundesliga)/i },
     { slug: "ita.1", label: { AR: "الدوري الإيطالي", TR: "İtalya Serie A", EN: "Italian Serie A" }, pattern: /(?:الدوري الإيطالي|الدوري الايطالي|سيري ?آ|serie a)/i },
     { slug: "fra.1", label: { AR: "الدوري الفرنسي", TR: "Fransa Ligue 1", EN: "French Ligue 1" }, pattern: /(?:الدوري الفرنسي|ليغ ?1|ligue ?1)/i },
-    { slug: "uefa.champions", label: { AR: "دوري أبطال أوروبا", TR: "UEFA Şampiyonlar Ligi", EN: "UEFA Champions League" }, pattern: /(?:دوري أبطال أوروبا|دوري ابطال اوروبا|ابطال اوروبا|champions league|\\bucl\\b)/i },
-    { slug: "uefa.europa", label: { AR: "الدوري الأوروبي", TR: "UEFA Avrupa Ligi", EN: "UEFA Europa League" }, pattern: /(?:الدوري الأوروبي|الدوري الاوروبي|يوروبا ليغ|europa league|\\buel\\b)/i },
+    { slug: "uefa.champions", label: { AR: "دوري أبطال أوروبا", TR: "UEFA Şampiyonlar Ligi", EN: "UEFA Champions League" }, pattern: /(?:دوري أبطال أوروبا|دوري ابطال اوروبا|ابطال اوروبا|champions league|\bucl\b)/i },
+    { slug: "uefa.europa", label: { AR: "الدوري الأوروبي", TR: "UEFA Avrupa Ligi", EN: "UEFA Europa League" }, pattern: /(?:الدوري الأوروبي|الدوري الاوروبي|يوروبا ليغ|europa league|\buel\b)/i },
   ];
   return leagues.find((league) => league.pattern.test(message));
 }
@@ -375,10 +375,10 @@ async function getEuropeanFootballScoreboardAnswer(
     if (!Array.isArray(data.events)) throw new Error("ESPN scoreboard response did not include an events list");
     if (data.events.length === 0) {
       return language === "AR"
-        ? `لا توجد مباريات مدرجة في ${league.label.AR} خلال الفترة المحددة. لم أعرض نتائج قديمة على أنها مباشرة.\\nالمصدر: ESPN — ${sourceUrl}`
+        ? `لا توجد مباريات مدرجة في ${league.label.AR} خلال الفترة المحددة. لم أعرض نتائج قديمة على أنها مباشرة.\nالمصدر: ESPN — ${sourceUrl}`
         : language === "TR"
-          ? `${league.label.TR} için seçilen dönemde listelenmiş maç bulunamadı.\\nKaynak: ESPN — ${sourceUrl}`
-          : `No matches are listed for ${league.label.EN} in the selected period.\\nSource: ESPN — ${sourceUrl}`;
+          ? `${league.label.TR} için seçilen dönemde listelenmiş maç bulunamadı.\nKaynak: ESPN — ${sourceUrl}`
+          : `No matches are listed for ${league.label.EN} in the selected period.\nSource: ESPN — ${sourceUrl}`;
     }
     const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
     const rows = data.events.slice(0, 10).map((event) => {
@@ -412,7 +412,7 @@ async function getEuropeanFootballScoreboardAnswer(
       : language === "TR"
         ? "Kaynak: ESPN. Veriler okuma anındaki skor tablosunu gösterir ve maç sırasında değişebilir."
         : "Source: ESPN. Scoreboard data is current at retrieval time and may change during a match.";
-    return `${heading}\\n${rows.join("\\n")}\\n\\n${note}\\n${sourceUrl}`;
+    return `${heading}\n${rows.join("\n")}\n\n${note}\n${sourceUrl}`;
   } catch (error) {
     console.warn("[ALASSAUL sports] ESPN European football scoreboard unavailable", safeProviderDiagnostic(error));
     return undefined;
