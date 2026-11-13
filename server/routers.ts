@@ -198,12 +198,123 @@ function isSaudiLeagueQuestion(message: string) {
 }
 
 function isSaudiLeagueScheduleQuestion(message: string) {
-  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|fixtures|schedule|match(?:es)?|today|this week)/i.test(message);
+  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|نتائج|مباشر|الآن|الان|من فاز|fixtures|schedule|match(?:es)?|today|this week|live|score|results)/i.test(message);
+}
+
+/** Read the public ESPN scoreboard for Saudi Pro League fixtures and results.
+ * ESPN's site endpoint is undocumented and may change; failures are handled as
+ * unavailable data, never as a guessed score. */
+async function getSaudiLeagueScoreboardAnswer(
+  language: "AR" | "TR" | "EN",
+  message: string,
+  scoreQuestion: boolean,
+): Promise<string | undefined> {
+  const hasYesterday = /(?:أمس|امس|البارحة|البارحه|yesterday)/i.test(message);
+  const asksToday = /(?:اليوم|today|الآن|الان|مباشر|live)/i.test(message);
+  const asksUpcoming = /(?:القادمة|القادمه|المقبلة|المقبله|مواعيد|جدول|fixtures|schedule|upcoming|next)/i.test(message);
+  const startOffset = hasYesterday ? -1 : scoreQuestion && !asksToday ? -3 : 0;
+  const endOffset = asksUpcoming && !asksToday ? 7 : 0;
+  const dateKey = (offset: number) => {
+    const date = new Date(Date.now() + offset * 24 * 60 * 60 * 1000);
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
+    }).formatToParts(date);
+    const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+    return `${part("year")}${part("month")}${part("day")}`;
+  };
+  const startDate = dateKey(startOffset);
+  const endDate = dateKey(endOffset);
+  const dateParam = startDate === endDate ? startDate : `${startDate}-${endDate}`;
+  const params = new URLSearchParams({ dates: dateParam });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6500);
+  try {
+    const response = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/ksa.1/scoreboard?${params.toString()}`,
+      { headers: { accept: "application/json", "user-agent": "ALASSAUL-AI/1.0 (Saudi Pro League scoreboard)" }, signal: controller.signal },
+    );
+    if (!response.ok) throw new Error(`ESPN scoreboard returned ${response.status}`);
+    const data = await response.json() as {
+      events?: Array<{
+        name?: string;
+        date?: string;
+        status?: { type?: { state?: string; completed?: boolean; detail?: string; description?: string; shortDetail?: string } };
+        competitions?: Array<{ competitors?: Array<{
+          homeAway?: string;
+          score?: string;
+          team?: { displayName?: string; name?: string };
+        }> }>;
+      }>;
+    };
+    if (!Array.isArray(data.events)) throw new Error("ESPN scoreboard response did not include an events list");
+    const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
+    const periodLabel = startOffset < 0 && endOffset === 0
+      ? (language === "AR" ? `من ${Math.abs(startOffset)} أيام حتى اليوم` : language === "TR" ? "Son günlerde" : "Recent days")
+      : startOffset === 0 && endOffset > 0
+        ? (language === "AR" ? "اليوم والأيام السبعة القادمة" : language === "TR" ? "Bugün ve gelecek yedi gün" : "Today and the next seven days")
+        : (language === "AR" ? "اليوم" : language === "TR" ? "Bugün" : "Today");
+    if (data.events.length === 0) {
+      return language === "AR"
+        ? `لا توجد مباريات مدرجة في دوري روشن السعودي خلال الفترة المحددة (${periodLabel}). لم أعرض نتائج قديمة على أنها مباشرة.\nالمصدر: ESPN — https://www.espn.com/soccer/scoreboard/_/league/ksa.1`
+        : language === "TR"
+          ? `Seçilen dönemde Suudi Pro Lig için listelenmiş maç bulunamadı (${periodLabel}).\nKaynak: ESPN — https://www.espn.com/soccer/scoreboard/_/league/ksa.1`
+          : `No Saudi Pro League matches are listed for the selected period (${periodLabel}).\nSource: ESPN — https://www.espn.com/soccer/scoreboard/_/league/ksa.1`;
+    }
+    const rows = data.events.slice(0, 10).map((event) => {
+      const competitors = event.competitions?.[0]?.competitors ?? [];
+      const home = competitors.find((team) => team.homeAway === "home") ?? competitors[0];
+      const away = competitors.find((team) => team.homeAway === "away") ?? competitors[1];
+      const homeName = home?.team?.displayName ?? home?.team?.name;
+      const awayName = away?.team?.displayName ?? away?.team?.name;
+      const score = homeName && awayName
+        ? `${homeName} ${home?.score ?? "—"} - ${away?.score ?? "—"} ${awayName}`
+        : event.name ?? "مباراة في دوري روشن السعودي";
+      const state = event.status?.type?.state;
+      const status = state === "in"
+        ? (language === "AR" ? "مباشرة الآن" : language === "TR" ? "Canlı" : "Live")
+        : event.status?.type?.completed || state === "post"
+          ? (language === "AR" ? "انتهت" : language === "TR" ? "Tamamlandı" : "Final")
+          : (language === "AR" ? "لم تبدأ بعد" : language === "TR" ? "Henüz başlamadı" : "Scheduled");
+      const date = event.date ? new Date(event.date) : null;
+      const dateText = date && !Number.isNaN(date.getTime())
+        ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date)
+        : "";
+      return `• ${score} — ${status}${dateText ? ` · ${dateText}` : ""}`;
+    });
+    const heading = language === "AR"
+      ? `دوري روشن السعودي — ${scoreQuestion ? "النتائج وحالة المباريات" : "المباريات والمواعيد"}`
+      : language === "TR"
+        ? `Suudi Pro Lig — ${scoreQuestion ? "Sonuçlar ve maç durumu" : "Maçlar ve fikstür"}`
+        : `Saudi Pro League — ${scoreQuestion ? "Scores and match status" : "Fixtures and schedule"}`;
+    const note = language === "AR"
+      ? "المصدر: ESPN. هذه بيانات الجدول وقت القراءة وقد تتغير أثناء المباراة."
+      : language === "TR"
+        ? "Kaynak: ESPN. Veriler okuma anındaki fikstür durumunu gösterir ve maç sırasında değişebilir."
+        : "Source: ESPN. These are scoreboard details at retrieval time and may change during a match.";
+    return `${heading}\n${rows.join("\n")}\n\n${note}\nhttps://www.espn.com/soccer/scoreboard/_/league/ksa.1`;
+  } catch (error) {
+    console.warn("[ALASSAUL sports] ESPN Saudi Pro League scoreboard unavailable", safeProviderDiagnostic(error));
+    return undefined;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
 async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", message: string) {
   const scheduleQuestion = isSaudiLeagueScheduleQuestion(message);
+  const scoreQuestion = /(?:نتيجة|نتائج|مباشر|الآن|الان|من فاز|score|scores|results|live)/i.test(message);
+  if (scheduleQuestion) {
+    const scoreboard = await getSaudiLeagueScoreboardAnswer(language, message, scoreQuestion);
+    if (scoreboard) return scoreboard;
+    if (scoreQuestion) {
+      return language === "AR"
+        ? "تعذر جلب نتيجة موثوقة من لوحة مباريات دوري روشن الآن؛ لن أخمّن نتيجة أو أذكر خبراً على أنه نتيجة مباراة. حاول بعد قليل.\\nالمصدر: https://www.espn.com/soccer/scoreboard/_/league/ksa.1"
+        : language === "TR"
+          ? "Suudi Pro Lig için doğrulanmış skor alınamadı; sonuç tahmin etmeyeceğim. Daha sonra tekrar deneyin."
+          : "A verified Saudi Pro League score is unavailable right now; I won't guess a result. Please try again shortly.";
+    }
+  }
   const query = language === "AR"
     ? scheduleQuestion ? "دوري روشن السعودي جدول مباريات الجولة القادمة مواعيد" : "أخبار دوري روشن السعودي اليوم"
     : scheduleQuestion ? "Saudi Pro League fixtures schedule upcoming matches" : "Saudi Pro League latest news today";
