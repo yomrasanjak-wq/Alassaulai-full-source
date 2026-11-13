@@ -290,7 +290,8 @@ describe("adaptive brain response strategy", () => {
 describe("keyless reference search", () => {
   it("recognizes stable informational questions", () => {
     expect(isWikipediaReferenceQuestion("ما معنى الذكاء الاصطناعي؟")).toBe(true);
-    expect(isWikipediaReferenceQuestion("Who is Ibn Battuta?")).toBe(true);\n    expect(isWikipediaReferenceQuestion("نبذه عن كريستيانو رونالدو")).toBe(true);
+    expect(isWikipediaReferenceQuestion("Who is Ibn Battuta?")).toBe(true);
+    expect(isWikipediaReferenceQuestion("نبذه عن كريستيانو رونالدو")).toBe(true);
   });
   it("excludes current news, weather, and nearby-place requests", () => {
     expect(isWikipediaReferenceQuestion("ما آخر أخبار اليوم؟")).toBe(false);
