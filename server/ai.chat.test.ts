@@ -374,6 +374,8 @@ describe("ai.chat", () => {
     expect(request?.messages?.at(-1)).toEqual({ role: "user", content: question });
     expect(request?.messages?.[0]?.content).toContain("مساعد ذكاء اصطناعي عام وشامل");
     expect(request?.messages?.[0]?.content).toContain("لا تستبدل الإجابة بترحيب عام أو نص محفوظ");
+    expect(request?.messages?.[0]?.content).toContain("تعامل مع الرسائل كسياق حوار واحد");
+    expect(request?.messages?.[0]?.content).toContain("لا تدّع أنك إنسان أو موظف بشري");
   });
 
   it("returns current weather directly without depending on a model response", async () => {
