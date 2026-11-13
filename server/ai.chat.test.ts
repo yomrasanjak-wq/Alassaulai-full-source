@@ -269,6 +269,18 @@ describe("adaptive brain response strategy", () => {
     expect(getAdaptiveTaskInstruction("عندي دوخة وش أسوي؟")).toContain("علامات الخطر");
   });
 
+  it("selects a sourced, cautious profile format for professional player questions", () => {
+    const instruction = getAdaptiveTaskInstruction("أعطني نبذة عن بعض اللاعبين المحترفين");
+    expect(instruction).toContain("نبذة لاعب محترف");
+    expect(instruction).toContain("لا تخمّن الأرقام");
+  });
+
+  it("selects a worldwide attraction guide rather than limiting tourism to North Turkey", () => {
+    const instruction = getAdaptiveTaskInstruction("اذكر لي أماكن سياحية في اليابان");
+    expect(instruction).toContain("الدليل السياحي العالمي");
+    expect(instruction).toContain("5 إلى 8 معالم");
+  });
+
   it("treats world news as time-sensitive and forbids invented current headlines", () => {
     expect(getAdaptiveTaskInstruction("ما أبرز أخبار العالم اليوم؟")).toContain("لا تعرض معلومة على أنها حدث اليوم");
   });
@@ -278,7 +290,7 @@ describe("adaptive brain response strategy", () => {
 describe("keyless reference search", () => {
   it("recognizes stable informational questions", () => {
     expect(isWikipediaReferenceQuestion("ما معنى الذكاء الاصطناعي؟")).toBe(true);
-    expect(isWikipediaReferenceQuestion("Who is Ibn Battuta?")).toBe(true);
+    expect(isWikipediaReferenceQuestion("Who is Ibn Battuta?")).toBe(true);\n    expect(isWikipediaReferenceQuestion("نبذه عن كريستيانو رونالدو")).toBe(true);
   });
   it("excludes current news, weather, and nearby-place requests", () => {
     expect(isWikipediaReferenceQuestion("ما آخر أخبار اليوم؟")).toBe(false);
