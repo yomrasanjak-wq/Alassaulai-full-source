@@ -320,6 +320,32 @@ describe("live news source", () => {
     }
   });
 
+  it("removes escaped HTML from publisher excerpts and deduplicates repeated headlines", async () => {
+    const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
+    const rss = `<rss><channel>
+      <item><title>خبر دولي مكرر اليوم</title><source>وكالة الاختبار</source><link>https://example.com/story-a</link><pubDate>${publishedAt}</pubDate><description>&lt;p&gt;ملخص نظيف من الناشر &amp;amp; تفاصيل إضافية.&lt;/p&gt;</description></item>
+      <item><title>خبر دولي مكرر اليوم</title><source>مصدر آخر</source><link>https://example.com/story-b</link><pubDate>${publishedAt}</pubDate><description>نسخة مكررة من الخبر.</description></item>
+      <item><title>تطور دولي مستقل</title><source>مصدر مستقل</source><link>https://example.com/story-c</link><pubDate>${publishedAt}</pubDate><description>&lt;div&gt;تفاصيل الخبر المستقل.&lt;/div&gt;</description></item>
+    </channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "ما أبرز أخبار العالم اليوم؟" }],
+      });
+      expect(result.text).toContain("ملخص نظيف من الناشر");
+      expect(result.text).toContain("تطور دولي مستقل");
+      expect(result.text).not.toContain("<p>");
+      expect(result.text).not.toContain("&lt;");
+      expect(result.text.match(/خبر دولي مكرر اليوم/g)).toHaveLength(1);
+      expect(result.text).not.toContain("https://example.com/story-b");
+      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
   it("includes a short publisher-provided excerpt with each current headline", async () => {
     const publishedAt = new Date(Date.now() - 60 * 60 * 1000).toUTCString();
     const rss = `<rss><channel><item>
