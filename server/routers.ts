@@ -211,9 +211,9 @@ async function getPhotonPlaceSearchAnswer(message: string, language: "AR" | "TR"
     { pattern: /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i, term: "supermarket" },
   ];
   const category = categories.find((item) => item.pattern.test(message));
-  const nearMe = /(?:قريب مني|بالقرب مني|قريب من موقعي|near me|nearby|nearest)/i.test(message);
+  const nearMe = /(?:قريب مني|بالقرب مني|قريب من موقعي(?: الحالي)?|near me|nearby|nearest)/i.test(message);
   const cleaned = message
-    .replace(/(?:أقرب|اقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث عن|ابحث|دلني على|أرشدني إلى|يقع|عنوان|موقع|كيف أصل إلى|كيف اصل الى|where is|find|show me|best|nearest|nearby|near me|location|address|search for|directions to)/gi, " ")
+    .replace(/(?:أقرب|اقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث عن|ابحث|دلني على|أرشدني إلى|قريب مني|بالقرب مني|قريب من موقعي(?: الحالي)?|يقع|عنوان|موقع|كيف أصل إلى|كيف اصل الى|where is|find|show me|best|nearest|nearby|near me|location|address|search for|directions to)/gi, " ")
     .replace(/(?:مطاعم?|restaurants?|فطور|إفطار|breakfast|مقاهي?|كافيه|قهوة|cafes?|coffee|فنادق?|hotels?|مستشفيات?|مستشفى|hospitals?|صيدليات?|صيدلية|pharmacies?|شواطئ?|شاطئ|beaches?|حدائق?|حديقة|parks?|مول|مركز تجاري|malls?|shopping centers?|متحف|museums?|أكواريوم|aquarium|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/gi, " ")
     .replace(/(?:^|\s)(?:في|بمدينة|بمدينه|داخل|بـ|in|at|near)(?=\s|$)/gi, " ")
     .replace(/[؟?!،,؛;:]+/g, " ")
@@ -278,7 +278,7 @@ async function getPhotonPlaceSearchAnswer(message: string, language: "AR" | "TR"
       const heading = language === "AR" ? "أماكن مطابقة لبحثك" : language === "TR" ? "Aramanızla eşleşen yerler" : "Places matching your search";
       const rows = places.map((place, i) => `${i + 1}. **${place.name}**${place.address ? ` — ${place.address}` : ""}${place.kind ? ` (${place.kind})` : ""}\n   الاتجاهات: ${place.directions}\n   الخريطة: ${place.map}`);
       const note = language === "AR"
-        ? "المصدر: OpenStreetMap عبر Photon. هذه نتائج أسماء ومواقع وليست تقييماً للأفضلية؛ ساعات العمل والتقييمات تحتاج تحققاً منفصلاً."
+        ? "المصدر: OpenStreetMap عبر Photon. هذه نتائج مطابقة وليست مرتبة حسب القرب أو التقييم؛ الصور وساعات العمل والتقييمات تحتاج تحققاً منفصلاً."
         : language === "TR" ? "Kaynak: Photon üzerinden OpenStreetMap. Bunlar konum eşleşmeleridir; puan veya çalışma saatleri değildir." : "Source: OpenStreetMap via Photon. These are location matches, not ratings or opening-hour verification.";
       answer = `${heading}\n${rows.join("\n")}\n\n${note}`;
     }
