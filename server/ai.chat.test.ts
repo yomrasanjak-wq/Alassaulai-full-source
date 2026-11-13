@@ -327,7 +327,7 @@ describe("live news source", () => {
       <item><title>خبر دولي مكرر اليوم</title><source>مصدر آخر</source><link>https://example.com/story-b</link><pubDate>${publishedAt}</pubDate><description>نسخة مكررة من الخبر.</description></item>
       <item><title>تطور دولي مستقل</title><source>مصدر مستقل</source><link>https://example.com/story-c</link><pubDate>${publishedAt}</pubDate><description>&lt;div&gt;تفاصيل الخبر المستقل.&lt;/div&gt;</description></item>
     </channel></rss>`;
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
     try {
       const result = await appRouter.createCaller(createPublicContext()).ai.chat({
         language: "AR",
