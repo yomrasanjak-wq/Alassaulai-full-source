@@ -194,7 +194,7 @@ function isLocalBusinessSearchQuestion(message: string) {
 }
 
 function isHealthAdviceQuestion(message: string) {
-  return /(?:عندي|أشعر|اشعر|أحس|احس|أعاني|اعاني|دوخة|دوار|صداع|(?:^|[\\s،,.])(?:ألم|الم|وجع)(?=$|[\\s،,.])|حمى|حرارة|غثيان|قيء|أعراض|اعراض|علاج|جرعة|تشخيص|أراجع|أحتاج استشارة|symptom|dizz(?:y|iness)|pain|fever|nausea|treatment|diagnosis)/i.test(message);
+  return /(?:عندي|أشعر|اشعر|أحس|احس|أعاني|اعاني|دوخة|دوار|صداع|(?:^|[\s،,.])(?:ألم|الم|وجع)(?=$|[\s،,.])|حمى|حرارة|غثيان|قيء|أعراض|اعراض|علاج|جرعة|تشخيص|أراجع|أحتاج استشارة|symptom|dizz(?:y|iness)|pain|fever|nausea|treatment|diagnosis)/i.test(message);
 }
 
 function isExplicitPlaceLookupQuestion(message: string) {
