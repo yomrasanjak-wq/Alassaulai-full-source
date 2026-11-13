@@ -1068,12 +1068,12 @@ export const appRouter = router({
           // addresses, ratings, or opening status.
           const mapsGroundingAvailable = Boolean(process.env.GEMINI_API_KEY?.trim())
             && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true";
-          if (
-            !mapsGroundingAvailable
-            && !isHealthAdviceQuestion(latestText)
-            && (isLocalBusinessSearchQuestion(latestText) || isExplicitPlaceLookupQuestion(latestText))
-          ) {
-            return { text: await getPhotonPlaceSearchAnswer(latestText, input.language, input.messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ")) };
+          const recentPlaceContext = input.messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
+          if (!isHealthAdviceQuestion(latestText) && isLocalBusinessSearchQuestion(latestText)) {
+            return { text: await getPhotonPlaceSearchAnswer(latestText, input.language, recentPlaceContext) };
+          }
+          if (!mapsGroundingAvailable && !isHealthAdviceQuestion(latestText) && isExplicitPlaceLookupQuestion(latestText)) {
+            return { text: await getPhotonPlaceSearchAnswer(latestText, input.language, recentPlaceContext) };
           }
 
           if (isSaudiLeagueQuestion(latestText)) {
