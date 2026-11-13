@@ -1301,9 +1301,9 @@ ${newsContext}`);
 ${newsContext}`);
           }
 
-          if (isGoogleMapsQuestion(latestText) && !grounded) {
+          if (isGoogleMapsQuestion(latestText) && !grounded && !directTourismAnswer) {
             liveContext.push("لم تُرجع أداة Google Maps نتيجة موثقة لهذا المكان. لا تدّعِ أنك حددت أقرب منشأة أو موقعاً؛ اطلب الحي أو الموقع وقدّم رابط بحث مناسباً عند الحاجة.");
-          } else if (isGoogleGroundingQuestion(latestText) && !grounded && !liveContext.some((context) => context.startsWith("نتيجة أو حالة موجز الأخبار الحي:"))) {
+          } else if (isGoogleGroundingQuestion(latestText) && !grounded && !directTourismAnswer && !liveContext.some((context) => context.startsWith("نتيجة أو حالة موجز الأخبار الحي:"))) {
             liveContext.push("لم تُرجع أدوات البحث نتيجة حية موثقة. لا تدّعِ أنك بحثت أو تحققت؛ قدّم إرشاداً عاماً فقط وصرّح بما لا يمكن تأكيده الآن.");
           }
         }
