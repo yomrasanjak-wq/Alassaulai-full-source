@@ -587,7 +587,7 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
       const title = decodeNewsXml(body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
       const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? "Google News");
       const url = decodeNewsXml(body.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? "");
-      const description = decodeNewsXml(body.match(/<description\b[^>]*>([\s\S]*?)<\/description>/i)?.[1] ?? "").replace(/\s+/g, " ").trim();
+      const description = decodeNewsXml(body.split("<description>")[1]?.split("</description>")[0] ?? "").replaceAll("\n", " ").trim();
       // Keep publisher-provided excerpts brief and distinct from the headline.
       const snippet = description && description !== title ? description.split(/\s+/).slice(0, 22).join(" ") : "";
       const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
