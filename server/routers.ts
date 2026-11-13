@@ -625,11 +625,11 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
     // Search the user's topic and the regional top-stories feed together.
     // This prevents a narrow query from leaving the visitor with only one headline.
     const feeds = await Promise.allSettled([
-      fetch(\`https://news.google.com/rss/search?\${searchParams.toString()}\`, {
+      fetch(`https://news.google.com/rss/search?${searchParams.toString()}`, {
         headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
         signal: controller.signal,
       }),
-      fetch(\`https://news.google.com/rss?\${topParams.toString()}\`, {
+      fetch(`https://news.google.com/rss?${topParams.toString()}`, {
         headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
         signal: controller.signal,
       }),
@@ -666,7 +666,7 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
     if (!items.length) throw new Error("Google News RSS returned no headlines published in the last 48 hours");
     const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
     const footer = language === "AR" ? "المصدر: Google News RSS (بحث الموضوع والأخبار الإقليمية). هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS (konu araması ve bölgesel manşetler). Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS (topic search and regional top stories). These are headlines; check the publisher for details and updates.";
-    return \`\${heading}\n\${items.map((item, index) => \`\${index + 1}. \${item.title} — \${item.source}\${item.dateText ? \` · \${item.dateText}\` : ""}\${item.snippet ? \`\n   \${item.snippet}\` : ""}\${item.url ? \`\n   \${item.url}\` : ""}\`).join("\n")}\n\n\${footer}\`;
+    return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.snippet ? `\n   ${item.snippet}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
   } catch (error) {
     console.warn("[ALASSAUL news] live feed unavailable", error);
     return language === "AR"
