@@ -221,7 +221,7 @@ function isSaudiLeagueQuestion(message: string) {
 
 function isSaudiLeagueScheduleQuestion(message: string) {
   const hasNewsIntent = /(?:أخبار|اخبار|news|headlines?)/i.test(message);
-  const hasFixtureIntent = /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|الجولة|يلعب|نتيجة|نتائج|مباشر|الآن|الان|من فاز|fixtures|schedule|match(?:es)?|this week|live|score|results)/i.test(message);
+  const hasFixtureIntent = /(?:متى|تستأنف|استئناف|تعود|ترجع|القادمة|القادمه|المقبلة|المقبله|القادم|جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|الجولة|يلعب|نتيجة|نتائج|مباشر|الآن|الان|من فاز|fixtures|schedule|match(?:es)?|this week|upcoming|resume|return|live|score|results)/i.test(message);
   const asksTodayWithoutNews = /(?:اليوم|today)/i.test(message) && !hasNewsIntent;
   return isSaudiLeagueQuestion(message) && (hasFixtureIntent || asksTodayWithoutNews);
 }
@@ -236,9 +236,12 @@ async function getSaudiLeagueScoreboardAnswer(
 ): Promise<string | undefined> {
   const hasYesterday = /(?:أمس|امس|البارحة|البارحه|yesterday)/i.test(message);
   const asksToday = /(?:اليوم|today|الآن|الان|مباشر|live)/i.test(message);
-  const asksUpcoming = /(?:القادمة|القادمه|المقبلة|المقبله|مواعيد|جدول|fixtures|schedule|upcoming|next)/i.test(message);
+  const asksResumption = /(?:متى|تستأنف|استئناف|تعود|ترجع|resume|return)/i.test(message);
+  const asksUpcoming = asksResumption || /(?:القادمة|القادمه|المقبلة|المقبله|القادم|مواعيد|جدول|fixtures|schedule|upcoming|next)/i.test(message);
   const startOffset = hasYesterday ? -1 : scoreQuestion && !asksToday ? -3 : 0;
-  const endOffset = asksUpcoming && !asksToday ? 7 : 0;
+  // A resumption question may refer to a pause longer than one week; inspect
+  // a wider verified scoreboard window instead of repeating today's status.
+  const endOffset = asksUpcoming && !asksToday ? (asksResumption ? 30 : 7) : 0;
   const dateKey = (offset: number) => {
     const date = new Date(Date.now() + offset * 24 * 60 * 60 * 1000);
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -276,7 +279,7 @@ async function getSaudiLeagueScoreboardAnswer(
     const periodLabel = startOffset < 0 && endOffset === 0
       ? (language === "AR" ? `من ${Math.abs(startOffset)} أيام حتى اليوم` : language === "TR" ? "Son günlerde" : "Recent days")
       : startOffset === 0 && endOffset > 0
-        ? (language === "AR" ? "اليوم والأيام السبعة القادمة" : language === "TR" ? "Bugün ve gelecek yedi gün" : "Today and the next seven days")
+        ? (language === "AR" ? (endOffset > 7 ? "اليوم والثلاثون يوماً القادمة" : "اليوم والأيام السبعة القادمة") : language === "TR" ? (endOffset > 7 ? "Bugün ve gelecek otuz gün" : "Bugün ve gelecek yedi gün") : (endOffset > 7 ? "Today and the next thirty days" : "Today and the next seven days"))
         : (language === "AR" ? "اليوم" : language === "TR" ? "Bugün" : "Today");
     if (data.events.length === 0) {
       return language === "AR"
