@@ -667,6 +667,39 @@ describe("ai.chat", () => {
     }
   });
 
+
+  it("checks the next thirty days when asked when Saudi Pro League matches resume", async () => {
+    let requestedDates = "";
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      expect(url.hostname).toBe("site.api.espn.com");
+      requestedDates = url.searchParams.get("dates") ?? "";
+      expect(requestedDates).toMatch(/^\\d{8}-\\d{8}$/);
+      const [start, end] = requestedDates.split("-").map((value) =>
+        Date.UTC(Number(value.slice(0, 4)), Number(value.slice(4, 6)) - 1, Number(value.slice(6, 8)))
+      );
+      expect(end - start).toBe(30 * 24 * 60 * 60 * 1000);
+      return new Response(JSON.stringify({ events: [] }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [
+          { role: "user", content: "هل توجد مباريات اليوم في دوري روشن؟" },
+          { role: "assistant", content: "لا توجد مباريات اليوم." },
+          { role: "user", content: "طيب متى تستأنف مباريات الدوري السعودي دوري روشن؟" },
+        ],
+      });
+      expect(result.text).toContain("الثلاثون يوماً القادمة");
+      expect(result.text).toContain("ESPN");
+      expect(requestedDates).not.toBe("");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
   it("does not invent Saudi Pro League results when the ESPN scoreboard is unavailable", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
     try {
