@@ -188,9 +188,111 @@ async function getJeddahWeatherAnswer(content: string) {
 const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
 function isLocalBusinessSearchQuestion(message: string) {
-  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast)/i.test(message);
+  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|مقهى|مقاهي|كافيه|قهوة|فندق|فنادق|مستشفى|مستشفيات|صيدلية|صيدليات|شاطئ|شواطئ|حديقة|حدائق|مول|مركز تجاري|متحف|أكواريوم|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast|cafe|coffee|hotel|hospital|pharmacy|beach|park|mall|museum|aquarium)/i.test(message);
   const asksForPlace = /(?:أقرب|اقرب|قريب|بالقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث|يقع|عنوان|موقع|nearby|nearest|near me|best|where|location|address|search)/i.test(message);
   return mentionsBusiness && asksForPlace;
+}
+
+const photonPlaceCache = new Map<string, { expiresAt: number; answer: string }>();
+let photonLastRequestAt = 0;
+
+async function getPhotonPlaceSearchAnswer(message: string, language: "AR" | "TR" | "EN"): Promise<string> {
+  const categories: Array<{ pattern: RegExp; term: string }> = [
+    { pattern: /(?:مطاعم?|restaurants?|فطور|إفطار|breakfast)/i, term: "restaurant" },
+    { pattern: /(?:مقاهي?|كافيه|قهوة|cafes?|coffee)/i, term: "cafe" },
+    { pattern: /(?:فنادق?|hotels?)/i, term: "hotel" },
+    { pattern: /(?:مستشفيات?|مستشفى|hospitals?)/i, term: "hospital" },
+    { pattern: /(?:صيدليات?|صيدلية|pharmacies?)/i, term: "pharmacy" },
+    { pattern: /(?:شواطئ?|شاطئ|beaches?)/i, term: "beach" },
+    { pattern: /(?:حدائق?|حديقة|parks?)/i, term: "park" },
+    { pattern: /(?:مول|مركز تجاري|malls?|shopping centers?)/i, term: "mall" },
+    { pattern: /(?:متحف|museums?)/i, term: "museum" },
+    { pattern: /(?:أكواريوم|aquarium)/i, term: "aquarium" },
+    { pattern: /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i, term: "supermarket" },
+  ];
+  const category = categories.find((item) => item.pattern.test(message));
+  const nearMe = /(?:قريب مني|بالقرب مني|قريب من موقعي|near me|nearby|nearest)/i.test(message);
+  const cleaned = message
+    .replace(/(?:أقرب|اقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث عن|ابحث|دلني على|أرشدني إلى|يقع|عنوان|موقع|كيف أصل إلى|كيف اصل الى|where is|find|show me|best|nearest|nearby|near me|location|address|search for|directions to)/gi, " ")
+    .replace(/(?:مطاعم?|restaurants?|فطور|إفطار|breakfast|مقاهي?|كافيه|قهوة|cafes?|coffee|فنادق?|hotels?|مستشفيات?|مستشفى|hospitals?|صيدليات?|صيدلية|pharmacies?|شواطئ?|شاطئ|beaches?|حدائق?|حديقة|parks?|مول|مركز تجاري|malls?|shopping centers?|متحف|museums?|أكواريوم|aquarium|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/gi, " ")
+    .replace(/(?:^|\s)(?:في|بمدينة|بمدينه|داخل|بـ|in|at|near)(?=\s|$)/gi, " ")
+    .replace(/[؟?!،,؛;:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (nearMe && !cleaned) {
+    return language === "AR"
+      ? "أحتاج اسم المدينة أو الحي لأحدد الأماكن القريبة بدقة؛ لا أملك إحداثيات موقعك في هذه المحادثة."
+      : language === "TR" ? "Yakındaki yerleri doğru bulabilmem için şehir veya mahalle adını yazın." : "Please provide a city or neighborhood so I can find nearby places accurately.";
+  }
+  const query = [category?.term, cleaned].filter(Boolean).join(" ").trim();
+  if (!query || (category && !cleaned)) {
+    return language === "AR"
+      ? "اذكر المدينة أو الحي مع نوع المكان، مثل: مطاعم في طرابزون أو صيدليات في يومرا."
+      : language === "TR" ? "Lütfen yer türüyle birlikte şehir veya mahalleyi belirtin." : "Please include a city or neighborhood with the place type.";
+  }
+  const cacheKey = `${language}:${query.toLowerCase()}`;
+  const cached = photonPlaceCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.answer;
+  const lang = language === "AR" ? "ar" : language === "TR" ? "tr" : "en";
+  const params = new URLSearchParams({ q: query, limit: "5", lang, dedupe: "1" });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6500);
+  try {
+    const waitMs = Math.max(0, 1000 - (Date.now() - photonLastRequestAt));
+    if (waitMs) await new Promise((resolve) => setTimeout(resolve, waitMs));
+    photonLastRequestAt = Date.now();
+    const response = await fetch(`https://photon.komoot.io/api/?${params.toString()}`, {
+      headers: { accept: "application/geo+json, application/json", "user-agent": "ALASSAUL-AI/1.0 (place search; OpenStreetMap attribution)" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Photon place search returned ${response.status}`);
+    const data = await response.json() as {
+      features?: Array<{
+        properties?: { name?: string; street?: string; housenumber?: string; district?: string; city?: string; county?: string; state?: string; country?: string; osm_value?: string; type?: string };
+        geometry?: { coordinates?: [number, number] };
+      }>;
+    };
+    const seen = new Set<string>();
+    const places = (data.features ?? []).flatMap((feature) => {
+      const p = feature.properties ?? {};
+      const coords = feature.geometry?.coordinates;
+      const name = p.name?.trim();
+      if (!name || !coords || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1])) return [];
+      const [lon, lat] = coords;
+      const key = `${name.toLowerCase()}|${(p.city ?? p.country ?? "").toLowerCase()}`;
+      if (seen.has(key)) return [];
+      seen.add(key);
+      const address = [p.street, p.housenumber, p.district, p.city, p.state, p.country].filter((v, i, all): v is string => Boolean(v) && all.indexOf(v) === i).join("، ");
+      return [{
+        name, address, kind: p.osm_value ?? p.type ?? "",
+        directions: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,
+        map: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`,
+      }];
+    }).slice(0, 5);
+    let answer: string;
+    if (!places.length) {
+      answer = language === "AR"
+        ? "لم أعثر على مكان مطابق يمكن تأكيده من بيانات الخرائط المفتوحة. جرّب كتابة الاسم مع المدينة أو الحي."
+        : language === "TR" ? "Açık harita verilerinde doğrulanabilir bir eşleşme bulunamadı. Yer adını şehir veya mahalleyle birlikte deneyin." : "I couldn't find a verifiable match in open map data. Try the name with its city or neighborhood.";
+    } else {
+      const heading = language === "AR" ? "أماكن مطابقة لبحثك" : language === "TR" ? "Aramanızla eşleşen yerler" : "Places matching your search";
+      const rows = places.map((place, i) => `${i + 1}. **${place.name}**${place.address ? ` — ${place.address}` : ""}${place.kind ? ` (${place.kind})` : ""}\n   الاتجاهات: ${place.directions}\n   الخريطة: ${place.map}`);
+      const note = language === "AR"
+        ? "المصدر: OpenStreetMap عبر Photon. هذه نتائج أسماء ومواقع وليست تقييماً للأفضلية؛ ساعات العمل والتقييمات تحتاج تحققاً منفصلاً."
+        : language === "TR" ? "Kaynak: Photon üzerinden OpenStreetMap. Bunlar konum eşleşmeleridir; puan veya çalışma saatleri değildir." : "Source: OpenStreetMap via Photon. These are location matches, not ratings or opening-hour verification.";
+      answer = `${heading}\n${rows.join("\n")}\n\n${note}`;
+    }
+    photonPlaceCache.set(cacheKey, { expiresAt: Date.now() + 10 * 60 * 1000, answer });
+    if (photonPlaceCache.size > 50) photonPlaceCache.delete(photonPlaceCache.keys().next().value!);
+    return answer;
+  } catch (error) {
+    console.warn("[ALASSAUL places] Photon search unavailable", safeProviderDiagnostic(error));
+    return language === "AR"
+      ? "تعذر الاتصال بمصدر الخرائط المفتوحة الآن، لذلك لن أخمّن أسماء أماكن أو مواقع. أعد المحاولة بعد قليل."
+      : language === "TR" ? "Açık harita kaynağına şu anda ulaşılamıyor; yer adı veya konum tahmin etmeyeceğim. Daha sonra tekrar deneyin." : "The open map source is unavailable right now, so I won't guess place names or locations. Please try again shortly.";
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function isSaudiLeagueQuestion(message: string) {
@@ -971,6 +1073,11 @@ export const appRouter = router({
                   ? "Avrupa futbolu için doğrulanmış skor alınamadı; sonuç tahmin etmeyeceğim. Daha sonra tekrar deneyin."
                   : "A verified European football score is unavailable right now; I won't guess the result. Please try again shortly." };
             }
+          }
+
+          const mapsGroundingEnabled = Boolean(process.env.GEMINI_API_KEY?.trim() && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true");
+          if ((isGoogleMapsQuestion(latestText) || isLocalBusinessSearchQuestion(latestText)) && !mapsGroundingEnabled) {
+            return { text: await getPhotonPlaceSearchAnswer(latestText, input.language) };
           }
 
           if (isWorldNewsQuestion(latestText)) {
