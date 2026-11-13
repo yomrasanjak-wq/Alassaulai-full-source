@@ -476,6 +476,56 @@ describe("ai.chat", () => {
     }));
   });
 
+  it("returns verified Saudi Pro League scores from the ESPN scoreboard instead of news headlines", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      expect(url.hostname).toBe("site.api.espn.com");
+      expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      expect(url.searchParams.get("dates")).toMatch(/^\d{8}(?:-\d{8})?$/);
+      return new Response(JSON.stringify({
+        events: [{
+          name: "Al Hilal vs Al Nassr",
+          date: "2026-11-13T17:00:00Z",
+          status: { type: { state: "post", completed: true, detail: "Final" } },
+          competitions: [{ competitors: [
+            { homeAway: "home", score: "2", team: { displayName: "Al Hilal" } },
+            { homeAway: "away", score: "1", team: { displayName: "Al Nassr" } },
+          ] }],
+        }],
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "ما نتيجة مباراة الهلال والنصر في دوري روشن؟" }],
+      });
+      expect(result.text).toContain("دوري روشن السعودي");
+      expect(result.text).toContain("Al Hilal 2 - 1 Al Nassr");
+      expect(result.text).toContain("انتهت");
+      expect(result.text).toContain("ESPN");
+      expect(result.text).not.toContain("أخبار دوري روشن السعودي اليوم");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not invent Saudi Pro League results when the ESPN scoreboard is unavailable", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "ما آخر نتائج الدوري السعودي؟" }],
+      });
+      expect(result.text).toContain("لن أخمّن نتيجة");
+      expect(result.text).not.toMatch(/فاز|خسر|\d\s*[-–]\s*\d/);
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
   it("keeps only recent bounded conversation context", () => {
     const messages = Array.from({ length: 12 }, (_, index) => ({
       role: index % 2 === 0 ? "user" as const : "assistant" as const,
