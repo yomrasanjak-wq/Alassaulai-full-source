@@ -188,9 +188,17 @@ async function getJeddahWeatherAnswer(content: string) {
 const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
 function isLocalBusinessSearchQuestion(message: string) {
-  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|مقهى|مقاهي|كافيه|قهوة|فندق|فنادق|مستشفى|مستشفيات|صيدلية|صيدليات|شاطئ|شواطئ|حديقة|حدائق|مول|مركز تجاري|متحف|أكواريوم|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast|cafe|coffee|hotel|hospital|pharmacy|beach|park|mall|museum|aquarium)/i.test(message);
+  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\\s*ماركت|هايبرماركت|لولو|مقهى|مقاهي|كافيه|قهوة|فندق|فنادق|مستشفى|مستشفيات|عيادة|عيادات|مركز طبي|طبيب|أطباء|صيدلية|صيدليات|شاطئ|شواطئ|حديقة|حدائق|مول|مركز تجاري|متحف|أكواريوم|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast|cafe|coffee|hotel|hospital|clinic|doctor|pharmacy|beach|park|mall|museum|aquarium)/i.test(message);
   const asksForPlace = /(?:أقرب|اقرب|قريب|بالقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث|يقع|عنوان|موقع|في|in|nearby|nearest|near me|best|where|location|address|search)/i.test(message);
   return mentionsBusiness && asksForPlace;
+}
+
+function isHealthAdviceQuestion(message: string) {
+  return /(?:عندي|أشعر|اشعر|أحس|احس|أعاني|اعاني|دوخة|دوار|صداع|ألم|الم|وجع|حمى|حرارة|غثيان|قيء|أعراض|اعراض|علاج|جرعة|تشخيص|أراجع|أحتاج استشارة|symptom|dizz(?:y|iness)|pain|fever|nausea|treatment|diagnosis)/i.test(message);
+}
+
+function isExplicitPlaceLookupQuestion(message: string) {
+  return /(?:أين يقع|وين يقع|أين أجد|وين ألقى|عنوان|موقع|كيف أصل|كيف اصل|كيف أذهب|خريطة|اتجاهات|where is|location of|directions to|route to|map of)/i.test(message);
 }
 
 const photonPlaceCache = new Map<string, { expiresAt: number; answer: string }>();
@@ -1053,9 +1061,12 @@ export const appRouter = router({
           // addresses, ratings, or opening status.
           const mapsGroundingAvailable = Boolean(process.env.GEMINI_API_KEY?.trim())
             && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true";
-          if (isLocalBusinessSearchQuestion(latestText) && !mapsGroundingAvailable) {
-            const localSearch = getContextualFallback(input.messages, input.language);
-            if (localSearch) return { text: localSearch };
+          if (
+            !mapsGroundingAvailable
+            && !isHealthAdviceQuestion(latestText)
+            && (isLocalBusinessSearchQuestion(latestText) || isExplicitPlaceLookupQuestion(latestText))
+          ) {
+            return { text: await getPhotonPlaceSearchAnswer(latestText, input.language) };
           }
 
           if (isSaudiLeagueQuestion(latestText)) {
@@ -1073,11 +1084,6 @@ export const appRouter = router({
                   ? "Avrupa futbolu için doğrulanmış skor alınamadı; sonuç tahmin etmeyeceğim. Daha sonra tekrar deneyin."
                   : "A verified European football score is unavailable right now; I won't guess the result. Please try again shortly." };
             }
-          }
-
-          const mapsGroundingEnabled = Boolean(process.env.GEMINI_API_KEY?.trim() && process.env.ALASSAUL_GOOGLE_MAPS_GROUNDING === "true");
-          if ((isGoogleMapsQuestion(latestText) || isLocalBusinessSearchQuestion(latestText)) && !mapsGroundingEnabled) {
-            return { text: await getPhotonPlaceSearchAnswer(latestText, input.language) };
           }
 
           if (isWorldNewsQuestion(latestText)) {
