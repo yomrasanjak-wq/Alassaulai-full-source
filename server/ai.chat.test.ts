@@ -328,6 +328,7 @@ describe("live worldwide tourism place lookup", () => {
   });
 
   it("returns verified attraction results even when the language model provider fails", async () => {
+    vi.mocked(invokeLLM).mockRejectedValue(new Error("test provider unavailable"));
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
       if (url.startsWith("https://photon.komoot.io/api/")) {
@@ -354,6 +355,7 @@ describe("live worldwide tourism place lookup", () => {
       expect(result.text).toContain("openstreetmap.org/node/67890");
     } finally {
       fetchSpy.mockRestore();
+      vi.mocked(invokeLLM).mockReset();
     }
   });
 
