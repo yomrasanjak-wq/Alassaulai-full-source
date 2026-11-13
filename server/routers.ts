@@ -5,6 +5,7 @@ import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
+import { getWikipediaSearchContext } from "./_core/wikipediaSearch";
 import { synthesizeSpeech } from "./_core/textToSpeech";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, controlStaffProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -1057,6 +1058,12 @@ ${newsContext}`);
           } else if (isGoogleGroundingQuestion(latestText) && !grounded && !liveContext.some((context) => context.startsWith("نتيجة أو حالة موجز الأخبار الحي:"))) {
             liveContext.push("لم تُرجع أدوات البحث نتيجة حية موثقة. لا تدّعِ أنك بحثت أو تحققت؛ قدّم إرشاداً عاماً فقط وصرّح بما لا يمكن تأكيده الآن.");
           }
+        }
+
+        // Free keyless reference lookup adds background context, never breaking news or local live data.
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
+          const referenceContext = await getWikipediaSearchContext(latestText, input.language);
+          if (referenceContext) liveContext.push(`نتيجة مرجعية من ويكيبيديا (للمعلومات الخلفية وليست مصدراً للأحداث اللحظية):\n${referenceContext}`);
         }
 
         const languageInstruction = input.language === "AR"
