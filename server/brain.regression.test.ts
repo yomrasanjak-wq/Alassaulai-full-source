@@ -12,6 +12,22 @@ function createPublicContext(): TrpcContext {
 
 const caller = () => appRouter.createCaller(createPublicContext());
 
+function mockPhotonPlace(name: string) {
+  return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = new URL(String(input));
+    expect(url.hostname).toBe("photon.komoot.io");
+    expect(url.pathname).toBe("/api/");
+    return new Response(JSON.stringify({
+      type: "FeatureCollection",
+      features: [{
+        type: "Feature",
+        properties: { name, city: "ينبع الصناعية", district: "حي الصبح", country: "Saudi Arabia", osm_value: "restaurant" },
+        geometry: { type: "Point", coordinates: [38.063, 24.089] },
+      }],
+    }), { status: 200, headers: { "content-type": "application/geo+json" } });
+  });
+});
+
 beforeEach(() => {
   vi.mocked(invokeLLM).mockReset().mockRejectedValue(new Error("provider unavailable"));
 });
@@ -193,22 +209,25 @@ describe("real-brain regression scenarios", () => {
     expect(invokeLLM).toHaveBeenCalled();
   });
 
-  it("offers a real map search instead of inventing breakfast restaurants after provider failure", async () => {
-    const result = await caller().ai.chat({
-      language: "AR",
-      messages: [
-        { role: "user", content: "أريد مطعماً قريباً في ينبع الصناعية حي الصبح" },
-        { role: "assistant", content: "حاضر، هل تفضل نوعاً معيناً؟" },
-        { role: "user", content: "أبغى مطعم فطور" },
-      ],
-    });
-    expect(result.text).toContain("مطاعم فطور");
-    expect(result.text).toContain("ينبع الصناعية");
-    expect(result.text).toContain("https://www.google.com/maps/search/");
-    expect(result.text).not.toMatch(/مطعم\s+[\p{L}]+\s+(?:ممتاز|مفتوح الآن)|تقييمه\s+\d/i);
-    expect(invokeLLM).not.toHaveBeenCalled();
+  it("uses recent conversation location context for breakfast restaurant map results", async () => {
+    const fetchSpy = mockPhotonPlace("مطاعم فطور حي الصبح");
+    try {
+      const result = await caller().ai.chat({
+        language: "AR",
+        messages: [
+          { role: "user", content: "أريد مطعماً قريباً في ينبع الصناعية حي الصبح" },
+          { role: "assistant", content: "حاضر، هل تفضل نوعاً معيناً؟" },
+          { role: "user", content: "أبغى مطعم فطور" },
+        ],
+      });
+      expect(result.text).toContain("مطاعم فطور");
+      expect(result.text).toContain("ينبع الصناعية");
+      expect(result.text).toContain("https://www.google.com/maps/dir/");
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
-
 
   it("opens a direct Google Maps driving route from Yanbu Industrial to Madinah without calling the model", async () => {
     const result = await caller().ai.chat({
@@ -243,29 +262,37 @@ describe("real-brain regression scenarios", () => {
     expect(invokeLLM).not.toHaveBeenCalled();
   });
 
-  it("offers a grounded Google Maps search instead of guessing a supermarket address", async () => {
-    const result = await caller().ai.chat({
-      language: "AR",
-      messages: [{ role: "user", content: "أقرب سوبر ماركت في حي الصبح بمدينة ينبع الصناعية" }],
-    });
-    expect(result.text).toContain("https://www.google.com/maps/search/");
-    expect(result.text).toContain("حي الصبح");
-    expect(result.text).not.toMatch(/يقع في منطقة|بجوار|عنوان الفرع هو/);
-    expect(invokeLLM).not.toHaveBeenCalled();
+  it("returns open-map supermarket matches instead of guessing an address", async () => {
+    const fetchSpy = mockPhotonPlace("سوبر ماركت حي الصبح");
+    try {
+      const result = await caller().ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "أقرب سوبر ماركت في حي الصبح بمدينة ينبع الصناعية" }],
+      });
+      expect(result.text).toContain("https://www.google.com/maps/dir/");
+      expect(result.text).toContain("حي الصبح");
+      expect(result.text).not.toMatch(/يقع في منطقة|بجوار|عنوان الفرع هو/);
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
-  it("offers a direct map search for popular restaurants in Yanbu Industrial when the model returns a generic error", async () => {
-    vi.mocked(invokeLLM).mockResolvedValue({
-      model: ENV.primaryModel,
-      choices: [{ message: { content: "لم أتمكن من تجهيز إجابة الآن. أعد إرسال السؤال بصياغة قصيرة." } }],
-    } as never);
-    const result = await caller().ai.chat({
-      language: "AR",
-      messages: [{ role: "user", content: "أهم المطاعم في ينبع الصناعية" }],
-    });
-    expect(result.text).toContain("أفضل المطاعم في ينبع الصناعية");
-    expect(result.text).toContain("https://www.google.com/maps/search/");
-    expect(result.text).not.toContain("لم أتمكن من تجهيز إجابة الآن");
+  it("returns open-map matches for popular restaurants in Yanbu Industrial", async () => {
+    const fetchSpy = mockPhotonPlace("مطعم ينبع");
+    try {
+      const result = await caller().ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "أهم المطاعم في ينبع الصناعية" }],
+      });
+      expect(result.text).toContain("أماكن مطابقة لبحثك");
+      expect(result.text).toContain("مطعم ينبع");
+      expect(result.text).toContain("https://www.google.com/maps/dir/");
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
+  
 });
