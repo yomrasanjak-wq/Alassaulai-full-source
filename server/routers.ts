@@ -188,13 +188,13 @@ async function getJeddahWeatherAnswer(content: string) {
 const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
 function isLocalBusinessSearchQuestion(message: string) {
-  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\\s*ماركت|هايبرماركت|لولو|مقهى|مقاهي|كافيه|قهوة|فندق|فنادق|مستشفى|مستشفيات|عيادة|عيادات|مركز طبي|طبيب|أطباء|صيدلية|صيدليات|شاطئ|شواطئ|حديقة|حدائق|مول|مركز تجاري|متحف|أكواريوم|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast|cafe|coffee|hotel|hospital|clinic|doctor|pharmacy|beach|park|mall|museum|aquarium)/i.test(message);
+  const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|مقهى|مقاهي|كافيه|قهوة|فندق|فنادق|مستشفى|مستشفيات|عيادة|عيادات|مركز طبي|طبيب|أطباء|صيدلية|صيدليات|شاطئ|شواطئ|حديقة|حدائق|مول|مركز تجاري|متحف|أكواريوم|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast|cafe|coffee|hotel|hospital|clinic|doctor|pharmacy|beach|park|mall|museum|aquarium)/i.test(message);
   const asksForPlace = /(?:أقرب|اقرب|قريب|بالقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث|يقع|عنوان|موقع|في|in|nearby|nearest|near me|best|where|location|address|search)/i.test(message);
   return mentionsBusiness && asksForPlace;
 }
 
 function isHealthAdviceQuestion(message: string) {
-  return /(?:عندي|أشعر|اشعر|أحس|احس|أعاني|اعاني|دوخة|دوار|صداع|ألم|الم|وجع|حمى|حرارة|غثيان|قيء|أعراض|اعراض|علاج|جرعة|تشخيص|أراجع|أحتاج استشارة|symptom|dizz(?:y|iness)|pain|fever|nausea|treatment|diagnosis)/i.test(message);
+  return /(?:عندي|أشعر|اشعر|أحس|احس|أعاني|اعاني|دوخة|دوار|صداع|(?:^|[\\s،,.])(?:ألم|الم|وجع)(?=$|[\\s،,.])|حمى|حرارة|غثيان|قيء|أعراض|اعراض|علاج|جرعة|تشخيص|أراجع|أحتاج استشارة|symptom|dizz(?:y|iness)|pain|fever|nausea|treatment|diagnosis)/i.test(message);
 }
 
 function isExplicitPlaceLookupQuestion(message: string) {
