@@ -637,7 +637,7 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
       return { title, source, snippet, dateText, publishedAt, url: /^https?:\/\//i.test(url) ? url : "" };
     }).filter((item) => {
       if (item.title.length <= 5 || item.publishedAt <= Date.now() - 48 * 60 * 60 * 1000) return false;
-      const key = item.title.toLocaleLowerCase().replace(/[\p{P}\p{S}\s]+/gu, " ").trim();
+      const key = item.title.toLocaleLowerCase().replace(/[\s.,،؛:!?؟"'()\-_/]+/g, " ").trim();
       if (!key || seenHeadlines.has(key)) return false;
       seenHeadlines.add(key);
       return true;
