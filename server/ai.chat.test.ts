@@ -274,6 +274,38 @@ describe("adaptive brain response strategy", () => {
 });
 
 
+describe("live news source", () => {
+  it("includes a short publisher-provided excerpt with each current headline", async () => {
+    const publishedAt = new Date(Date.now() - 60 * 60 * 1000).toUTCString();
+    const rss = `<rss><channel><item>
+      <title>تطورات دولية مهمة اليوم</title>
+      <source>وكالة الاختبار</source>
+      <link>https://example.com/world-news</link>
+      <pubDate>${publishedAt}</pubDate>
+      <description><![CDATA[<p>ملخص من الناشر: أعلنت الجهات المعنية تفاصيل جديدة بشأن التطورات الدولية وأكدت استمرار المشاورات خلال الساعات القادمة.</p>]]></description>
+    </item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      expect(url.hostname).toBe("news.google.com");
+      return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "ما أبرز أخبار العالم اليوم؟" }],
+      });
+      expect(result.text).toContain("أبرز عناوين الأخبار الحديثة");
+      expect(result.text).toContain("ملخص من الناشر");
+      expect(result.text).toContain("وكالة الاختبار");
+      expect(result.text).toContain("https://example.com/world-news");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+});
+
 describe("live weather source", () => {
   it("uses a live Open-Meteo response for current Trabzon weather", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ current: { time: "2026-10-15T20:00", temperature_2m: 20, apparent_temperature: 21, weather_code: 3, wind_speed_10m: 8 } }), { status: 200, headers: { "content-type": "application/json" } }));

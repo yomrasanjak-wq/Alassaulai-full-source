@@ -587,15 +587,18 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
       const title = decodeNewsXml(body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
       const source = decodeNewsXml(body.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i)?.[1] ?? "Google News");
       const url = decodeNewsXml(body.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? "");
+      const description = decodeNewsXml(body.match(/<description\b[^>]*>([\s\S]*?)<\/description>/i)?.[1] ?? "").replace(/\s+/g, " ").trim();
+      // Keep publisher-provided excerpts brief and distinct from the headline.
+      const snippet = description && description !== title ? description.split(/\s+/).slice(0, 22).join(" ") : "";
       const published = decodeNewsXml(body.match(/<pubDate\b[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ?? "");
       const date = published ? new Date(published) : null;
       const dateText = date && !Number.isNaN(date.getTime()) ? new Intl.DateTimeFormat(language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Riyadh" }).format(date) : "";
-      return { title, source, dateText, publishedAt: date && !Number.isNaN(date.getTime()) ? date.getTime() : 0, url: /^https?:\/\//i.test(url) ? url : "" };
+      return { title, source, snippet, dateText, publishedAt: date && !Number.isNaN(date.getTime()) ? date.getTime() : 0, url: /^https?:\/\//i.test(url) ? url : "" };
     }).filter((item) => item.title.length > 5 && item.publishedAt > Date.now() - 48 * 60 * 60 * 1000);
     if (!items.length) throw new Error("News RSS returned no headlines published in the last 48 hours");
     const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
     const footer = language === "AR" ? "المصدر: Google News RSS. هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS. Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS. These are headlines; check the publisher for details and updates.";
-    return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
+    return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.snippet ? `\n   ${item.snippet}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
   } catch (error) {
     console.warn("[ALASSAUL news] live feed unavailable", error);
     return language === "AR"
