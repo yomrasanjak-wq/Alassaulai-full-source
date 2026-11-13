@@ -634,10 +634,11 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
         signal: controller.signal,
       }),
     ]);
-    const xmlFeeds = await Promise.all(feeds.map(async (feed) => {
+    const xmlResults = await Promise.allSettled(feeds.map(async (feed) => {
       if (feed.status !== "fulfilled" || !feed.value.ok) return "";
       return feed.value.text();
     }));
+    const xmlFeeds = xmlResults.map((result) => result.status === "fulfilled" ? result.value : "");
     if (!xmlFeeds.some(Boolean)) throw new Error("All Google News RSS feeds were unavailable");
 
     const seenHeadlines = new Set<string>();
