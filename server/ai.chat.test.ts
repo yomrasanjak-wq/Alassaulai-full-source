@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer, getVisitorIdentityInstruction } from "./routers";
+import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -273,6 +274,35 @@ describe("adaptive brain response strategy", () => {
   });
 });
 
+
+describe("keyless reference search", () => {
+  it("recognizes stable informational questions", () => {
+    expect(isWikipediaReferenceQuestion("ما معنى الذكاء الاصطناعي؟")).toBe(true);
+    expect(isWikipediaReferenceQuestion("Who is Ibn Battuta?")).toBe(true);
+  });
+  it("excludes current news, weather, and nearby-place requests", () => {
+    expect(isWikipediaReferenceQuestion("ما آخر أخبار اليوم؟")).toBe(false);
+    expect(isWikipediaReferenceQuestion("كم درجة الحرارة الآن في طرابزون؟")).toBe(false);
+    expect(isWikipediaReferenceQuestion("وين أقرب صيدلية؟")).toBe(false);
+  });
+  it("returns a language-specific excerpt and source link", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({
+      pages: [{ title: "الذكاء الاصطناعي", key: "الذكاء_الاصطناعي", excerpt: "مجال يهتم بإنشاء أنظمة ذكية." }],
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    try {
+      const result = await getWikipediaSearchContext("ما معنى الذكاء الاصطناعي؟", "AR");
+      expect(result).toContain("مجال يهتم بإنشاء أنظمة ذكية");
+      expect(result).toContain("https://ar.wikipedia.org/wiki/");
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally { fetchSpy.mockRestore(); }
+  });
+  it("returns no claim when the provider is unavailable", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("unavailable", { status: 503 }));
+    try {
+      await expect(getWikipediaSearchContext("ما معنى الفيزياء؟", "AR")).resolves.toBeUndefined();
+    } finally { fetchSpy.mockRestore(); }
+  });
+});
 
 describe("live news source", () => {
   it.each(["وش صاير بالعالم اليوم؟", "وش آخر المستجدات؟", "عطني آخر الأخبار"]) ("recognizes Gulf Arabic requests for current world news: %s", async (question) => {
