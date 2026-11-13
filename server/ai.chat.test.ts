@@ -84,6 +84,26 @@ describe("brain governance", () => {
     }
   });
 
+  it("reports brain readiness from the resolved LLM provider instead of storage-only Forge credentials", async () => {
+    const previous = {
+      forgeApiUrl: ENV.forgeApiUrl,
+      forgeApiKey: ENV.forgeApiKey,
+      llmApiUrl: ENV.llmApiUrl,
+      llmApiKey: ENV.llmApiKey,
+    };
+    try {
+      ENV.forgeApiUrl = "";
+      ENV.forgeApiKey = "";
+      ENV.llmApiUrl = "https://api.openai.com/v1";
+      ENV.llmApiKey = "test-provider-key";
+      const caller = appRouter.createCaller(createUserContext("admin-open-id", "admin"));
+      const status = await caller.brain.status();
+      expect(status.configured).toBe(true);
+    } finally {
+      Object.assign(ENV, previous);
+    }
+  });
+
   it("allows only the configured owner identity into the control room", async () => {
     const previousOwnerId = ENV.ownerOpenId;
     ENV.ownerOpenId = "platform-owner-open-id";
@@ -474,6 +494,29 @@ describe("ai.chat", () => {
         ]) }),
       ]),
     }));
+  });
+
+  it("keeps Saudi Pro League news queries on the news feed even when they mention today", async () => {
+    const rss = `<rss><channel><item><title>أخبار دوري روشن السعودي اليوم</title><source>وكالة اختبار</source><link>https://example.com/saudi-news</link><pubDate>${new Date(Date.now() - 60 * 60 * 1000).toUTCString()}</pubDate></item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      expect(url.hostname).toBe("news.google.com");
+      expect(url.searchParams.get("q")).toContain("أخبار دوري روشن السعودي اليوم");
+      return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "أخبار دوري روشن اليوم" }],
+      });
+      expect(result.text).toContain("أحدث أخبار دوري روشن السعودي");
+      expect(result.text).toContain("أخبار دوري روشن السعودي اليوم");
+      expect(result.text).not.toContain("النتائج وحالة المباريات");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
   it("returns verified Saudi Pro League scores from the ESPN scoreboard instead of news headlines", async () => {

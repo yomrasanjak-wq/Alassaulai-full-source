@@ -198,7 +198,10 @@ function isSaudiLeagueQuestion(message: string) {
 }
 
 function isSaudiLeagueScheduleQuestion(message: string) {
-  return isSaudiLeagueQuestion(message) && /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|اليوم|الجولة|يلعب|نتيجة|نتائج|مباشر|الآن|الان|من فاز|fixtures|schedule|match(?:es)?|today|this week|live|score|results)/i.test(message);
+  const hasNewsIntent = /(?:أخبار|اخبار|news|headlines?)/i.test(message);
+  const hasFixtureIntent = /(?:جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|الجولة|يلعب|نتيجة|نتائج|مباشر|الآن|الان|من فاز|fixtures|schedule|match(?:es)?|this week|live|score|results)/i.test(message);
+  const asksTodayWithoutNews = /(?:اليوم|today)/i.test(message) && !hasNewsIntent;
+  return isSaudiLeagueQuestion(message) && (hasFixtureIntent || asksTodayWithoutNews);
 }
 
 /** Read the public ESPN scoreboard for Saudi Pro League fixtures and results.
@@ -582,7 +585,7 @@ export const appRouter = router({
   // deployment, deletion, billing, permission, or secret changes automatically.
   brain: router({
     status: adminProcedure.query(() => ({
-      configured: Boolean(ENV.forgeApiUrl && ENV.forgeApiKey),
+      configured: Boolean(ENV.llmApiUrl && (ENV.llmApiKey || ENV.forgeApiKey)),
       primaryModel: ENV.primaryModel,
       backupModel: ENV.backupModel,
       permissions: {
