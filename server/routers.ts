@@ -227,11 +227,11 @@ async function getPhotonPlaceSearchAnswer(message: string, language: "AR" | "TR"
     .replace(/[؟?!،,؛;:]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-  const contextMatch = contextText.match(/(?:في|بمدينة|بمدينه|داخل|in)\\s+([^؟?!,.;\\n]+)/i);
+  const contextMatch = contextText.match(/(?:في|بمدينة|بمدينه|داخل|in)\s+([^؟?!,.;\n]+)/i);
   const contextLocation = (contextMatch?.[1] ?? "")
     .replace(/(?:أقرب|اقرب|أفضل|افضل|أهم|اهم|مشهور|وين|أين|اين|أبغى|ابغى|أريد|اريد|ابي|ابحث عن|ابحث|دلني على|أرشدني إلى|أرغب|ارغب|أريد|اريد)/gi, " ")
-    .replace(/(?:مطاعم?|restaurants?|فطور|إفطار|breakfast|مقاهي?|كافيه|قهوة|cafes?|coffee|فنادق?|hotels?|مستشفيات?|مستشفى|عيادة|عيادات|مركز طبي|طبيب|أطباء|hospitals?|clinics?|doctors?|صيدليات?|صيدلية|pharmacies?|شواطئ?|شاطئ|beaches?|حدائق?|حديقة|parks?|مول|مركز تجاري|malls?|shopping centers?|متحف|museums?|أكواريوم|aquarium|سوبر\\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/gi, " ")
-    .replace(/\\s+/g, " ")
+    .replace(/(?:مطاعم?|restaurants?|فطور|إفطار|breakfast|مقاهي?|كافيه|قهوة|cafes?|coffee|فنادق?|hotels?|مستشفيات?|مستشفى|عيادة|عيادات|مركز طبي|طبيب|أطباء|hospitals?|clinics?|doctors?|صيدليات?|صيدلية|pharmacies?|شواطئ?|شاطئ|beaches?|حدائق?|حديقة|parks?|مول|مركز تجاري|malls?|shopping centers?|متحف|museums?|أكواريوم|aquarium|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/gi, " ")
+    .replace(/\s+/g, " ")
     .trim();
   const locationText = cleaned || contextLocation;
   if (nearMe && !locationText) {
