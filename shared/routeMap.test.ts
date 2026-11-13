@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getRouteMapCamera } from "./routeMap";
+import { getRouteMapCamera, getRouteMapPoints } from "./routeMap";
 
 describe("route map camera", () => {
   it.each([
@@ -26,6 +26,18 @@ describe("route map camera", () => {
     expect(center.lng).toBeCloseTo(38.6173, 4);
     expect(center.lat).toBeLessThan(30);
     expect(zoom).toBe(5);
+  });
+
+
+  it("uses verified city-center coordinates for the Yanbu–Madinah route", () => {
+    const { center, zoom } = getRouteMapCamera("Yanbu", "المدينة المنورة");
+    expect(center?.lat).toBeCloseTo(24.27835, 4);
+    expect(center?.lng).toBeCloseTo(38.83645, 4);
+    expect(zoom).toBe(5);
+    expect(getRouteMapPoints("Yanbu", "Madinah")).toEqual([
+      { lat: 24.0895, lng: 38.0618 },
+      { lat: 24.4672, lng: 39.6111 },
+    ]);
   });
 
   it("uses the resolved city when only one endpoint is recognized", () => {
