@@ -12,6 +12,7 @@ import { adminProcedure, controlStaffProcedure, ownerProcedure, protectedProcedu
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
+import { buildOfflineItineraryFallback } from "../shared/itineraryFallback";
 
 const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -715,6 +716,8 @@ function getContextualFallback(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   language: "AR" | "TR" | "EN",
 ): string | undefined {
+  const itineraryFallback = buildOfflineItineraryFallback(messages, language);
+  if (itineraryFallback) return itineraryFallback;
   const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
   const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
