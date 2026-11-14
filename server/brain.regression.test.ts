@@ -189,7 +189,7 @@ describe("real-brain regression scenarios", () => {
     const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "رتب لي برنامجاً في طرابزون" }] });
     expect(result.text).toContain("قصر أتاتورك");
     expect(result.text).toContain("غانيتا");
-    expect(result.text).toContain("ليس تحققاً من الطقس");
+    expect(result.text).toContain("الطقس وساعات الزيارة والطرق تحتاج إلى التحقق");
     expect(invokeLLM).toHaveBeenCalled();
   });
 
