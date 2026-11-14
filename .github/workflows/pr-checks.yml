@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - "fix/place-guide-return-regression"
+      - "brain/player-bios-global-tourism"
 
 permissions:
   contents: read
