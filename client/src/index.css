@@ -3702,3 +3702,38 @@ img { display: block; max-width: 100%; }
   .control-audit-entry { flex-direction: column; gap: 5px; }
   .control-audit-entry > small { white-space: normal; }
 }
+
+
+/* Mobile modal positioning: center the assistant and photo journal in the visible phone viewport. */
+@media (max-width: 740px) {
+  .site-shell .chat-panel {
+    position: fixed !important;
+    top: 50% !important;
+    bottom: auto !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    height: min(760px, calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom))) !important;
+    max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+  }
+
+  .photo-book-overlay {
+    display: grid !important;
+    place-items: center !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: max(16px, env(safe-area-inset-top)) 10px max(16px, env(safe-area-inset-bottom)) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+  }
+
+  .photo-book-dialog {
+    width: 100% !important;
+    max-width: 900px !important;
+    max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    margin: auto !important;
+  }
+}
