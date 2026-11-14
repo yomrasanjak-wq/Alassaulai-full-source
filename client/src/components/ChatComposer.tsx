@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Camera, ImagePlus, Mic, Send, X } from "lucide-react";
+import { Camera, Mic, Paperclip, Send, X } from "lucide-react";
 
 type ChatComposerProps = {
   value: string;
@@ -30,9 +30,9 @@ export function ChatComposer({ value, onChange, onSend, onVoice, isListening, vo
     <form className="chat-compose" onSubmit={(event) => { event.preventDefault(); onSend(); }}>
       <input ref={imageInputRef} className="chat-image-input" type="file" accept="image/*" aria-label="اختيار صورة من الاستديو" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) onImageSelected(file); event.currentTarget.value = ""; }} />
       <input ref={cameraInputRef} className="chat-image-input" type="file" accept="image/*" capture="environment" aria-label="التقاط صورة بالكاميرا" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) onImageSelected(file); event.currentTarget.value = ""; }} />
-      <button type="button" className="chat-gallery-button" onClick={() => imageInputRef.current?.click()} disabled={isLoading} aria-label="اختيار صورة من الاستديو" title="اختر صورة من استديو هاتفك">
-        <ImagePlus size={19} />
-        <span>الاستديو</span>
+      <button type="button" className="chat-gallery-button" onClick={() => imageInputRef.current?.click()} disabled={isLoading} aria-label="إرفاق صورة من الاستديو" title="إرفاق صورة من الاستديو">
+        <Paperclip size={19} />
+        <span>إرفاق</span>
       </button>
       <button type="button" className="chat-camera-button" onClick={() => cameraInputRef.current?.click()} disabled={isLoading} aria-label="التقاط صورة بالكاميرا" title="التقط صورة بالكاميرا لتحليلها">
         <Camera size={19} />
