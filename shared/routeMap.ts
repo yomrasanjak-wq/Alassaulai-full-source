@@ -11,7 +11,7 @@ const places: Place[] = [
   { names: /سامسون|سامسونج|samsun/i, position: { lat: 41.2867, lng: 36.33 } },
   { names: /ريزا|ريزه|rize/i, position: { lat: 41.0201, lng: 40.5234 } },
   { names: /آيدر|ايدر|ayder/i, position: { lat: 40.9527, lng: 41.0931 } },
-  { names: /أوزنجول|اوزنجول|أوزونغول|uzung[oö]l/i, position: { lat: 40.6197, lng: 40.2958 } },
+  { names: /أوزنجول|اوزنجول|أوزونغول|زنجول|uzung[oö]l/i, position: { lat: 40.6197, lng: 40.2958 } },
   { names: /جيرسون|قيرسون|غيرسون|giresun/i, position: { lat: 40.9128, lng: 38.3895 } },
   { names: /أرسين|ارسين|arsin/i, position: { lat: 40.952, lng: 39.93 } },
   { names: /سورميني|سورمنه|s[uü]r[mn]ene/i, position: { lat: 40.906, lng: 40.116 } },
