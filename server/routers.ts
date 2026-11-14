@@ -148,7 +148,7 @@ let tourismCooldownUntil = 0;
 export function isItineraryPlanningQuestion(message: string): boolean {
   const text = message.normalize("NFKC");
   return /(?:رتب لي|رتب|سو[ّ]? لي|اعمل لي|جهز لي|خطط لي|برنامج|خطة|جدول|رحلة|itinerary|trip plan|travel plan)/i.test(text)
-    && /(?:في|إلى|الى|بـ|بمدينة|بمدينه|in|to)\\s+.{2,}/i.test(text);
+    && /(?:في|إلى|الى|بـ|بمدينة|بمدينه|in|to)\s+.{2,}/i.test(text);
 }
 
 export function isTourismPlacesQuestion(message: string): boolean {
