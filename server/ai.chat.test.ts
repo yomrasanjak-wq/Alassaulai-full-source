@@ -404,6 +404,49 @@ describe("keyless reference search", () => {
 });
 
 describe("live news source", () => {
+  it("recognizes Yemen news and filters out headlines unrelated to Yemen", async () => {
+    const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
+    const rss = `<rss><channel>
+      <item><title>تطورات في اليمن ومحادثات جديدة في صنعاء</title><source>وكالة اليمن</source><link>https://example.com/yemen</link><pubDate>${publishedAt}</pubDate></item>
+      <item><title>تطورات سياسية في الولايات المتحدة</title><source>وكالة دولية</source><link>https://example.com/us</link><pubDate>${publishedAt}</pubDate></item>
+    </channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      expect(url.hostname).toBe("news.google.com");
+      expect(url.searchParams.get("q")).toContain("أخبار اليمن اليوم");
+      return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "أخبار اليمن اليوم" }],
+      });
+      expect(result.text).toContain("تطورات في اليمن");
+      expect(result.text).not.toContain("تطورات سياسية في الولايات المتحدة");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not substitute unrelated international headlines when a country has no matching news", async () => {
+    const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
+    const rss = `<rss><channel><item><title>تطورات سياسية في الولايات المتحدة</title><source>وكالة دولية</source><link>https://example.com/us</link><pubDate>${publishedAt}</pubDate></item></channel></rss>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } }));
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "أخبار اليمن اليوم" }],
+      });
+      expect(result.text).toContain("لم أعثر على عناوين حديثة مؤكدة");
+      expect(result.text).not.toContain("تطورات سياسية في الولايات المتحدة");
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
   it.each(["وش صاير بالعالم اليوم؟", "وش آخر المستجدات؟", "عطني آخر الأخبار"]) ("recognizes Gulf Arabic requests for current world news: %s", async (question) => {
     const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
     const rss = `<rss><channel><item><title>تطور دولي حديث</title><source>وكالة الاختبار</source><link>https://example.com/latest</link><pubDate>${publishedAt}</pubDate></item></channel></rss>`;
