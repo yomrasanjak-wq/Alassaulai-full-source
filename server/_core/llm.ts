@@ -405,7 +405,6 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     response_format,
     model,
     thinking,
-    reasoning,
     maxTokens,
     max_tokens,
     maxCompletionTokens,
@@ -474,9 +473,9 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   if (thinking && !useResponsesApi) {
     payload.thinking = thinking;
   }
-  if (reasoning) {
-    payload.reasoning = reasoning;
-  }
+  // Do not forward the generic `reasoning` option to OpenAI-compatible
+  // chat-completions providers. Groq rejects that field with HTTP 400.
+  // Provider-specific reasoning controls must be added only when supported.
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
