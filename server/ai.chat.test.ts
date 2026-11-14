@@ -875,6 +875,34 @@ describe("ai.chat", () => {
     }
   });
 
+  it("does not label a previous-day Saudi Pro League result as a match from today", async () => {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({
+      events: [{
+        name: "Al Hilal vs Al Nassr",
+        date: yesterday,
+        status: { type: { state: "post", completed: true } },
+        competitions: [{ competitors: [
+          { homeAway: "home", score: "2", team: { displayName: "Al Hilal" } },
+          { homeAway: "away", score: "1", team: { displayName: "Al Nassr" } },
+        ] }],
+      }],
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "هل توجد مباريات اليوم في دوري روشن؟" }],
+      });
+      expect(result.text).toContain("لا توجد مباريات مدرجة");
+      expect(result.text).not.toContain("Al Hilal 2 - 1 Al Nassr");
+      expect(result.text).toContain("لم أعرض نتائج قديمة");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
   it("returns verified Saudi Pro League scores from the ESPN scoreboard instead of news headlines", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = new URL(String(input));
