@@ -3721,3 +3721,62 @@ img { display: block; max-width: 100%; }
   .chat-compose .chat-camera-button svg { width: 19px; height: 19px; }
   .chat-compose .chat-gallery-button { height: 38px; min-height: 38px; }
 }
+
+
+/* Final mobile composer layout: reserve real width for the question field. */
+@media (max-width: 480px) {
+  .chat-compose {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 5px;
+    padding: 8px;
+    min-height: 58px;
+  }
+  .chat-compose .chat-gallery-button,
+  .chat-compose .chat-mic-button,
+  .chat-compose .chat-camera-button,
+  .chat-compose .send-button {
+    box-sizing: border-box;
+    width: 38px;
+    min-width: 38px;
+    max-width: 38px;
+    height: 38px;
+    min-height: 38px;
+    flex: 0 0 38px;
+    padding: 0;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chat-compose .chat-gallery-button span { display: none; }
+  .chat-compose .chat-gallery-button svg,
+  .chat-compose .chat-mic-button svg,
+  .chat-compose .chat-camera-button svg,
+  .chat-compose .send-button svg {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 auto;
+  }
+  .chat-compose-field {
+    display: flex;
+    flex: 1 1 0%;
+    width: 0;
+    min-width: 0;
+    align-items: center;
+  }
+  .chat-compose-field textarea {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    max-height: 88px;
+    padding: 9px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .chat-compose-field small { display: none; }
+}
