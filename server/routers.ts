@@ -818,7 +818,6 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
     ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en",
   };
   const searchParams = new URLSearchParams({ q: message.slice(0, 160), ...locale });
-  const topParams = new URLSearchParams(locale);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   try {
