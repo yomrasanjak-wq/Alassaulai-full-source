@@ -35,6 +35,13 @@ describe("parseRouteRequest", () => {
     });
   });
 
+  it("recognizes the spoken shorthand زنجول as Uzungöl", () => {
+    expect(parseRouteRequest("افتح الطريق من طرابزون إلى زنجول")).toEqual({
+      origin: "Trabzon",
+      destinations: ["Uzungöl"],
+    });
+  });
+
   it("does not invent a destination from an unclear voice transcript", () => {
     expect(parseRouteRequest("ممكن تفتح لي الطريق إلى هذا شو اسمه")).toBeNull();
     expect(parseRouteRequest("افتح الطريق الى هذا")).toBeNull();
