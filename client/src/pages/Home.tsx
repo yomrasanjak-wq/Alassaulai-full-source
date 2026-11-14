@@ -11,6 +11,7 @@ import { ChatComposer } from "@/components/ChatComposer";
 import { AssistantReply, type VoiceGender } from "@/components/AssistantReply";
 import { RouteMapCard } from "@/components/RouteMapCard";
 import { parseRouteRequest, type RouteRequest } from "@shared/routeRequest";
+import { buildOfflineItineraryFallback } from "@shared/itineraryFallback";
 import { getSeason } from "@shared/season";
 import { VoiceSelector } from "@/components/VoiceSelector";
 import { NotificationCenter, type AppNotification, type NotificationTone } from "@/components/NotificationCenter";
@@ -1306,7 +1307,8 @@ export default function Home() {
       }
     } catch (error) {
       console.error("[ALASSAUL chat] request failed", error);
-      setChatMessages((messages) => [...messages, { from: "assistant", text: getChatErrorMessage(error) }]);
+      const offlineItinerary = buildOfflineItineraryFallback(nextMessages.map((message) => ({ role: message.from, content: message.text })), language);
+      setChatMessages((messages) => [...messages, { from: "assistant", text: offlineItinerary ?? getChatErrorMessage(error) }]);
       notify("تعذر إكمال الطلب", "جرّب مرة أخرى أو اكتب السؤال بصياغة أقصر.", "error");
     }
   }
