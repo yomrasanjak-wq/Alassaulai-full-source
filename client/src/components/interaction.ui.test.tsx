@@ -242,7 +242,7 @@ describe("ChatComposer UI", () => {
   it("offers separate gallery and camera attachment inputs", () => {
     const props = chatProps();
     const { container } = render(<ChatComposer {...props} />);
-    const galleryInput = container.querySelector('input[type="file"][aria-label="اختيار صورة من الاستديو"]') as HTMLInputElement;
+    const galleryInput = container.querySelector('input[type="file"][aria-label="إرفاق صورة من الاستديو"]') as HTMLInputElement;
     const cameraInput = container.querySelector('input[type="file"][aria-label="التقاط صورة بالكاميرا"]') as HTMLInputElement;
     expect(galleryInput).toBeTruthy();
     expect(galleryInput.accept).toBe("image/*");
@@ -252,7 +252,7 @@ describe("ChatComposer UI", () => {
     expect(cameraInput.getAttribute("capture")).toBe("environment");
     const galleryClick = vi.spyOn(galleryInput, "click").mockImplementation(() => {});
     const cameraClick = vi.spyOn(cameraInput, "click").mockImplementation(() => {});
-    fireEvent.click(screen.getByRole("button", { name: "اختيار صورة من الاستديو" }));
+    fireEvent.click(screen.getByRole("button", { name: "إرفاق صورة من الاستديو" }));
     fireEvent.click(screen.getByRole("button", { name: "التقاط صورة بالكاميرا" }));
     expect(galleryClick).toHaveBeenCalledOnce();
     expect(cameraClick).toHaveBeenCalledOnce();
