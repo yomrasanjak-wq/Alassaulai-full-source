@@ -3851,23 +3851,9 @@ img { display: block; max-width: 100%; }
   border-radius: 22px !important;
 }
 .site-shell .chat-compose {
-  display: grid !important;
-  grid-template-columns: auto auto auto minmax(0, 1fr) !important;
-  align-items: center !important;
+  display: flex !important;
+  align-items: flex-end !important;
   gap: 8px !important;
-}
-.site-shell .chat-compose-field {
-  grid-column: 1 / -1 !important;
-  grid-row: 1 !important;
-  width: 100% !important;
-}
-.site-shell .chat-compose > button {
-  grid-row: 2 !important;
-}
-.site-shell .chat-compose .send-button {
-  grid-column: 4 !important;
-  margin-inline-start: 0 !important;
-  justify-self: end !important;
 }
 .site-shell .chat-compose .chat-gallery-button,
 .site-shell .chat-compose .chat-camera-button,
@@ -3891,9 +3877,22 @@ img { display: block; max-width: 100%; }
   }
   .site-shell .chat-layout { flex-direction: column !important; }
   .site-shell .chat-compose {
+    display: grid !important;
     grid-template-columns: auto auto auto minmax(0, 1fr) !important;
+    align-items: center !important;
     gap: 7px !important;
     padding: 9px 10px calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+  .site-shell .chat-compose-field {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+  }
+  .site-shell .chat-compose > button { grid-row: 2 !important; }
+  .site-shell .chat-compose .send-button {
+    grid-column: 4 !important;
+    margin-inline-start: 0 !important;
+    justify-self: end !important;
   }
   .site-shell .chat-compose .chat-gallery-button {
     min-width: 66px !important;
