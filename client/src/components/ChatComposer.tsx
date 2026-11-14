@@ -28,7 +28,7 @@ export function ChatComposer({ value, onChange, onSend, onVoice, isListening, vo
 
   return (
     <form className="chat-compose" onSubmit={(event) => { event.preventDefault(); onSend(); }}>
-      <input ref={imageInputRef} className="chat-image-input" type="file" accept="image/*" aria-label="اختيار صورة من الاستديو" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) onImageSelected(file); event.currentTarget.value = ""; }} />
+      <input ref={imageInputRef} className="chat-image-input" type="file" accept="image/*" aria-label="إرفاق صورة من الاستديو" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) onImageSelected(file); event.currentTarget.value = ""; }} />
       <input ref={cameraInputRef} className="chat-image-input" type="file" accept="image/*" capture="environment" aria-label="التقاط صورة بالكاميرا" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) onImageSelected(file); event.currentTarget.value = ""; }} />
       <button type="button" className="chat-gallery-button" onClick={() => imageInputRef.current?.click()} disabled={isLoading} aria-label="إرفاق صورة من الاستديو" title="إرفاق صورة من الاستديو">
         <Paperclip size={19} />
