@@ -39,7 +39,7 @@ export function ChatComposer({ value, onChange, onSend, onVoice, isListening, vo
       </button>
       <button
         type="button"
-        className={isListening ? "listening" : ""}
+        className={isListening ? "listening chat-mic-button" : "chat-mic-button"}
         onClick={onVoice}
         aria-label="voice"
         disabled={!voiceSupported || isLoading}
