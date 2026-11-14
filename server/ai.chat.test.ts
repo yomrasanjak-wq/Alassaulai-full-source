@@ -456,7 +456,7 @@ describe("live news source", () => {
       expect(result.text).toContain("تطور دولي حديث");
       expect(result.text).toContain("https://example.com/latest");
       expect(invokeLLM).not.toHaveBeenCalled();
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy).toHaveBeenCalledOnce();
     } finally {
       fetchSpy.mockRestore();
     }
@@ -481,7 +481,7 @@ describe("live news source", () => {
       expect(result.text).not.toContain("&lt;");
       expect(result.text.match(/خبر دولي مكرر اليوم/g)).toHaveLength(1);
       expect(result.text).not.toContain("https://example.com/story-b");
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy).toHaveBeenCalledOnce();
       expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
@@ -512,7 +512,7 @@ describe("live news source", () => {
       expect(result.text).toContain("وكالة الاختبار");
       expect(result.text).toContain("https://example.com/world-news");
       expect(invokeLLM).not.toHaveBeenCalled();
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy).toHaveBeenCalledOnce();
     } finally {
       fetchSpy.mockRestore();
     }
@@ -655,7 +655,7 @@ describe("ai.chat", () => {
       const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "ما أبرز أخبار العالم اليوم؟" }] });
       expect(result.text).toContain("عنوان تجريبي لأخبار اليوم");
       expect(invokeLLM).not.toHaveBeenCalled();
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy).toHaveBeenCalledOnce();
     } finally {
       fetchSpy.mockRestore();
       vi.unstubAllEnvs();
