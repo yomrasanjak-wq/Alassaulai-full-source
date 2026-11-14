@@ -250,6 +250,12 @@ describe("ChatComposer UI", () => {
     expect(cameraInput).toBeTruthy();
     expect(cameraInput.accept).toBe("image/*");
     expect(cameraInput.getAttribute("capture")).toBe("environment");
+    const galleryClick = vi.spyOn(galleryInput, "click").mockImplementation(() => {});
+    const cameraClick = vi.spyOn(cameraInput, "click").mockImplementation(() => {});
+    fireEvent.click(screen.getByRole("button", { name: "اختيار صورة من الاستديو" }));
+    fireEvent.click(screen.getByRole("button", { name: "التقاط صورة بالكاميرا" }));
+    expect(galleryClick).toHaveBeenCalledOnce();
+    expect(cameraClick).toHaveBeenCalledOnce();
     const file = new File(["fake-image"], "photo.jpg", { type: "image/jpeg" });
     fireEvent.change(galleryInput, { target: { files: [file] } });
     expect(props.onImageSelected).toHaveBeenCalledWith(file);
