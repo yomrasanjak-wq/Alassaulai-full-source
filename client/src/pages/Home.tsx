@@ -2053,7 +2053,7 @@ export default function Home() {
       </div>}
 
       <button className="floating-chat" aria-label="chat" onClick={() => setChatOpen((open) => !open)}><span className="floating-chat-avatar"><img src={ASSETS.officialRobot} alt="" /></span><span>اسأل العسول</span></button>
-      {chatOpen && <aside className="chat-panel" style={{ left: "12px", right: "12px", insetInlineStart: "auto", insetInlineEnd: "auto", marginInline: "auto", transform: "none" }} aria-label="محادثة مساعد ALASSAUL">
+      {chatOpen && <aside className="chat-panel" aria-label="محادثة مساعد ALASSAUL">
         <div className="chat-header">
           <div><span className="chat-avatar official-robot"><img src={ASSETS.officialRobot} alt="روبوت ALASSAUL الرسمي" /></span><span><strong>المتحدث الرسمي · {t.chatTitle}</strong><small><span className="green-ping" /> {chatMutation.isPending ? "يكتب الآن…" : "متصل الآن"}</small></span></div>
           <button onClick={() => { window.speechSynthesis?.cancel(); setChatOpen(false); }} aria-label="إغلاق المحادثة"><X size={18} /></button>
