@@ -134,7 +134,7 @@ export function compactChatHistory(messages: Array<{ role: "user" | "assistant";
  * requested destination with Photon. Results are candidates, not opening-hour,
  * price, quality, or accessibility verification. */
 type TourismPhotonFeature = {
-  properties?: { name?: string; city?: string; state?: string; country?: string };
+  properties?: { name?: string; city?: string; state?: string; country?: string; countrycode?: string };
   geometry?: { coordinates?: unknown[] };
 };
 type TourismOverpassElement = {
@@ -145,13 +145,20 @@ const tourismResultCache = new Map<string, { expiresAt: number; answer: string }
 let tourismLastRequestAt = 0;
 let tourismCooldownUntil = 0;
 
+export function isItineraryPlanningQuestion(message: string): boolean {
+  const text = message.normalize("NFKC");
+  return /(?:رتب لي|رتب|سو[ّ]? لي|اعمل لي|جهز لي|خطط لي|برنامج|خطة|جدول|رحلة|itinerary|trip plan|travel plan)/i.test(text)
+    && /(?:في|إلى|الى|بـ|بمدينة|بمدينه|in|to)\s+.{2,}/i.test(text);
+}
+
 export function isTourismPlacesQuestion(message: string): boolean {
   return /(?:أماكن سياحية|اماكن سياحية|مكان سياحي|معالم سياحية|معالم سياحيه|وجهات سياحية|وجهات سياحيه|ماذا أزور|ماذا ازور|وش أزور|وين أروح|أين أذهب|tourist attractions|places to visit|things to do)/i.test(message)
+    && !isItineraryPlanningQuestion(message)
     && !/(?:رتب لي|برنامج|خطة|جدول|رحلة|itinerary|trip plan)/i.test(message);
 }
 
 export function extractTourismDestination(message: string): string | undefined {
-  if (!isTourismPlacesQuestion(message)) return undefined;
+  if (!isTourismPlacesQuestion(message) && !isItineraryPlanningQuestion(message)) return undefined;
   const normalized = message.normalize("NFKC").replace(/[؟?!،,؛;]+/g, " ").trim();
   const match = normalized.match(/(?:في|داخل|بمدينة|بمدينه|in|at)\s+(.+)$/i);
   const destination = match?.[1]?.trim().replace(/\s+/g, " ");
@@ -202,7 +209,11 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
   try {
     await waitForTourismRequestSlot();
     const geocodeUrl = new URL("https://photon.komoot.io/api/");
-    geocodeUrl.search = new URLSearchParams({ q: destination, limit: "5", lang: language === "AR" ? "ar" : language === "TR" ? "tr" : "en" }).toString();
+    const isKnownTurkishDestination = /(?:طرابزون|ترابزون|trabzon|أوزنجول|اوزنجول|uzung[oö]l|أيدر|ايدر|ayder|ريزه|ريزة|rize|سامسون|samsun|أوردو|ordu|جيرسون|giresun|سورميني|sürmene|surmene|أراكلي|araklı|arakli)/i.test(destination);
+    const geocodeQuery = isKnownTurkishDestination && !/(?:تركيا|turkey|türkiye)/i.test(destination)
+      ? destination + ", Türkiye"
+      : destination;
+    geocodeUrl.search = new URLSearchParams({ q: geocodeQuery, limit: "8", lang: language === "AR" ? "ar" : language === "TR" ? "tr" : "en" }).toString();
     const geocodeResponse = await fetch(geocodeUrl.toString(), {
       headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
       signal: AbortSignal.timeout(7000),
@@ -211,8 +222,12 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
     const geocode = await geocodeResponse.json() as { features?: TourismPhotonFeature[] };
     const resolved = (geocode.features ?? []).find((feature) => {
       const coords = feature.geometry?.coordinates;
+      const country = feature.properties?.country?.toLocaleLowerCase() ?? "";
+      const countryCode = feature.properties?.countrycode?.toLocaleLowerCase() ?? "";
+      const isInTurkey = countryCode === "tr" || country === "turkey" || country === "türkiye";
       return typeof feature.properties?.name === "string"
-        && Number.isFinite(Number(coords?.[0])) && Number.isFinite(Number(coords?.[1]));
+        && Number.isFinite(Number(coords?.[0])) && Number.isFinite(Number(coords?.[1]))
+        && (!isKnownTurkishDestination || isInTurkey);
     });
     if (!resolved) {
       return language === "AR"
@@ -1262,9 +1277,17 @@ export const appRouter = router({
           if (weatherContext) liveContext.push(`سياق من مصدر الطقس الحي:
 ${weatherContext}`);
 
-          if (isTourismPlacesQuestion(latestText)) {
+          if (isTourismPlacesQuestion(latestText) || isItineraryPlanningQuestion(latestText)) {
             directTourismAnswer = await getLiveTourismPlacesAnswer(latestText, input.language);
-            if (directTourismAnswer) liveContext.push("نتائج المعالم السياحية من OpenStreetMap:\n" + directTourismAnswer);
+            if (directTourismAnswer) {
+              const lookupUnavailable = /(?:تعذر جلب|لم أتمكن من تحديد|لم أتمكن من جلب|لم تُرجع معالم|لم أضع أسماء غير متحققة|مصدر الخرائط مزدحم|Verified attractions .* unavailable|couldn't reliably locate|returned no sufficiently named)/i.test(directTourismAnswer);
+              if (isItineraryPlanningQuestion(latestText) && lookupUnavailable) {
+                return { text: directTourismAnswer };
+              }
+              liveContext.push((isItineraryPlanningQuestion(latestText)
+                ? "أماكن موثقة لتخطيط الرحلة من OpenStreetMap:"
+                : "نتائج المعالم السياحية من OpenStreetMap:") + "\n" + directTourismAnswer);
+            }
           }
 
           let grounded = false;
@@ -1329,7 +1352,9 @@ ${newsContext}`);
             : "Answer in clear, concise English.";
         const taskInstruction = latestMessage?.imageDataUrl
           ? "نمط تحليل صورة: صف العناصر الواضحة أولاً، ثم اشرح ما يمكن استنتاجه وما لا يمكن الجزم به. إذا طلب المستخدم التعرف على شيء، اذكر الاحتمالات وعلامات التمييز، ولا تخترع تفاصيل غير ظاهرة."
-          : getAdaptiveTaskInstruction(latestText);
+          : isItineraryPlanningQuestion(latestText)
+            ? getAdaptiveTaskInstruction(latestText) + " ضابط صارم للوجهات: استخدم أسماء الأماكن الواردة حصراً في قائمة OpenStreetMap المرفقة في السياق. لا تضف أي معلم أو قرية أو بحيرة أو شلال من الذاكرة، ولا تخلط بين المدن أو الأقاليم. إذا كانت القائمة لا تكفي لملء أربعة أيام، قل ذلك بوضوح واقترح تقليل عدد الأيام أو طلب منطقة إضافية؛ لا تملأ الفراغ بأسماء غير موثقة. لا تفترض أن المواقع متجاورة لمجرد أنها في المدينة نفسها؛ راعِ الإحداثيات ونطاق البحث."
+            : getAdaptiveTaskInstruction(latestText);
         const sourceInstruction = liveContext.length
           ? `\n\nبيانات داعمة من الأدوات الحية (ليست جواباً بديلاً عنك):\n${liveContext.join("\n\n")}\nاستخدم هذه البيانات عند صلتها بالسؤال، وانسب المصدر ووقت القراءة إن وُجدا، ولا تضف حقائق آنية غير موجودة فيها.`
           : "\n\nأجب بصفتك نموذجاً لغوياً عن السؤال الجديد مباشرة. لا تستبدل الإجابة بترحيب عام أو نص محفوظ أو رد مبني على مطابقة كلمات. في المعلومات الآنية لا تخترع؛ اذكر بوضوح إن لم يتوفر مصدر حي.";
