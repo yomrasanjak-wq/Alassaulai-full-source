@@ -549,6 +549,7 @@ describe("live weather source", () => {
 
   it.each([
     ["ما طقس أوزنجول اليوم؟", "أوزنجول", 40.6197, 40.2895],
+    ["ما طقس زنجول اليوم؟", "أوزنجول", 40.6197, 40.2895],
     ["كيف الأجواء في همسي كوي اليوم؟", "همسي كوي", 40.7139, 39.4572],
   ])("uses the requested mountain destination for live weather: %s", async (question, city, latitude, longitude) => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ current: { time: "2026-11-14T12:00", temperature_2m: 12, apparent_temperature: 10, weather_code: 3, wind_speed_10m: 6 } }), { status: 200, headers: { "content-type": "application/json" } }));
