@@ -828,7 +828,7 @@ export default function Home() {
   };
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { from: "assistant", text: "أهلاً بك، أنا مساعد ALASSAUL-AI. اسألني عن أي موضوع، من الأخبار والعلوم والصحة والسفر إلى طرابزون وشمال تركيا، ويمكنك أيضاً إرسال صورة لفهم ما يظهر فيها." },
+    
   ]);
   const [isListening, setIsListening] = useState(false);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -2064,7 +2064,7 @@ export default function Home() {
         <div className="chat-layout">
           <section className="chat-conversation">
             <div className="chat-body">
-              <div className="chat-welcome"><Sparkles size={16} /> أهلاً بك، أنا مساعد ALASSAUL الذكي. كيف أستطيع مساعدتك؟</div>
+              <div className="chat-welcome"><Sparkles size={16} /> أهلاً بك، كيف أستطيع مساعدتك اليوم؟</div>
               <VoiceSelector value={voiceGender} onChange={setVoiceGender} />
               <div className="chat-quick-prompts">{quickPrompts.map((prompt) => <button key={prompt} onClick={() => void askAssistant(prompt)} disabled={chatMutation.isPending}>{prompt}</button>)}</div>
               {chatMessages.map((message, index) => <div key={`${message.from}-${index}`} className={`chat-message chat-${message.from}`}><span>{renderChatText(message.text)}</span>{message.imageDataUrl && <img className="chat-message-image" src={message.imageDataUrl} alt="الصورة التي أرسلها المستخدم" />}{message.from === "assistant" && <AssistantReply text={message.text} language={language} voiceGender={voiceGender} />}</div>)}

@@ -34,18 +34,18 @@ export function ChatComposer({ value, onChange, onSend, onVoice, isListening, vo
         <Paperclip size={19} />
         <span>إرفاق</span>
       </button>
-      <button type="button" className="chat-camera-button" onClick={() => cameraInputRef.current?.click()} disabled={isLoading} aria-label="التقاط صورة بالكاميرا" title="التقط صورة بالكاميرا لتحليلها">
-        <Camera size={19} />
-      </button>
       <button
         type="button"
-        className={isListening ? "listening" : ""}
+        className={isListening ? "listening chat-mic-button" : "chat-mic-button"}
         onClick={onVoice}
         aria-label="voice"
         disabled={!voiceSupported || isLoading}
         title={!voiceSupported ? "التعرف الصوتي غير متاح في هذا المتصفح" : isListening ? "إيقاف الاستماع" : "تحدث بالعربية"}
       >
-        <Mic size={17} />
+        <Mic size={19} />
+      </button>
+      <button type="button" className="chat-camera-button" onClick={() => cameraInputRef.current?.click()} disabled={isLoading} aria-label="التقاط صورة بالكاميرا" title="التقط صورة بالكاميرا لتحليلها">
+        <Camera size={19} />
       </button>
       <div className="chat-compose-field">
         {imagePreview && <div className="chat-image-preview"><img src={imagePreview} alt="الصورة المرفقة للمساعد" /><button type="button" onClick={() => onImageSelected(undefined)} aria-label="إزالة الصورة" title="إزالة الصورة"><X size={15} /></button><small>ستُرسل الصورة للعسول لتحليلها</small></div>}
