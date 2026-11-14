@@ -3773,3 +3773,175 @@ img { display: block; max-width: 100%; }
     font-size: 14px;
   }
 }
+
+
+/* ALASSAUL final mobile pass — opaque, readable resident services and centered assistant. */
+.site-shell #resident-services .resident-services-content,
+.site-shell #resident-services .resident-accordion-group,
+.site-shell #resident-services .resident-services-grid,
+.site-shell #resident-services .resident-local-focus,
+.site-shell #resident-services .resident-phrasebook {
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+.site-shell #resident-services .resident-accordion-group {
+  background: #103d34 !important;
+  border-color: rgb(219 188 123 / 48%) !important;
+}
+.site-shell #resident-services .resident-accordion-trigger {
+  color: #fff4dc !important;
+  background: #155044 !important;
+  border-color: rgb(219 188 123 / 48%) !important;
+  opacity: 1 !important;
+}
+.site-shell #resident-services .resident-accordion-trigger > span,
+.site-shell #resident-services .resident-accordion-trigger strong {
+  color: #fff4dc !important;
+  opacity: 1 !important;
+}
+.site-shell #resident-services .resident-service-card,
+.site-shell #resident-services .resident-phrase-card {
+  color: #fff4dc !important;
+  background: #16483d !important;
+  border: 1px solid rgb(219 188 123 / 42%) !important;
+  opacity: 1 !important;
+  box-shadow: 0 5px 16px rgb(0 0 0 / 16%) !important;
+}
+.site-shell #resident-services .resident-service-copy strong,
+.site-shell #resident-services .resident-phrase-card strong {
+  color: #fff4dc !important;
+  opacity: 1 !important;
+}
+.site-shell #resident-services .resident-service-copy small,
+.site-shell #resident-services .resident-phrase-ar,
+.site-shell #resident-services .resident-services-note,
+.site-shell #resident-services .resident-local-focus-heading small {
+  color: #dce8dd !important;
+  opacity: 1 !important;
+}
+.site-shell #resident-services .resident-local-focus {
+  color: #fff4dc !important;
+  background: #123f35 !important;
+  border-color: rgb(219 188 123 / 42%) !important;
+}
+.site-shell #resident-services .resident-local-focus-heading strong {
+  color: #fff4dc !important;
+}
+.site-shell #resident-services .resident-phrase-copy {
+  color: #123f35 !important;
+  background: #f1e7cf !important;
+  opacity: 1 !important;
+}
+
+/* Keep the assistant dialog truly centered on both desktop and mobile. */
+.site-shell .chat-panel {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  top: 50% !important;
+  bottom: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  width: min(920px, calc(100vw - 28px)) !important;
+  height: min(760px, calc(100dvh - 40px)) !important;
+  max-height: calc(100dvh - 40px) !important;
+  border-radius: 22px !important;
+}
+.site-shell .chat-compose {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+}
+.site-shell .chat-compose .chat-gallery-button,
+.site-shell .chat-compose .chat-camera-button,
+.site-shell .chat-compose .chat-mic-button {
+  min-height: 42px !important;
+  border-radius: 11px !important;
+}
+@media (max-width: 740px) {
+  .site-shell .chat-panel {
+    left: 50% !important;
+    right: auto !important;
+    top: 50% !important;
+    bottom: auto !important;
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+    height: calc(100dvh - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    border-radius: 18px !important;
+  }
+  .site-shell .chat-layout { flex-direction: column !important; }
+  .site-shell .chat-compose {
+    display: grid !important;
+    grid-template-columns: auto auto auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 9px 10px calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+  .site-shell .chat-compose-field {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+  }
+  .site-shell .chat-compose > button { grid-row: 2 !important; }
+  .site-shell .chat-compose .send-button {
+    grid-column: 4 !important;
+    margin-inline-start: 0 !important;
+    justify-self: end !important;
+  }
+  .site-shell .chat-compose .chat-gallery-button {
+    min-width: 66px !important;
+    width: auto !important;
+    padding-inline: 8px !important;
+  }
+  .site-shell .chat-compose .chat-camera-button,
+  .site-shell .chat-compose .chat-mic-button,
+  .site-shell .chat-compose .send-button {
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    flex-basis: 40px !important;
+  }
+}
+.live-broadcast-watch-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  margin: 10px auto 0;
+  padding: 8px 14px;
+  border: 1px solid rgb(212 175 55 / 48%);
+  border-radius: 10px;
+  background: #103d34;
+  color: #f6e8c7;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.live-broadcast-watch-link:hover { background: #185446; color: #fff; }
+
+/* Let the player keep its 16:9 frame while the YouTube fallback remains visible below. */
+.live-broadcast-player {
+  display: flex !important;
+  flex-direction: column !important;
+  aspect-ratio: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.live-broadcast-iframe {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 220px !important;
+  aspect-ratio: 16 / 9 !important;
+  flex: 0 0 auto !important;
+}
+.live-broadcast-watch-link { flex: 0 0 auto !important; }
+@media (max-width: 640px) {
+  .live-broadcast-iframe { min-height: 190px !important; }
+}
