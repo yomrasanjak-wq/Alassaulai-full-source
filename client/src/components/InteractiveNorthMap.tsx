@@ -14,7 +14,7 @@ type MapDestination = {
   query: string;
   city: string;
   branch: string;
-  position: google.maps.LatLngLiteral;
+  position: { lat: number; lng: number };
 };
 
 const destinations: MapDestination[] = [
