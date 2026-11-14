@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, getAdaptiveTaskInstruction, getDistinctBackupModel, getLiveWeatherAnswer, getVisitorIdentityInstruction } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
@@ -269,16 +269,115 @@ describe("adaptive brain response strategy", () => {
     expect(getAdaptiveTaskInstruction("عندي دوخة وش أسوي؟")).toContain("علامات الخطر");
   });
 
+  it("selects a sourced, cautious profile format for professional player questions", () => {
+    const instruction = getAdaptiveTaskInstruction("أعطني نبذة عن بعض اللاعبين المحترفين");
+    expect(instruction).toContain("نبذة لاعب محترف");
+    expect(instruction).toContain("لا تخمّن الأرقام");
+  });
+
+  it("selects a worldwide attraction guide rather than limiting tourism to North Turkey", () => {
+    const instruction = getAdaptiveTaskInstruction("اذكر لي أماكن سياحية في اليابان");
+    expect(instruction).toContain("الدليل السياحي العالمي");
+    expect(instruction).toContain("5 إلى 8 معالم");
+  });
+
   it("treats world news as time-sensitive and forbids invented current headlines", () => {
     expect(getAdaptiveTaskInstruction("ما أبرز أخبار العالم اليوم؟")).toContain("لا تعرض معلومة على أنها حدث اليوم");
   });
 });
 
 
+
+describe("live worldwide tourism place lookup", () => {
+  it("recognizes a country or region tourism request and extracts its destination", () => {
+    const question = "اذكر لي أماكن سياحية في كيوتو اليابان";
+    expect(isTourismPlacesQuestion(question)).toBe(true);
+    expect(extractTourismDestination(question)).toBe("كيوتو اليابان");
+    expect(isTourismPlacesQuestion("رتب لي رحلة إلى كيوتو اليابان")).toBe(false);
+  });
+
+  it("returns only named mapped attractions with direct map pins and directions", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.startsWith("https://photon.komoot.io/api/")) {
+        return new Response(JSON.stringify({
+          features: [{
+            properties: { name: "Kyoto", city: "Kyoto", state: "Kyoto", country: "Japan" },
+            geometry: { coordinates: [135.7681, 35.0116] },
+          }],
+        }), { status: 200, headers: { "content-type": "application/geo+json" } });
+      }
+      expect(url).toBe("https://overpass-api.de/api/interpreter");
+      return new Response(JSON.stringify({
+        elements: [{
+          type: "node", id: 12345, lat: 35.039, lon: 135.729,
+          tags: { name: "Kinkaku-ji", tourism: "attraction" },
+        }],
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    try {
+      const result = await getLiveTourismPlacesAnswer("اذكر لي أماكن سياحية في كيوتو اليابان", "AR");
+      expect(result).toContain("Kinkaku-ji");
+      expect(result).toContain("openstreetmap.org/node/12345");
+      expect(result).toContain("google.com/maps/dir/");
+      expect(result).toContain("OpenStreetMap contributors");
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("returns verified attraction results even when the language model provider fails", async () => {
+    vi.mocked(invokeLLM).mockRejectedValue(new Error("test provider unavailable"));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.startsWith("https://photon.komoot.io/api/")) {
+        return new Response(JSON.stringify({
+          features: [{
+            properties: { name: "Osaka", city: "Osaka", country: "Japan" },
+            geometry: { coordinates: [135.5023, 34.6937] },
+          }],
+        }), { status: 200, headers: { "content-type": "application/geo+json" } });
+      }
+      return new Response(JSON.stringify({
+        elements: [{
+          type: "node", id: 67890, lat: 35.039, lon: 135.729,
+          tags: { name: "Kinkaku-ji", tourism: "attraction" },
+        }],
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "اذكر لي أماكن سياحية في أوساكا اليابان" }],
+      });
+      expect(result.text).toContain("Kinkaku-ji");
+      expect(result.text).toContain("openstreetmap.org/node/67890");
+    } finally {
+      fetchSpy.mockRestore();
+      vi.mocked(invokeLLM).mockReset();
+    }
+  });
+
+  it("does not invent attractions when geocoding cannot resolve a destination", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ features: [] }), {
+      status: 200, headers: { "content-type": "application/geo+json" },
+    }));
+    try {
+      const result = await getLiveTourismPlacesAnswer("أماكن سياحية في مكان غير معروف", "AR");
+      expect(result).toContain("لم أتمكن من تحديد");
+      expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+});
+
 describe("keyless reference search", () => {
   it("recognizes stable informational questions", () => {
     expect(isWikipediaReferenceQuestion("ما معنى الذكاء الاصطناعي؟")).toBe(true);
     expect(isWikipediaReferenceQuestion("Who is Ibn Battuta?")).toBe(true);
+    expect(isWikipediaReferenceQuestion("نبذه عن كريستيانو رونالدو")).toBe(true);
   });
   it("excludes current news, weather, and nearby-place requests", () => {
     expect(isWikipediaReferenceQuestion("ما آخر أخبار اليوم؟")).toBe(false);
@@ -402,6 +501,36 @@ describe("live news source", () => {
     } finally {
       fetchSpy.mockRestore();
     }
+  });
+});
+
+describe("context-aware weather follow-ups", () => {
+  it("reuses the most recently mentioned city when a short follow-up omits it", () => {
+    const messages = [
+      { role: "user" as const, content: "ما طقس طرابزون الآن؟" },
+      { role: "assistant" as const, content: "الجو بارد اليوم." },
+      { role: "user" as const, content: "طيب وكم درجة الحرارة؟" },
+    ];
+    expect(getContextualWeatherQuestion(messages)).toBe("طيب وكم درجة الحرارة؟ في طرابزون");
+  });
+
+  it("honors a new city named in the latest weather question", () => {
+    const messages = [
+      { role: "user" as const, content: "ما طقس طرابزون الآن؟" },
+      { role: "assistant" as const, content: "الجو بارد اليوم." },
+      { role: "user" as const, content: "وكيف الجو في ريزه؟" },
+    ];
+    expect(getContextualWeatherQuestion(messages)).toBe("وكيف الجو في ريزه؟");
+  });
+
+  it("does not infer a city from assistant text or turn a definition into a weather lookup", () => {
+    const messages = [
+      { role: "user" as const, content: "اقترح لي رحلة جميلة" },
+      { role: "assistant" as const, content: "يمكنك زيارة طرابزون، والطقس فيها معتدل." },
+      { role: "user" as const, content: "كم درجة الحرارة؟" },
+    ];
+    expect(getContextualWeatherQuestion(messages)).toBe("كم درجة الحرارة؟");
+    expect(getContextualWeatherQuestion([{ role: "user", content: "ما معنى كلمة الطقس؟" }])).toBe("ما معنى كلمة الطقس؟");
   });
 });
 

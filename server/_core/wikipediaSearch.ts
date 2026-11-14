@@ -7,7 +7,7 @@ const WIKIPEDIA_HOST: Record<ReferenceLanguage, string> = {
   AR: "ar.wikipedia.org", TR: "tr.wikipedia.org", EN: "en.wikipedia.org",
 };
 const CURRENT_OR_LOCAL_QUERY = /(?:اليوم|الآن|الان|حالياً|حاليا|آخر الأخبار|اخر الاخبار|عاجل|مباشر|نتيجة المباراة|الطقس|درجة الحرارة|مفتوح الآن|مفتوح الان|أقرب|اقرب|بالقرب من|حول(?:ي|نا)?|near me|nearby|open now|today|latest|current|breaking|live score|weather|directions|route)/i;
-const INFORMATIONAL_QUESTION = /(?:ما هو|ماهي|ما هي|ما معنى|من هو|من هي|اشرح|فسر|فسّر|لماذا|كيف يعمل|كيف تعمل|متى تأسس|متى تأسست|تعريف|نبذة عن|معلومات عن|what is|who is|explain|meaning of|how does|history of|about)/i;
+const INFORMATIONAL_QUESTION = /(?:ما هو|ماهي|ما هي|ما معنى|من هو|من هي|اشرح|فسر|فسّر|لماذا|كيف يعمل|كيف تعمل|متى تأسس|متى تأسست|تعريف|نبذة عن|نبذه عن|معلومات عن|معلومات حول|ما معلومات|what is|who is|explain|meaning of|how does|history of|about)/i;
 function cleanExcerpt(value: unknown): string {
   if (typeof value !== "string") return "";
   return value.replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"')
