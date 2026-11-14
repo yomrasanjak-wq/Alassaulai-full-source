@@ -76,14 +76,16 @@ export default function LiveBroadcastSection() {
                   <a href={active.newsUrl} target="_blank" rel="noreferrer">قراءة الخبر من المصدر الرسمي ↗</a>
                 </div>
               ) : (
-                <iframe
-                  src={active.embedUrl}
-                  title={active.name}
-                  className="live-broadcast-iframe"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                />
-                {active.watchUrl && <a className="live-broadcast-watch-link" href={active.watchUrl} target="_blank" rel="noreferrer">إذا لم يعمل البث هنا، افتحه مباشرة في YouTube ↗</a>}
+                <>
+                  <iframe
+                    src={active.embedUrl}
+                    title={active.name}
+                    className="live-broadcast-iframe"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                  />
+                  {active.watchUrl && <a className="live-broadcast-watch-link" href={active.watchUrl} target="_blank" rel="noreferrer">إذا لم يعمل البث هنا، افتحه مباشرة في YouTube ↗</a>}
+                </>
               )}
               <div className="live-broadcast-player-bar">
                 <div className="live-broadcast-player-label">
