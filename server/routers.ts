@@ -305,6 +305,8 @@ function weatherDescription(code: number) {
 }
 
 const WEATHER_CITIES = [
+  { names: /أوزنجول|اوزنجول|أوزونغول|اوزونغول|uzung[oö]l/i, name: "أوزنجول", latitude: 40.6197, longitude: 40.2895, timezone: "Europe/Istanbul" },
+  { names: /همسه\s*كوي|همسي\s*كوي|هامسي\s*كوي|hamsik[oö]y/i, name: "همسي كوي", latitude: 40.7139, longitude: 39.4572, timezone: "Europe/Istanbul" },
   { names: /طرابزون|ترابزون|trabzon/i, name: "طرابزون", latitude: 41.0027, longitude: 39.7168, timezone: "Europe/Istanbul" },
   { names: /أوردو|اوردو|ordu/i, name: "أوردو", latitude: 40.9839, longitude: 37.8764, timezone: "Europe/Istanbul" },
   { names: /سامسون|samsun/i, name: "سامسون", latitude: 41.2867, longitude: 36.3300, timezone: "Europe/Istanbul" },
@@ -820,14 +822,9 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   try {
-    // Search the user's topic and the regional top-stories feed together.
-    // This prevents a narrow query from leaving the visitor with only one headline.
+    // Keep country/topic queries isolated. Mixing regional top stories into a specific country search can introduce unrelated headlines.
     const feeds = await Promise.allSettled([
       fetch(`https://news.google.com/rss/search?${searchParams.toString()}`, {
-        headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
-        signal: controller.signal,
-      }),
-      fetch(`https://news.google.com/rss?${topParams.toString()}`, {
         headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
         signal: controller.signal,
       }),
@@ -864,7 +861,7 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
     }).sort((a, b) => b.publishedAt - a.publishedAt).slice(0, 5);
     if (!items.length) throw new Error("Google News RSS returned no headlines published in the last 48 hours");
     const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
-    const footer = language === "AR" ? "المصدر: Google News RSS (بحث الموضوع والأخبار الإقليمية). هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS (konu araması ve bölgesel manşetler). Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS (topic search and regional top stories). These are headlines; check the publisher for details and updates.";
+    const footer = language === "AR" ? "المصدر: Google News RSS (بحث الموضوع المحدد). هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS (konu araması). Ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS (topic search). Check the publisher for details and updates.";
     return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.snippet ? `\n   ${item.snippet}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
   } catch (error) {
     console.warn("[ALASSAUL news] live feed unavailable", error);
