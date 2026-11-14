@@ -28,6 +28,13 @@ describe("parseRouteRequest", () => {
     });
   });
 
+  it("parses the exact natural-language route request used in the visitor test", () => {
+    expect(parseRouteRequest("طيب ممكن تفتح لي الطريق في الخريطه من طرابزون الى ريزا")).toEqual({
+      origin: "Trabzon",
+      destinations: ["Rize"],
+    });
+  });
+
   it("does not invent a destination from an unclear voice transcript", () => {
     expect(parseRouteRequest("ممكن تفتح لي الطريق إلى هذا شو اسمه")).toBeNull();
     expect(parseRouteRequest("افتح الطريق الى هذا")).toBeNull();
