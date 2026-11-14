@@ -3924,3 +3924,24 @@ img { display: block; max-width: 100%; }
   text-decoration: none;
 }
 .live-broadcast-watch-link:hover { background: #185446; color: #fff; }
+
+/* Let the player keep its 16:9 frame while the YouTube fallback remains visible below. */
+.live-broadcast-player {
+  display: flex !important;
+  flex-direction: column !important;
+  aspect-ratio: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.live-broadcast-iframe {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 220px !important;
+  aspect-ratio: 16 / 9 !important;
+  flex: 0 0 auto !important;
+}
+.live-broadcast-watch-link { flex: 0 0 auto !important; }
+@media (max-width: 640px) {
+  .live-broadcast-iframe { min-height: 190px !important; }
+}
