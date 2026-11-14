@@ -392,7 +392,7 @@ describe("VoiceSelector UI", () => {
     try {
       window.localStorage.setItem("alassault-voice-gender", "male");
       render(<VoiceSelector />);
-      await waitFor(() => expect(screen.getByText(/لا يوفر جهازك صوت رجل عربي مستقلاً/)).toBeTruthy());
+      await waitFor(() => expect(screen.getByText(/الصوت العربي المتاح يعتمد على الأصوات المثبتة في جهازك/)).toBeTruthy());
     } finally {
       Object.defineProperty(window, "speechSynthesis", { configurable: true, value: originalSpeechSynthesis });
     }
