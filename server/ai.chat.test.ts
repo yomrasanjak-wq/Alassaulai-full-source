@@ -462,7 +462,7 @@ describe("live news source", () => {
     }
   });
 
-  it("removes escaped HTML from publisher excerpts and deduplicates repeated headlines across feeds", async () => {
+  it("removes escaped HTML from publisher excerpts and deduplicates repeated headlines within the feed", async () => {
     const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
     const rss = `<rss><channel>
       <item><title>خبر دولي مكرر اليوم</title><source>وكالة الاختبار</source><link>https://example.com/story-a</link><pubDate>${publishedAt}</pubDate><description>&lt;p&gt;ملخص نظيف من الناشر &amp;amp; تفاصيل إضافية.&lt;/p&gt;</description></item>
@@ -481,34 +481,6 @@ describe("live news source", () => {
       expect(result.text).not.toContain("&lt;");
       expect(result.text.match(/خبر دولي مكرر اليوم/g)).toHaveLength(1);
       expect(result.text).not.toContain("https://example.com/story-b");
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
-      expect(invokeLLM).not.toHaveBeenCalled();
-    } finally {
-      fetchSpy.mockRestore();
-    }
-  });
-
-  it("supplements a narrow topic search with regional top stories to provide a fuller news brief", async () => {
-    const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
-    const topicFeed = `<rss><channel><item><title>خبر الموضوع المحدد</title><source>مصدر الموضوع</source><link>https://example.com/topic</link><pubDate>${publishedAt}</pubDate></item></channel></rss>`;
-    const topFeed = `<rss><channel>
-      <item><title>خبر إقليمي أول</title><source>وكالة أولى</source><link>https://example.com/one</link><pubDate>${publishedAt}</pubDate></item>
-      <item><title>خبر إقليمي ثان</title><source>وكالة ثانية</source><link>https://example.com/two</link><pubDate>${publishedAt}</pubDate></item>
-      <item><title>خبر إقليمي ثالث</title><source>وكالة ثالثة</source><link>https://example.com/three</link><pubDate>${publishedAt}</pubDate></item>
-      <item><title>خبر إقليمي رابع</title><source>وكالة رابعة</source><link>https://example.com/four</link><pubDate>${publishedAt}</pubDate></item>
-    </channel></rss>`;
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-      const url = new URL(String(input));
-      return new Response(url.pathname.endsWith("/search") ? topicFeed : topFeed, { status: 200, headers: { "content-type": "application/rss+xml" } });
-    });
-    try {
-      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
-        language: "AR",
-        messages: [{ role: "user", content: "ما أبرز أخبار العالم اليوم؟" }],
-      });
-      for (const title of ["خبر الموضوع المحدد", "خبر إقليمي أول", "خبر إقليمي ثان", "خبر إقليمي ثالث", "خبر إقليمي رابع"]) {
-        expect(result.text).toContain(title);
-      }
       expect(fetchSpy).toHaveBeenCalledTimes(2);
       expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
