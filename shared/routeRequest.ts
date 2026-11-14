@@ -85,6 +85,10 @@ export function parseRouteRequest(text: string): RouteRequest | null {
 
   const rawDestination = (destinationMatches.find((match) => /\s+(?:أو|او|or|ya da|veya)\s+/i.test(match[1] ?? "")) ?? lastDestinationMatch)?.[1]?.trim();
   if (!rawDestination) return null;
+  // A voice transcript such as "افتح الطريق إلى هذا شو اسمه" does not identify a place.
+  // Never turn a vague demonstrative or speech fragment into a fabricated map destination.
+  if (/^(?:هذا|هذه|هذي|ذاك|تلك|هنا|هناك|المكان|هذا شو اسمه|وش اسمه|شو اسمه)(?:\\s|$)/i.test(rawDestination.trim())
+    || /(?:شو اسمه|وش اسمه|ما اسمه|ما اسمها|اللي قدامي)/i.test(rawDestination)) return null;
 
   // Keep alternative destinations when the user asks for one of several places.
   // Strip repeated destination prepositions before canonicalizing each option.
