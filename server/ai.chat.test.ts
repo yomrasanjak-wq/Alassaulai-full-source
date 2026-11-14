@@ -404,7 +404,7 @@ describe("keyless reference search", () => {
 });
 
 describe("live news source", () => {
-  it("recognizes Yemen news and filters out headlines unrelated to Yemen", async () => {
+  it.each(["أخبار اليمن اليوم", "وش أخبار اليمن اليوم؟", "آخر أخبار اليمن"]) ("recognizes country-specific Gulf Arabic news requests: %s", async (question) => {
     const publishedAt = new Date(Date.now() - 30 * 60 * 1000).toUTCString();
     const rss = `<rss><channel>
       <item><title>تطورات في اليمن ومحادثات جديدة في صنعاء</title><source>وكالة اليمن</source><link>https://example.com/yemen</link><pubDate>${publishedAt}</pubDate></item>
@@ -413,13 +413,13 @@ describe("live news source", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = new URL(String(input));
       expect(url.hostname).toBe("news.google.com");
-      expect(url.searchParams.get("q")).toContain("أخبار اليمن اليوم");
+      expect(url.searchParams.get("q")).toContain("اليمن");
       return new Response(rss, { status: 200, headers: { "content-type": "application/rss+xml" } });
     });
     try {
       const result = await appRouter.createCaller(createPublicContext()).ai.chat({
         language: "AR",
-        messages: [{ role: "user", content: "أخبار اليمن اليوم" }],
+        messages: [{ role: "user", content: question }],
       });
       expect(result.text).toContain("تطورات في اليمن");
       expect(result.text).not.toContain("تطورات سياسية في الولايات المتحدة");
