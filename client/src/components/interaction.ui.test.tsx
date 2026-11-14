@@ -239,14 +239,25 @@ describe("City-first map and discovery flow", () => {
 });
 
 describe("ChatComposer UI", () => {
-  it("offers a camera/image attachment control", () => {
+  it("offers separate gallery and camera attachment inputs", () => {
     const props = chatProps();
-    render(<ChatComposer {...props} />);
-    const input = screen.getByLabelText("التقاط صورة أو اختيار صورة") as HTMLInputElement;
-    expect(input.accept).toBe("image/*");
-    expect(input.getAttribute("capture")).toBe("environment");
+    const { container } = render(<ChatComposer {...props} />);
+    const galleryInput = container.querySelector('input[type="file"][aria-label="إرفاق صورة من الاستديو"]') as HTMLInputElement;
+    const cameraInput = container.querySelector('input[type="file"][aria-label="التقاط صورة بالكاميرا"]') as HTMLInputElement;
+    expect(galleryInput).toBeTruthy();
+    expect(galleryInput.accept).toBe("image/*");
+    expect(galleryInput.hasAttribute("capture")).toBe(false);
+    expect(cameraInput).toBeTruthy();
+    expect(cameraInput.accept).toBe("image/*");
+    expect(cameraInput.getAttribute("capture")).toBe("environment");
+    const galleryClick = vi.spyOn(galleryInput, "click").mockImplementation(() => {});
+    const cameraClick = vi.spyOn(cameraInput, "click").mockImplementation(() => {});
+    fireEvent.click(screen.getByRole("button", { name: "إرفاق صورة من الاستديو" }));
+    fireEvent.click(screen.getByRole("button", { name: "التقاط صورة بالكاميرا" }));
+    expect(galleryClick).toHaveBeenCalledOnce();
+    expect(cameraClick).toHaveBeenCalledOnce();
     const file = new File(["fake-image"], "photo.jpg", { type: "image/jpeg" });
-    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.change(galleryInput, { target: { files: [file] } });
     expect(props.onImageSelected).toHaveBeenCalledWith(file);
   });
   it("sends text and disables voice when the browser lacks support", () => {
