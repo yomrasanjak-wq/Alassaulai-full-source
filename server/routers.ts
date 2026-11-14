@@ -402,6 +402,8 @@ async function getJeddahWeatherAnswer(content: string) {
   }
 }
 
+const isSaudiNewsQuestion = (message: string) => /(?:أخبار|اخبار|أنباء|انباء|مستجدات|آخر|اخر).{0,28}(?:السعودية|سعودية|المملكة)|(?:السعودية|المملكة العربية السعودية|Saudi Arabia).{0,28}(?:أخبار|اخبار|أنباء|انباء|اليوم|مستجدات|news|today)/i.test(message);
+
 const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار|المستجدات|التطورات)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|وش صاير(?: بالعالم| في العالم)?|وش صار(?: بالعالم| في العالم)?|وش السالفة(?: بالعالم| في العالم)?|ايش صاير(?: بالعالم| في العالم)?|إيش صاير(?: بالعالم| في العالم)?|عطني آخر الأخبار|عطني اخر الاخبار|آخر المستجدات|اخر المستجدات|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
 function isLocalBusinessSearchQuestion(message: string) {
@@ -812,23 +814,29 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
     gl: language === "AR" ? "SA" : language === "TR" ? "TR" : "US",
     ceid: language === "AR" ? "SA:ar" : language === "TR" ? "TR:tr" : "US:en",
   };
-  const searchParams = new URLSearchParams({ q: message.slice(0, 160), ...locale });
+  const saudiOnly = isSaudiNewsQuestion(message);
+  const newsQuery = saudiOnly ? `${message.slice(0, 120)} السعودية OR المملكة العربية السعودية OR Saudi Arabia` : message.slice(0, 160);
+  const searchParams = new URLSearchParams({ q: newsQuery, ...locale });
   const topParams = new URLSearchParams(locale);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   try {
     // Search the user's topic and the regional top-stories feed together.
     // This prevents a narrow query from leaving the visitor with only one headline.
-    const feeds = await Promise.allSettled([
+    const feedRequests = [
       fetch(`https://news.google.com/rss/search?${searchParams.toString()}`, {
         headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
         signal: controller.signal,
       }),
-      fetch(`https://news.google.com/rss?${topParams.toString()}`, {
+    ];
+    // Saudi-specific requests must not be diluted with generic regional headlines.
+    if (!saudiOnly) {
+      feedRequests.push(fetch(`https://news.google.com/rss?${topParams.toString()}`, {
         headers: { accept: "application/rss+xml, application/xml, text/xml", "user-agent": "ALASSAUL-AI/1.0 (news reader)" },
         signal: controller.signal,
-      }),
-    ]);
+      }));
+    }
+    const feeds = await Promise.allSettled(feedRequests);
     const xmlResults = await Promise.allSettled(feeds.map(async (feed) => {
       if (feed.status !== "fulfilled" || !feed.value.ok) return "";
       return feed.value.text();
@@ -861,7 +869,7 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
     }).sort((a, b) => b.publishedAt - a.publishedAt).slice(0, 5);
     if (!items.length) throw new Error("Google News RSS returned no headlines published in the last 48 hours");
     const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
-    const footer = language === "AR" ? "المصدر: Google News RSS (بحث الموضوع والأخبار الإقليمية). هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS (konu araması ve bölgesel manşetler). Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS (topic search and regional top stories). These are headlines; check the publisher for details and updates.";
+    const footer = language === "AR" ? (saudiOnly ? "المصدر: Google News RSS (بحث مخصص لأخبار السعودية). هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : "المصدر: Google News RSS (بحث الموضوع والأخبار الإقليمية). هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات.") : language === "TR" ? "Kaynak: Google News RSS (konu araması ve bölgesel manşetler). Bunlar başlıklardır; ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS (topic search and regional top stories). These are headlines; check the publisher for details and updates.";
     return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.snippet ? `\n   ${item.snippet}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
   } catch (error) {
     console.warn("[ALASSAUL news] live feed unavailable", error);
