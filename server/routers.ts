@@ -305,7 +305,7 @@ function weatherDescription(code: number) {
 }
 
 const WEATHER_CITIES = [
-  { names: /أوزنجول|اوزنجول|أوزونغول|اوزونغول|uzung[oö]l/i, name: "أوزنجول", latitude: 40.6197, longitude: 40.2895, timezone: "Europe/Istanbul" },
+  { names: /أوزنجول|اوزنجول|أوزونغول|اوزونغول|زنجول|uzung[oö]l/i, name: "أوزنجول", latitude: 40.6197, longitude: 40.2895, timezone: "Europe/Istanbul" },
   { names: /همسه\s*كوي|همسي\s*كوي|هامسي\s*كوي|hamsik[oö]y/i, name: "همسي كوي", latitude: 40.7139, longitude: 39.4572, timezone: "Europe/Istanbul" },
   { names: /طرابزون|ترابزون|trabzon/i, name: "طرابزون", latitude: 41.0027, longitude: 39.7168, timezone: "Europe/Istanbul" },
   { names: /أوردو|اوردو|ordu/i, name: "أوردو", latitude: 40.9839, longitude: 37.8764, timezone: "Europe/Istanbul" },
