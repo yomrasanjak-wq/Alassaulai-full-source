@@ -62,7 +62,7 @@ export function VoiceSelector({ value, onChange }: VoiceSelectorProps) {
   const message = !voiceAvailability
     ? "جارٍ تجهيز الصوت الواضح…"
     : !voiceAvailability.male && !voiceAvailability.female
-      ? "لا يوفر جهازك صوت رجل عربي مستقلاً أو صوت امرأة عربية مستقلاً؛ سيُستخدم أفضل صوت عربي متاح مع تمييز النبرة للرجل والمرأة."
+      ? "الصوت العربي المتاح يعتمد على الأصوات المثبتة في جهازك."
       : selected === "male" && !voiceAvailability.male
         ? "لا يوفر جهازك اسم صوت رجل عربي مستقلاً؛ سيُستخدم أفضل صوت عربي واضح."
         : selected === "female" && !voiceAvailability.female
