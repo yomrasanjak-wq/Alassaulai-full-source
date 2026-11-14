@@ -417,6 +417,15 @@ function isSaudiLeagueQuestion(message: string) {
   return /(?:روشن|الدوري السعودي|دوري روشن|السوبر السعودي|الدوري السعودي للمحترفين|Saudi Pro League)/i.test(message);
 }
 
+/** Convert timestamps to the scoreboard's Saudi-local calendar date. */
+function getRiyadhScoreboardDateKey(value: Date): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(value);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}${part("month")}${part("day")}`;
+}
+
 function isSaudiLeagueScheduleQuestion(message: string) {
   const hasNewsIntent = /(?:أخبار|اخبار|news|headlines?)/i.test(message);
   const hasFixtureIntent = /(?:متى|تستأنف|استئناف|تعود|ترجع|القادمة|القادمه|المقبلة|المقبله|القادم|جدول|مباريات|مواعيد|هذا الأسبوع|هالأسبوع|الاسبوع|الأسبوع|الجولة|يلعب|نتيجة|نتائج|مباشر|الآن|الان|من فاز|fixtures|schedule|match(?:es)?|this week|upcoming|resume|return|live|score|results)/i.test(message);
@@ -440,14 +449,7 @@ async function getSaudiLeagueScoreboardAnswer(
   // A resumption question may refer to a pause longer than one week; inspect
   // a wider verified scoreboard window instead of repeating today's status.
   const endOffset = asksUpcoming && !asksToday ? (asksResumption ? 30 : 7) : 0;
-  const dateKey = (offset: number) => {
-    const date = new Date(Date.now() + offset * 24 * 60 * 60 * 1000);
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
-    }).formatToParts(date);
-    const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
-    return `${part("year")}${part("month")}${part("day")}`;
-  };
+  const dateKey = (offset: number) => getRiyadhScoreboardDateKey(new Date(Date.now() + offset * 24 * 60 * 60 * 1000));
   const startDate = dateKey(startOffset);
   const endDate = dateKey(endOffset);
   const dateParam = startDate === endDate ? startDate : `${startDate}-${endDate}`;
@@ -473,20 +475,28 @@ async function getSaudiLeagueScoreboardAnswer(
       }>;
     };
     if (!Array.isArray(data.events)) throw new Error("ESPN scoreboard response did not include an events list");
+    // Validate returned events against the exact Saudi-local date window requested.
+    const requestedEvents = data.events.filter((event) => {
+      if (!event.date) return false;
+      const eventDate = new Date(event.date);
+      if (Number.isNaN(eventDate.getTime())) return false;
+      const key = getRiyadhScoreboardDateKey(eventDate);
+      return key >= startDate && key <= endDate;
+    });
     const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
     const periodLabel = startOffset < 0 && endOffset === 0
       ? (language === "AR" ? `من ${Math.abs(startOffset)} أيام حتى اليوم` : language === "TR" ? "Son günlerde" : "Recent days")
       : startOffset === 0 && endOffset > 0
         ? (language === "AR" ? (endOffset > 7 ? "اليوم والثلاثون يوماً القادمة" : "اليوم والأيام السبعة القادمة") : language === "TR" ? (endOffset > 7 ? "Bugün ve gelecek otuz gün" : "Bugün ve gelecek yedi gün") : (endOffset > 7 ? "Today and the next thirty days" : "Today and the next seven days"))
         : (language === "AR" ? "اليوم" : language === "TR" ? "Bugün" : "Today");
-    if (data.events.length === 0) {
+    if (requestedEvents.length === 0) {
       return language === "AR"
         ? `لا توجد مباريات مدرجة في دوري روشن السعودي خلال الفترة المحددة (${periodLabel}). لم أعرض نتائج قديمة على أنها مباشرة.\nالمصدر: ESPN — https://www.espn.com/soccer/scoreboard/_/league/ksa.1`
         : language === "TR"
           ? `Seçilen dönemde Suudi Pro Lig için listelenmiş maç bulunamadı (${periodLabel}).\nKaynak: ESPN — https://www.espn.com/soccer/scoreboard/_/league/ksa.1`
           : `No Saudi Pro League matches are listed for the selected period (${periodLabel}).\nSource: ESPN — https://www.espn.com/soccer/scoreboard/_/league/ksa.1`;
     }
-    const rows = data.events.slice(0, 10).map((event) => {
+    const rows = requestedEvents.slice(0, 10).map((event) => {
       const competitors = event.competitions?.[0]?.competitors ?? [];
       const home = competitors.find((team) => team.homeAway === "home") ?? competitors[0];
       const away = competitors.find((team) => team.homeAway === "away") ?? competitors[1];
@@ -563,14 +573,7 @@ async function getEuropeanFootballScoreboardAnswer(
   const asksUpcoming = /(?:القادمة|القادمه|المقبلة|المقبله|مواعيد|جدول|fixtures|schedule|upcoming|next)/i.test(message);
   const startOffset = hasYesterday ? -1 : scoreQuestion && !asksToday ? -3 : 0;
   const endOffset = asksUpcoming && !asksToday ? 7 : 0;
-  const dateKey = (offset: number) => {
-    const date = new Date(Date.now() + offset * 24 * 60 * 60 * 1000);
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
-    }).formatToParts(date);
-    const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
-    return `${part("year")}${part("month")}${part("day")}`;
-  };
+  const dateKey = (offset: number) => getRiyadhScoreboardDateKey(new Date(Date.now() + offset * 24 * 60 * 60 * 1000));
   const startDate = dateKey(startOffset);
   const endDate = dateKey(endOffset);
   const dates = startDate === endDate ? startDate : `${startDate}-${endDate}`;
@@ -596,7 +599,15 @@ async function getEuropeanFootballScoreboardAnswer(
       }>;
     };
     if (!Array.isArray(data.events)) throw new Error("ESPN scoreboard response did not include an events list");
-    if (data.events.length === 0) {
+    // Validate returned events against the exact Saudi-local date window requested.
+    const requestedEvents = data.events.filter((event) => {
+      if (!event.date) return false;
+      const eventDate = new Date(event.date);
+      if (Number.isNaN(eventDate.getTime())) return false;
+      const key = getRiyadhScoreboardDateKey(eventDate);
+      return key >= startDate && key <= endDate;
+    });
+    if (requestedEvents.length === 0) {
       return language === "AR"
         ? `لا توجد مباريات مدرجة في ${league.label.AR} خلال الفترة المحددة. لم أعرض نتائج قديمة على أنها مباشرة.\nالمصدر: ESPN — ${sourceUrl}`
         : language === "TR"
@@ -604,7 +615,7 @@ async function getEuropeanFootballScoreboardAnswer(
           : `No matches are listed for ${league.label.EN} in the selected period.\nSource: ESPN — ${sourceUrl}`;
     }
     const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
-    const rows = data.events.slice(0, 10).map((event) => {
+    const rows = requestedEvents.slice(0, 10).map((event) => {
       const teams = event.competitions?.[0]?.competitors ?? [];
       const home = teams.find((team) => team.homeAway === "home") ?? teams[0];
       const away = teams.find((team) => team.homeAway === "away") ?? teams[1];
