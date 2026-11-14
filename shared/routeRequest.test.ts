@@ -28,6 +28,11 @@ describe("parseRouteRequest", () => {
     });
   });
 
+  it("does not invent a destination from an unclear voice transcript", () => {
+    expect(parseRouteRequest("ممكن تفتح لي الطريق إلى هذا شو اسمه")).toBeNull();
+    expect(parseRouteRequest("افتح الطريق الى هذا")).toBeNull();
+  });
+
   it("does not treat ordinary chat as a route request", () => {
     expect(parseRouteRequest("السلام عليكم كيف حالك")).toBeNull();
   });
