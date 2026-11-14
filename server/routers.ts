@@ -405,7 +405,7 @@ async function getJeddahWeatherAnswer(content: string) {
   }
 }
 
-const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار|المستجدات|التطورات)|(?:أخبار|اخبار).{0,20}(?:اليوم|العالم|إيران|ايران|أمريكا|امريكا|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|وش صاير(?: بالعالم| في العالم)?|وش صار(?: بالعالم| في العالم)?|وش السالفة(?: بالعالم| في العالم)?|ايش صاير(?: بالعالم| في العالم)?|إيش صاير(?: بالعالم| في العالم)?|عطني آخر الأخبار|عطني اخر الاخبار|آخر المستجدات|اخر المستجدات|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
+const isWorldNewsQuestion = (message: string) => /(?:أخبار العالم|اخبار العالم|(?:آخر|اخر).{0,16}(?:خبر|أخبار|اخبار|المستجدات|التطورات)|(?:أخبار|اخبار).{0,24}(?:اليوم|العالم|اليمن|اليمني|إيران|ايران|أمريكا|امريكا|الولايات المتحدة|فلسطين|السعودية|تركيا|أوكرانيا|اوكرانيا|لبنان|سوريا|مصر|العراق|السودان|قطر|الإمارات|الامارات|الكويت|البحرين|عمان|الأردن|الاردن|فرنسا|بريطانيا|روسيا|الصين)|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|وش صاير(?: بالعالم| في العالم)?|وش صار(?: بالعالم| في العالم)?|وش السالفة(?: بالعالم| في العالم)?|ايش صاير(?: بالعالم| في العالم)?|إيش صاير(?: بالعالم| في العالم)?|عطني آخر الأخبار|عطني اخر الاخبار|آخر المستجدات|اخر المستجدات|أهم الأخبار|اهم الاخبار|latest news|world news|breaking news)/i.test(message);
 
 function isLocalBusinessSearchQuestion(message: string) {
   const mentionsBusiness = /(?:مطعم|مطاعم|فطور|إفطار|سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|لولو|hypermarket|supermarket|grocery|restaurant|restaurants|breakfast)/i.test(message);
@@ -808,6 +808,27 @@ function decodeNewsXml(value: string) {
     .trim();
 }
 
+const NEWS_COUNTRY_TERMS: Array<{ names: RegExp; terms: RegExp }> = [
+  { names: /اليمن|اليمني|اليمنية|yemen|yemeni/i, terms: /اليمن|اليمني|اليمنية|yemen|yemeni|صنعاء|عدن|الحديدة|مأرب|تعز|حضرموت|sanaa|aden|hodeidah|marib|taiz/i },
+  { names: /السعودية|السعودي|السعودية|saudi(?: arabia)?/i, terms: /السعودية|السعودي|السعودية|saudi|الرياض|جدة|مكة|الدمام|riyadh|jeddah/i },
+  { names: /تركيا|التركية|turkey|turkish/i, terms: /تركيا|التركية|turkey|turkish|أنقرة|اسطنبول|أنطاليا|ankara|istanbul|antalya/i },
+  { names: /إيران|ايران|الإيرانية|الايرانية|iran|iranian/i, terms: /إيران|ايران|الإيرانية|الايرانية|iran|iranian|طهران|tehran/i },
+  { names: /فلسطين|الفلسطينية|palestine|palestinian/i, terms: /فلسطين|الفلسطينية|الفلسطيني|غزة|الضفة|القدس|palestine|palestinian|gaza|west bank/i },
+  { names: /لبنان|اللبناني|lebanon|lebanese/i, terms: /لبنان|اللبناني|lebanon|lebanese|بيروت|beirut/i },
+  { names: /سوريا|السوري|syria|syrian/i, terms: /سوريا|السوري|syria|syrian|دمشق|حلب|damascus|aleppo/i },
+  { names: /مصر|المصري|egypt|egyptian/i, terms: /مصر|المصري|egypt|egyptian|القاهرة|cairo/i },
+  { names: /العراق|العراقي|iraq|iraqi/i, terms: /العراق|العراقي|iraq|iraqi|بغداد|baghdad/i },
+  { names: /السودان|السوداني|sudan|sudanese/i, terms: /السودان|السوداني|sudan|sudanese|الخرطوم|دارفور|khartoum|darfur/i },
+  { names: /أوكرانيا|اوكرانيا|الأوكراني|ukraine|ukrainian/i, terms: /أوكرانيا|اوكرانيا|الأوكراني|ukraine|ukrainian|كييف|kyiv/i },
+  { names: /روسيا|الروسي|russia|russian/i, terms: /روسيا|الروسي|russia|russian|موسكو|moscow/i },
+  { names: /الصين|الصيني|china|chinese/i, terms: /الصين|الصيني|china|chinese|بكين|beijing/i },
+  { names: /أمريكا|امريكا|الولايات المتحدة|الأمريكية|الامريكية|united states|usa|american/i, terms: /أمريكا|امريكا|الولايات المتحدة|الأمريكية|الامريكية|united states|usa|american|واشنطن|washington/i },
+];
+
+function getRequestedNewsCountry(message: string) {
+  return NEWS_COUNTRY_TERMS.find((country) => country.names.test(message));
+}
+
 /** Fetch a small set of current headlines from Google News RSS. If the feed is
  * unreachable, return a clear status instead of letting the model invent news. */
 async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN") {
@@ -857,8 +878,17 @@ async function getWorldNewsAnswer(message: string, language: "AR" | "TR" | "EN")
       if (!key || seenHeadlines.has(key)) return false;
       seenHeadlines.add(key);
       return true;
+    }).filter((item) => {
+      const requestedCountry = getRequestedNewsCountry(message);
+      return !requestedCountry || requestedCountry.terms.test(`${item.title} ${item.snippet}`);
     }).sort((a, b) => b.publishedAt - a.publishedAt).slice(0, 5);
-    if (!items.length) throw new Error("Google News RSS returned no headlines published in the last 48 hours");
+    if (!items.length) {
+      if (getRequestedNewsCountry(message)) return language === "AR"
+        ? "لم أعثر على عناوين حديثة مؤكدة تطابق الدولة التي طلبتها. فضّلت عدم عرض أخبار من دول أخرى على أنها أخبار هذه الدولة."
+        : language === "TR" ? "İstenen ülkeyle eşleşen doğrulanmış güncel haber başlığı bulunamadı; başka ülkelerin haberlerini göstermeyeceğim."
+        : "No verified recent headlines matched the requested country, so I will not show news from other countries as a substitute.";
+      throw new Error("Google News RSS returned no headlines published in the last 48 hours");
+    }
     const heading = language === "AR" ? "أبرز عناوين الأخبار الحديثة" : language === "TR" ? "Güncel öne çıkan haber başlıkları" : "Recent top headlines";
     const footer = language === "AR" ? "المصدر: Google News RSS (بحث الموضوع المحدد). هذه عناوين أولية؛ افتح المصدر الإخباري للتحقق من التفاصيل والتحديثات." : language === "TR" ? "Kaynak: Google News RSS (konu araması). Ayrıntılar için haber kaynağını kontrol edin." : "Source: Google News RSS (topic search). Check the publisher for details and updates.";
     return `${heading}\n${items.map((item, index) => `${index + 1}. ${item.title} — ${item.source}${item.dateText ? ` · ${item.dateText}` : ""}${item.snippet ? `\n   ${item.snippet}` : ""}${item.url ? `\n   ${item.url}` : ""}`).join("\n")}\n\n${footer}`;
