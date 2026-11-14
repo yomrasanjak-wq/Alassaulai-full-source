@@ -1308,7 +1308,7 @@ export default function Home() {
     } catch (error) {
       console.error("[ALASSAUL chat] request failed", error);
       const offlineItinerary = buildOfflineItineraryFallback(nextMessages.map((message) => ({ role: message.from, content: message.text })), language);
-      setChatMessages((messages) => [...messages, { from: "assistant", text: offlineItinerary ?? getChatErrorMessage(error) }]);
+      setChatMessages((messages) => [...messages, { from: "assistant", text: offlineItinerary ?? getChatErrorMessage(error), route: routeRequest }]);
       notify("تعذر إكمال الطلب", "جرّب مرة أخرى أو اكتب السؤال بصياغة أقصر.", "error");
     }
   }
