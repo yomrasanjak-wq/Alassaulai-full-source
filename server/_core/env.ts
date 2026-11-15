@@ -27,8 +27,8 @@ const configuredBaseUrl = firstConfigured(
 );
 
 // Keep platform storage/maps credentials separate from the language model.
-// An explicit ALASSAUL provider override always wins; otherwise Gemini is
-// selected when its dedicated server-side key is present.
+// An explicit ALASSAUL provider override always wins. Otherwise a dedicated
+// OpenAI key selects the Responses API before Gemini or legacy providers.
 const explicitLlmBaseUrl = firstConfigured("ALASSAUL_LLM_API_URL", "OPENAI_BASE_URL");
 const resolvedLlmBaseUrl = explicitLlmBaseUrl ||
   (openAiKey
