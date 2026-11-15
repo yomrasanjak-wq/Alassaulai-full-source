@@ -828,6 +828,7 @@ export default function Home() {
   };
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const welcomeAddedRef = useRef(false);
   const [isListening, setIsListening] = useState(false);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const speechIdleTimerRef = useRef<number | null>(null);
@@ -1058,6 +1059,17 @@ export default function Home() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, chatOpen]);
+
+  useEffect(() => {
+    if (!chatOpen || welcomeAddedRef.current || chatMessages.length > 0) return;
+    welcomeAddedRef.current = true;
+    const welcomeText = language === "AR"
+      ? "أهلاً وسهلاً بك في ALASSAUL-AI، بوابتك للشمال التركي. أنا مساعدك الذكي، اسألني عمّا تريد، وسأساعدك في الوجهات والخرائط والرحلات والأخبار ومختلف المعلومات."
+      : language === "TR"
+        ? "ALASSAUL-AI'ye hoş geldiniz. Ben akıllı asistanınızım; Karadeniz destinasyonları, haritalar, geziler, haberler ve daha fazlası hakkında bana soru sorabilirsiniz."
+        : "Welcome to ALASSAUL-AI, your gateway to Türkiye's Black Sea region. I'm your AI assistant. Ask me about destinations, maps, trips, news, and much more.";
+    setChatMessages([{ from: "assistant", text: welcomeText }]);
+  }, [chatOpen, chatMessages.length, language]);
 
   useEffect(() => {
     if (!modal) return;
@@ -2062,10 +2074,9 @@ export default function Home() {
         <div className="chat-layout">
           <section className="chat-conversation">
             <div className="chat-body">
-              <div className="chat-welcome"><Sparkles size={16} /> مرحباً بك في ALASSAUL-AI، اسأل عمّا تريد وسأساعدك.</div>
               <VoiceSelector value={voiceGender} onChange={setVoiceGender} />
               <div className="chat-quick-prompts">{quickPrompts.map((prompt) => <button key={prompt} onClick={() => void askAssistant(prompt)} disabled={chatMutation.isPending}>{prompt}</button>)}</div>
-              {chatMessages.map((message, index) => <div key={`${message.from}-${index}`} className={`chat-message chat-${message.from}`}><span>{renderChatText(message.text)}</span>{message.imageDataUrl && <img className="chat-message-image" src={message.imageDataUrl} alt="الصورة التي أرسلها المستخدم" />}{message.from === "assistant" && <AssistantReply text={message.text} language={language} voiceGender={voiceGender} />}</div>)}
+              {chatMessages.map((message, index) => <div key={`${message.from}-${index}`} className={`chat-message chat-${message.from}`}><span>{renderChatText(message.text)}</span>{message.imageDataUrl && <img className="chat-message-image" src={message.imageDataUrl} alt="الصورة التي أرسلها المستخدم" />}{message.from === "assistant" && <AssistantReply text={message.text} language={language} autoSpeak voiceGender={voiceGender} />}</div>)}
               {chatMutation.isPending && <div className="chat-message chat-assistant chat-thinking"><span className="thinking-dots">● ● ●</span><small>العسول يكتب بالفصحى…</small></div>}
               <div ref={chatEndRef} />
             </div>

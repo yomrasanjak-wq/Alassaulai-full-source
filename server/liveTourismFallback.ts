@@ -35,7 +35,7 @@ export async function getWikimediaNearbyAttractions(
     try {
       const response = await fetch("https://" + language + ".wikipedia.org/w/api.php?" + params.toString(), {
         headers: { accept: "application/json", "user-agent": "ALASSAUL-AI/1.0 (https://alassaul.com; attraction lookup)" },
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(4000),
       });
       if (!response.ok) throw new Error("Wikipedia API HTTP " + response.status);
       const data = await response.json() as {
