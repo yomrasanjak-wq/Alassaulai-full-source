@@ -23,12 +23,12 @@ const endpoint = (first('ALASSAUL_LLM_API_URL', 'OPENAI_BASE_URL') || (openAiKey
   ? 'https://api.openai.com/v1/responses'
   : geminiKey
     ? 'https://generativelanguage.googleapis.com/v1beta/openai'
-    : configuredEndpoint || (openRouterKey ? 'https://openrouter.ai/api/v1' : 'https://api.groq.com/openai/v1'))).replace(/\\/+$/, '');
-const netlify = /\\/\\.netlify\\/ai(?:\\/|$)/i.test(endpoint);
-const responses = netlify || /\\/v1\\/responses$/i.test(endpoint);
-const directOpenAi = /api\\.openai\\.com/i.test(endpoint) && !netlify;
-const openRouter = /openrouter\\.ai\\/api\\/v1/i.test(endpoint);
-const gemini = /generativelanguage\\.googleapis\\.com\\/v1beta\\/openai/i.test(endpoint);
+    : configuredEndpoint || (openRouterKey ? 'https://openrouter.ai/api/v1' : 'https://api.groq.com/openai/v1'))).replace(/\/+$/, '');
+const netlify = /\/\.netlify\/ai(?:\/|$)/i.test(endpoint);
+const responses = netlify || /\/v1\/responses$/i.test(endpoint);
+const directOpenAi = /api\.openai\.com/i.test(endpoint) && !netlify;
+const openRouter = /openrouter\.ai\/api\/v1/i.test(endpoint);
+const gemini = /generativelanguage\.googleapis\.com\/v1beta\/openai/i.test(endpoint);
 const key = keyExplicit || (gemini ? geminiKey : openRouter ? openRouterKey : netlify ? openAiKey || providerKey : directOpenAi ? openAiKey : providerKey || openAiKey);
 const model = first('ALASSAUL_PRIMARY_MODEL') || (gemini ? 'gemini-3.8-flash' : netlify ? 'gpt-5.6-luna' : directOpenAi ? 'gpt-6.1-sol' : openRouter ? 'openai/gpt-4.1-mini' : 'qwen/qwen3.8-27b');
 
