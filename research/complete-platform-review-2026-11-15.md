@@ -35,3 +35,9 @@ This commit records a safety and architecture review only. No application source
 - `adminProcedure` is separate and admits admin-role users or the explicitly configured owner.
 - Preserve these distinctions exactly. Do not promote a user, broaden a role, or change owner identity as part of repository integration.
 - `ChatComposer` uses real file inputs for gallery and camera capture, not decorative buttons; preserve its callbacks and loading-state guards when changing chat UI.
+
+
+## AI preflight consistency item
+- The offline preflight mirrors most of the provider selection logic, but the live probe's default model selection differs from `server/_core/env.ts` for a direct OpenAI endpoint: the runtime defaults to `gpt-6.1-sol` while the live probe defaults to `gpt-5-mini`. This can make the probe test a different model from the one the application actually uses.
+- Before enabling live checks, align the probe's endpoint/key/model resolution with the runtime in a unit-tested helper. Keep live provider calls opt-in because they can incur usage charges. No live request was sent in this review.
+- GitHub's combined commit status for this documentation update reports Vercel success. This is a status on the documentation commit only; it does not demonstrate runtime behavior or a successful test suite for application code.
