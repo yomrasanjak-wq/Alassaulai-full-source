@@ -27,17 +27,17 @@ const configuredBaseUrl = firstConfigured(
 );
 
 // Keep platform storage/maps credentials separate from the language model.
-// An explicit ALASSAUL provider override always wins; otherwise Gemini is
-// selected when its dedicated server-side key is present.
+// An explicit ALASSAUL provider override always wins. Otherwise a dedicated
+// OpenAI key selects the Responses API before Gemini or legacy providers.
 const explicitLlmBaseUrl = firstConfigured("ALASSAUL_LLM_API_URL", "OPENAI_BASE_URL");
 const resolvedLlmBaseUrl = explicitLlmBaseUrl ||
-  (geminiKey
-    ? "https://generativelanguage.googleapis.com/v1beta/openai"
-    : configuredBaseUrl ||
-      (openRouterKey
-        ? "https://openrouter.ai/api/v1"
-        : openAiKey && !explicitProviderKey
-          ? "https://api.openai.com"
+  (openAiKey
+    ? "https://api.openai.com/v1/responses"
+    : geminiKey
+      ? "https://generativelanguage.googleapis.com/v1beta/openai"
+      : configuredBaseUrl ||
+        (openRouterKey
+          ? "https://openrouter.ai/api/v1"
           : "https://api.groq.com/openai/v1"));
 const usesNetlifyAiGateway = /\/\.netlify\/ai(?:\/|$)/i.test(resolvedLlmBaseUrl);
 const usesDirectOpenAi = /api\.openai\.com/i.test(resolvedLlmBaseUrl) && !usesNetlifyAiGateway;
@@ -73,7 +73,7 @@ export const ENV = {
     : usesNetlifyAiGateway
       ? "gpt-5.6-luna"
       : usesDirectOpenAi
-        ? "gpt-5-mini"
+        ? "gpt-6.1-sol"
         : usesOpenRouter
           ? "openai/gpt-4.1-mini"
           : "qwen/qwen3.8-27b"),
@@ -82,7 +82,7 @@ export const ENV = {
     : usesNetlifyAiGateway
       ? "gpt-5-mini"
       : usesDirectOpenAi
-        ? "gpt-4.1-mini"
+        ? "gpt-6.1-terra"
         : usesOpenRouter
           ? "openai/gpt-oss-20b"
           : "openai/gpt-oss-20b"),

@@ -10,7 +10,7 @@ const checker = resolve(dirname(fileURLToPath(import.meta.url)), 'brain-prefligh
 const controlledNames = [
   'ALASSAUL_LLM_API_KEY', 'ALASSAUL_LLM_API_URL', 'ALASSAUL_PRIMARY_MODEL',
   'ALASSAUL_BACKUP_MODEL', 'OPENAI_API_KEY', 'AI_API_KEY', 'OPENAI_BASE_URL',
-  'FORGE_API_KEY', 'FORGE_API_URL', 'MANUS_API_KEY', 'MANUS_API_URL',
+  'FORGE_API_KEY', 'FORGE_API_URL', 'MANUS_API_KEY', 'MANUS_API_URL', 'GEMINI_API_KEY', 'OPENROUTER_API_KEY',
   'GROQ_API_KEY', 'GROQ_API_URL', 'BUILT_IN_FORGE_API_KEY',
   'BUILT_IN_FORGE_API_URL', 'VITE_GROQ_API_KEY', 'VITE_FRONTEND_FORGE_API_KEY',
   'VITE_FORGE_API_KEY', 'VITE_FRONTEND_FORGE_API_URL',
@@ -46,6 +46,19 @@ test('Netlify Responses endpoint recognizes OpenAI key and hides its value', () 
   assert.match(result.stdout, /Responses API route detected/);
   assert.match(result.stdout, /A key is configured \(value hidden\)/);
   assert.doesNotMatch(result.stdout, new RegExp(secret));
+});
+
+test('OpenAI key takes priority over Gemini and Groq and selects Responses API', () => {
+  const result = runChecker({
+    OPENAI_API_KEY: 'openai-test-secret',
+    GEMINI_API_KEY: 'gemini-test-secret',
+    GROQ_API_KEY: 'groq-test-secret',
+  });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Responses API route detected/);
+  assert.match(result.stdout, /gpt-6\.1-sol/);
+  assert.match(result.stdout, /gpt-6\.1-terra/);
+  assert.doesNotMatch(result.stdout, /openai-test-secret|gemini-test-secret|groq-test-secret/);
 });
 
 test('Groq endpoint recognizes the Groq credential', () => {

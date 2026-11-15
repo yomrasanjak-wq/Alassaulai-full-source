@@ -71,6 +71,8 @@ export type InvokeParams = {
   model?: string;
   thinking?: Record<string, unknown>;
   reasoning?: Record<string, unknown>;
+  /** Use OpenAI's hosted live web search on Responses API requests. */
+  webSearch?: boolean;
 };
 
 export type ToolCall = {
@@ -296,8 +298,11 @@ const normalizeResponseFormat = ({
 const RETRY_MAX_RETRIES = 2;
 const RETRY_BASE_DELAY_MS = 300;
 const RETRY_MAX_DELAY_MS = 2_000;
-const REQUEST_TIMEOUT_MS = 10_000;
-const REQUEST_BUDGET_MS = 18_000;
+// The Vercel function has a 30s ceiling. Give Responses API enough time
+// for real answers (especially multi-day itineraries) while leaving a small
+// margin for server-side normalization and the tRPC response.
+const REQUEST_TIMEOUT_MS = 22_000;
+const REQUEST_BUDGET_MS = 23_000;
 
 type FetchInit = NonNullable<Parameters<typeof fetch>[1]>;
 
@@ -412,6 +417,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     response_format,
     model,
     thinking,
+    reasoning,
     maxTokens,
     max_tokens,
     maxCompletionTokens,
@@ -421,21 +427,49 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   const useResponsesApi = isResponsesGateway();
   const payload: Record<string, unknown> = useResponsesApi
     ? {
-        input: messages.map((message) => {
+        input: messages.flatMap((message): Array<Record<string, unknown>> => {
           const rawContent = message.content;
-          const contentParts: Array<{ type: "input_text"; text: string } | { type: "input_image"; image_url: string; detail: "auto" | "low" | "high" }> = [];
+
+          // Responses API represents tool results as function_call_output items,
+          // not assistant messages. Preserve the original call_id so the model
+          // can associate each result with the function call it issued.
+          if (message.role === "tool" || message.role === "function") {
+            if (!message.tool_call_id) {
+              throw new Error("Responses API tool output is missing tool_call_id");
+            }
+            const output = ensureArray(rawContent)
+              .map((part) =>
+                typeof part === "string"
+                  ? part
+                  : part.type === "text"
+                    ? part.text
+                    : JSON.stringify(part)
+              )
+              .join("\n");
+            return [{
+              type: "function_call_output",
+              call_id: message.tool_call_id,
+              output,
+            }];
+          }
+
+          const contentParts: Array<
+            | { type: "input_text"; text: string }
+            | { type: "output_text"; text: string }
+            | { type: "input_image"; image_url: string; detail: "auto" | "low" | "high" }
+          > = [];
+          const textType = message.role === "assistant" ? "output_text" : "input_text";
           if (typeof rawContent === "string") {
-            contentParts.push({ type: "input_text", text: rawContent });
+            contentParts.push({ type: textType, text: rawContent });
           } else {
             for (const part of ensureArray(rawContent)) {
-              if (typeof part === "string") contentParts.push({ type: "input_text", text: part });
-              else if (part.type === "text") contentParts.push({ type: "input_text", text: part.text });
+              if (typeof part === "string") contentParts.push({ type: textType, text: part });
+              else if (part.type === "text") contentParts.push({ type: textType, text: part.text });
               else if (part.type === "image_url") contentParts.push({ type: "input_image", image_url: part.image_url.url, detail: part.image_url.detail ?? "auto" });
-              else contentParts.push({ type: "input_text", text: JSON.stringify(part) });
+              else contentParts.push({ type: textType, text: JSON.stringify(part) });
             }
           }
-          const role = message.role === "function" || message.role === "tool" ? "assistant" : message.role;
-          return { role, content: contentParts };
+          return [{ role: message.role, content: contentParts }];
         }),
       }
     : { messages: messages.map(normalizeMessage) };
@@ -465,6 +499,15 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       strict: false,
     }));
   }
+  if (useResponsesApi && params.webSearch) {
+    const existingTools = Array.isArray(payload.tools) ? payload.tools : [];
+    payload.tools = [
+      ...existingTools,
+      { type: "web_search", search_context_size: "low" },
+    ];
+    // Current-information requests must actually search, not merely be allowed to.
+    if (!payload.tool_choice) payload.tool_choice = "required";
+  }
 
   const resolvedMaxCompletionTokens = max_completion_tokens ?? maxCompletionTokens;
   const resolvedMaxTokens = max_tokens ?? maxTokens;
@@ -477,12 +520,19 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.max_tokens = resolvedMaxTokens;
   }
 
-  if (thinking && !useResponsesApi) {
+  if (useResponsesApi) {
+    const requestedEffort = reasoning?.effort ?? thinking?.effort;
+    const normalizedEffort = requestedEffort === "minimal" ? "low" : requestedEffort;
+    // GPT-6.1 Sol supports low/medium/high/xhigh/max. Keep routine visitor
+    // questions responsive while allowing the caller to request more effort.
+    payload.reasoning = {
+      effort: typeof normalizedEffort === "string" ? normalizedEffort : "low",
+    };
+  } else if (thinking) {
     payload.thinking = thinking;
   }
-  // Do not forward the generic `reasoning` option to OpenAI-compatible
-  // chat-completions providers. Groq rejects that field with HTTP 400.
-  // Provider-specific reasoning controls must be added only when supported.
+  // Do not forward generic reasoning controls to Chat Completions providers.
+  // Responses API receives the provider-supported reasoning.effort field.
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
@@ -515,7 +565,15 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       authorization: `Bearer ${ENV.llmApiKey || ENV.forgeApiKey}`,
     },
     body: JSON.stringify(payload),
-  }, isGeminiProvider ? { maxRetries: 0, requestTimeoutMs: 10_000, requestBudgetMs: 11_000 } : undefined);
+  }, (isGeminiProvider || useResponsesApi)
+    ? {
+        // Avoid retrying a slow Responses request inside the short serverless
+        // window; one bounded attempt is more useful than duplicate latency.
+        maxRetries: 0,
+        requestTimeoutMs: useResponsesApi ? 22_000 : 10_000,
+        requestBudgetMs: useResponsesApi ? 23_000 : 11_000,
+      }
+    : undefined);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -543,6 +601,19 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     .join("\n")
     .trim();
   const text = topLevelText || nestedText;
+  const webSources = outputItems
+    .filter((item: any) => item?.type === "message")
+    .flatMap((item: any) => Array.isArray(item.content) ? item.content : [])
+    .flatMap((part: any) => Array.isArray(part?.annotations) ? part.annotations : [])
+    .filter((annotation: any) => annotation?.type === "url_citation" && typeof annotation.url === "string")
+    .map((annotation: any) => ({ title: typeof annotation.title === "string" ? annotation.title : annotation.url, url: annotation.url }))
+    // Prefer publisher pages over search-result and news-aggregator redirect URLs.
+    .filter((source: any) => !/(?:news\.google\.com|google\.com\/news|news\.yahoo\.com\/rss)/i.test(source.url))
+    .filter((source: any, index: number, all: any[]) => all.findIndex((item: any) => item.url === source.url) === index)
+    .slice(0, 6);
+  const answerWithSources = webSources.length
+    ? `${text}\n\nروابط المصادر الأصلية:\n${webSources.map((source: any, index: number) => `${index + 1}. [${source.title}](${source.url})`).join("\n")}`
+    : text;
   const toolCalls = outputItems
     .filter((item: any) => item?.type === "function_call")
     .map((item: any) => ({ id: item.call_id || item.id, type: "function", function: { name: item.name, arguments: item.arguments || "{}" } }));
@@ -552,7 +623,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     model: result.model || params.model || "unknown",
     choices: [{
       index: 0,
-      message: { role: "assistant", content: text, ...(toolCalls.length ? { tool_calls: toolCalls } : {}) },
+      message: { role: "assistant", content: answerWithSources, ...(toolCalls.length ? { tool_calls: toolCalls } : {}) },
       finish_reason: result.status === "incomplete" ? "length" : toolCalls.length ? "tool_calls" : "stop",
     }],
     usage: result.usage ? { prompt_tokens: result.usage.input_tokens || 0, completion_tokens: result.usage.output_tokens || 0, total_tokens: result.usage.total_tokens || 0 } : undefined,

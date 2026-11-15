@@ -78,7 +78,7 @@ export function getDistinctBackupModel(primaryModel: string | undefined, backupM
 export function getAdaptiveTaskInstruction(message: string): string {
   const text = message.normalize("NFKC").toLowerCase();
   if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|أخبار السعودية|اخبار السعودية|السعودية اليوم|أخبار اليمن|اخبار اليمن|اليمن اليوم|latest news|world news|breaking news)/i.test(text)) {
-    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. إذا طلب موجز أخبار دولة أو العالم، اعرض حتى 5 عناوين حديثة مستقلة، ولكل عنوان ملخصاً واضحاً من سطرين تقريباً، مع تاريخ النشر والمصدر عندما يتوفران. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. افصل الخبر المؤكد عن الخلفية والتحليل، ولا تعرض حدثاً على أنه جديد دون نتيجة بحث حديثة موثوقة. إذا لم تتوفر أداة بحث حي، قل ذلك بوضوح وقدّم خلفية مؤرخة بدلاً من اختلاق عناوين أو أرقام.";
+    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. التزم بالعدد الذي يطلبه المستخدم حرفياً؛ إذا طلب ثلاثة أخبار فاعرض ثلاثة فقط، وإذا لم يحدد عدداً فاعرض ثلاثة أخبار كحد افتراضي. في موجز أخبار العالم نوّع التغطية جغرافياً وموضوعياً، وفضّل ثلاثة ناشرين موثوقين مختلفين متى توفرت تغطية حديثة قابلة للتحقق؛ لا تضحِّ بالدقة لمجرد التنويع. لكل خبر عنوان دقيق يعكس محتوى صفحة الناشر، وملخص موجز وتاريخ النشر واسم الناشر. ميّز بوضوح بين الوقائع المؤكدة والادعاءات والتقارير الأولية، ولا تكرر الخبر نفسه بصيغ مختلفة. لا تكتب روابط Markdown داخل متن الإجابة ولا تنشئ قائمة مصادر يدوياً؛ ستُرفق روابط المصادر الموثقة تلقائياً بعد الإجابة. لا تعرض روابط Google News أو RSS أو صفحات تجميع الأخبار على أنها مصادر أصلية، ولا تنسب خبراً إلى ناشر لمجرد ظهوره في نتيجة بحث. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. إذا لم تتوفر أداة بحث حي أو روابط ناشر أصلية، صرّح بذلك ولا تختلق عناوين أو مصادر.";
   }
   if (/(كيف أصلح|كيف اصلح|متعطل|عطل|لا يعمل|ما يشتغل|ما يفتح|خطأ|مشكلة|حل المشكلة|تشخيص)/i.test(text)) {
     return "نمط معالجة مشكلة: حدّد الاحتمال الأقرب دون الجزم، ثم أعطِ خطوات تشخيص مرتبة من الأبسط والأكثر أماناً إلى المتقدم. اذكر ما ينبغي عدم فعله، واسأل عن معلومة واحدة فقط إذا كانت ضرورية.";
@@ -876,9 +876,18 @@ function getContextualFallback(
   const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
   const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
-    && /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
-  if (asksItinerary && language === "AR") {
-    return "تعذّر تشغيل المساعد الذكي مؤقتاً، لكن إليك برنامجاً مبدئياً ليوم في طرابزون:\n\n1. **الصباح:** قصر أتاتورك وحدائقه، ثم جولة قصيرة في ميدان طرابزون.\n2. **وقت الغداء:** اختر مطعماً محلياً في وسط المدينة، وتحقق من التقييمات وساعات العمل قبل التوجه إليه.\n3. **بعد الظهر:** ممشى غانيتا على البحر، أو أكواريوم طرابزون إذا كانت الرحلة عائلية.\n4. **قبل الغروب:** بو زتبه للإطلالة على المدينة والبحر.\n\nهذا اقتراح عام وليس تحققاً من الطقس أو أوقات الفتح اليوم. إذا أخبرتني بوجود أطفال أو سيارة وعدد أيام الرحلة، أرتّب لك نسخة أنسب عند عودة المساعد.";
+    && /(?:طرابزون|ترابزون|trabzon|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i.test(latest);
+  if (asksItinerary) {
+    const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
+    const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
+    const durationNote = requestedDays && requestedDays > 1
+      ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
+      : "";
+    return language === "AR"
+      ? `تعذّر إكمال برنامج الرحلة بسبب انقطاع مؤقت في مزود الذكاء الاصطناعي.${durationNote} أعد المحاولة بعد قليل، وسأرتب البرنامج كاملاً يوماً بيوم بدلاً من تخمين تفاصيل ناقصة.`
+      : language === "TR"
+        ? "Gezi programı yapay zekâ sağlayıcısındaki geçici kesinti nedeniyle tamamlanamadı. Lütfen biraz sonra tekrar deneyin."
+        : "The itinerary could not be completed because the AI provider temporarily timed out. Please retry shortly; I won't replace a multi-day plan with an incomplete one-day answer.";
   }
 
   const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
@@ -1328,7 +1337,22 @@ export const appRouter = router({
         language: languageSchema,
         gender: z.enum(["male", "female"]).default("male"),
       }))
-      .mutation(({ input }) => synthesizeSpeech(input.text, input.language, input.gender)),
+      .mutation(async ({ input }) => {
+        try {
+          const result = await synthesizeSpeech(input.text, input.language, input.gender);
+          console.info("[ALASSAUL speech] Google TTS succeeded", {
+            language: input.language,
+            gender: input.gender,
+            chunks: result.allChunks.length,
+          });
+          return result;
+        } catch (error) {
+          // Log the provider failure safely so the browser fallback no longer hides
+          // why Google Cloud TTS failed. Never log request URLs or credential values.
+          console.error("[ALASSAUL speech] Google TTS failed", safeProviderDiagnostic(error));
+          throw error;
+        }
+      }),
     chat: publicProcedure
       .input(z.object({
         messages: z.array(chatMessageSchema).min(1).max(14),
@@ -1338,6 +1362,7 @@ export const appRouter = router({
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
         const contextualWeatherText = getContextualWeatherQuestion(input.messages);
+        const usesResponsesWebSearch = /\/v1\/responses$/i.test(ENV.llmApiUrl ?? "");
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
@@ -1405,7 +1430,9 @@ export const appRouter = router({
             }
           }
 
-          if (isWorldNewsQuestion(latestText)) {
+          // OpenAI Responses API has native web search. Do not short-circuit
+          // news requests with the legacy Google News RSS headline feed.
+          if (isWorldNewsQuestion(latestText) && !usesResponsesWebSearch) {
             const directNews = await getWorldNewsAnswer(latestText, input.language);
             if (directNews) return { text: directNews };
           }
@@ -1450,7 +1477,7 @@ ${mapsContext}`);
             }
           }
 
-          if (isGoogleGroundingQuestion(latestText)) {
+          if (isGoogleGroundingQuestion(latestText) && !(usesResponsesWebSearch && isWorldNewsQuestion(latestText))) {
             if (process.env.GEMINI_API_KEY?.trim()) {
               try {
                 const searchContext = await getGoogleGroundedAnswer(latestText, input.language);
@@ -1472,7 +1499,7 @@ ${newsContext}`);
               const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, latestText);
               if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\n${scheduleContext}`);
             }
-          } else if (isWorldNewsQuestion(latestText)) {
+          } else if (isWorldNewsQuestion(latestText) && !usesResponsesWebSearch) {
             const newsContext = await getWorldNewsAnswer(latestText, input.language);
             if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
@@ -1519,10 +1546,14 @@ ${newsContext}`);
             ],
           };
         }
+        const needsLiveWebSearch = isWorldNewsQuestion(latestText)
+          || isGoogleGroundingQuestion(latestText)
+          || /(?:سعر|أسعار|اسعار|حراج|مستعمل|قيمة السوق|حارس|لاعب|تشكيلة|مدرب|كم.*(?:السوق|حراج)|current|latest|today)/i.test(latestText);
         const llmRequest = {
           model: ENV.primaryModel,
-          max_completion_tokens: 512,
+          max_completion_tokens: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText)) ? 1200 : 512,
           reasoning: { effort: "minimal" },
+          webSearch: needsLiveWebSearch,
           messages: llmMessages,
         };
         const backupModel = getDistinctBackupModel(llmRequest.model, ENV.backupModel);
