@@ -876,9 +876,18 @@ function getContextualFallback(
   const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
   const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
-    && /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
-  if (asksItinerary && language === "AR") {
-    return "تعذّر تشغيل المساعد الذكي مؤقتاً، لكن إليك برنامجاً مبدئياً ليوم في طرابزون:\n\n1. **الصباح:** قصر أتاتورك وحدائقه، ثم جولة قصيرة في ميدان طرابزون.\n2. **وقت الغداء:** اختر مطعماً محلياً في وسط المدينة، وتحقق من التقييمات وساعات العمل قبل التوجه إليه.\n3. **بعد الظهر:** ممشى غانيتا على البحر، أو أكواريوم طرابزون إذا كانت الرحلة عائلية.\n4. **قبل الغروب:** بو زتبه للإطلالة على المدينة والبحر.\n\nهذا اقتراح عام وليس تحققاً من الطقس أو أوقات الفتح اليوم. إذا أخبرتني بوجود أطفال أو سيارة وعدد أيام الرحلة، أرتّب لك نسخة أنسب عند عودة المساعد.";
+    && /(?:طرابزون|ترابزون|trabzon|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i.test(latest);
+  if (asksItinerary) {
+    const durationMatch = latest.match(/(\\d{1,2})\\s*(?:أيام|ايام|يوم|days?)/i);
+    const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
+    const durationNote = requestedDays && requestedDays > 1
+      ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
+      : "";
+    return language === "AR"
+      ? `تعذّر إكمال برنامج الرحلة بسبب انقطاع مؤقت في مزود الذكاء الاصطناعي.${durationNote} أعد المحاولة بعد قليل، وسأرتب البرنامج كاملاً يوماً بيوم بدلاً من تخمين تفاصيل ناقصة.`
+      : language === "TR"
+        ? "Gezi programı yapay zekâ sağlayıcısındaki geçici kesinti nedeniyle tamamlanamadı. Lütfen biraz sonra tekrar deneyin."
+        : "The itinerary could not be completed because the AI provider temporarily timed out. Please retry shortly; I won't replace a multi-day plan with an incomplete one-day answer.";
   }
 
   const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
@@ -1521,7 +1530,7 @@ ${newsContext}`);
         }
         const llmRequest = {
           model: ENV.primaryModel,
-          max_completion_tokens: 512,
+          max_completion_tokens: isItineraryPlanningQuestion(latestText) ? 1200 : 512,
           reasoning: { effort: "minimal" },
           messages: llmMessages,
         };
