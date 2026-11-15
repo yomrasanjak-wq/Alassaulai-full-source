@@ -1,6 +1,6 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteGuestMemory, deleteMediaItem, ensureControlRoomSchema, getSystemHealth, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
+import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
@@ -1331,6 +1331,53 @@ export const appRouter = router({
       .mutation(({ input }) => deleteGuestMemory(input.id)),
   }),
   ai: router({
+    // Account-backed memory is deliberately opt-in and currently limited to signed-in visitors.
+    memoryStatus: protectedProcedure.query(async ({ ctx }) => {
+      const memory = await getAssistantMemory(ctx.user.openId);
+      return {
+        enabled: memory?.enabled ?? false,
+        consentedAt: memory?.consentedAt ?? null,
+        hasSavedDetails: Boolean(memory && (memory.displayName || memory.preferences.length || memory.activeTopics.length || memory.recentSummary)),
+      };
+    }),
+    enableMemory: protectedProcedure
+      .input(z.object({ consent: z.literal(true) }))
+      .mutation(async ({ ctx }) => {
+        const memory = await enableAssistantMemory(ctx.user.openId);
+        return { enabled: memory.enabled, consentedAt: memory.consentedAt };
+      }),
+    getMemory: protectedProcedure.query(async ({ ctx }) => {
+      const memory = await getAssistantMemory(ctx.user.openId);
+      if (!memory?.enabled || !memory.consentedAt) return { enabled: false, memory: null };
+      return {
+        enabled: true,
+        memory: {
+          displayName: memory.displayName,
+          preferences: memory.preferences,
+          activeTopics: memory.activeTopics,
+          recentSummary: memory.recentSummary,
+          lastInteractionAt: memory.lastInteractionAt,
+        },
+      };
+    }),
+    updateMemory: protectedProcedure
+      .input(z.object({
+        displayName: z.string().trim().max(80).nullable().optional(),
+        preferences: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
+        activeTopics: z.array(z.string().trim().min(1).max(160)).max(20).optional(),
+        recentSummary: z.string().trim().max(1200).nullable().optional(),
+      }).refine((value) => Object.keys(value).length > 0, "أدخل تعديلاً واحداً على الأقل."))
+      .mutation(async ({ ctx, input }) => {
+        const current = await getAssistantMemory(ctx.user.openId);
+        if (!current?.enabled || !current.consentedAt) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "فعّل الذاكرة ووافق عليها أولاً." });
+        }
+        const updated = await updateAssistantMemory(ctx.user.openId, input);
+        return { success: Boolean(updated) };
+      }),
+    deleteMemory: protectedProcedure.mutation(async ({ ctx }) => ({
+      success: await deleteAssistantMemory(ctx.user.openId),
+    })),
     speech: publicProcedure
       .input(z.object({
         text: z.string().trim().min(1).max(5000),
