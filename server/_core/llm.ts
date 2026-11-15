@@ -608,11 +608,11 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     .filter((annotation: any) => annotation?.type === "url_citation" && typeof annotation.url === "string")
     .map((annotation: any) => ({ title: typeof annotation.title === "string" ? annotation.title : annotation.url, url: annotation.url }))
     // Prefer publisher pages over search-result and news-aggregator redirect URLs.
-    .filter((source: any) => !/(?:news\\.google\\.com|google\\.com\\/news|news\\.yahoo\\.com\\/rss)/i.test(source.url))
+    .filter((source: any) => !/(?:news\.google\.com|google\.com\/news|news\.yahoo\.com\/rss)/i.test(source.url))
     .filter((source: any, index: number, all: any[]) => all.findIndex((item: any) => item.url === source.url) === index)
     .slice(0, 6);
   const answerWithSources = webSources.length
-    ? `${text}\n\nروابط المصادر الأصلية:\n${webSources.map((source: any, index: number) => `${index + 1}. [${source.title.replace(/\\]/g, "")}](${source.url})`).join("\n")}`
+    ? `${text}\n\nروابط المصادر الأصلية:\n${webSources.map((source: any, index: number) => `${index + 1}. [${source.title}](${source.url})`).join("\n")}`
     : text;
   const toolCalls = outputItems
     .filter((item: any) => item?.type === "function_call")
