@@ -71,6 +71,8 @@ export type InvokeParams = {
   model?: string;
   thinking?: Record<string, unknown>;
   reasoning?: Record<string, unknown>;
+  /** Use OpenAI's hosted live web search on Responses API requests. */
+  webSearch?: boolean;
 };
 
 export type ToolCall = {
@@ -497,6 +499,15 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       strict: false,
     }));
   }
+  if (useResponsesApi && params.webSearch) {
+    const existingTools = Array.isArray(payload.tools) ? payload.tools : [];
+    payload.tools = [
+      ...existingTools,
+      { type: "web_search", search_context_size: "low" },
+    ];
+    // Current-information requests must actually search, not merely be allowed to.
+    if (!payload.tool_choice) payload.tool_choice = "required";
+  }
 
   const resolvedMaxCompletionTokens = max_completion_tokens ?? maxCompletionTokens;
   const resolvedMaxTokens = max_tokens ?? maxTokens;
@@ -590,6 +601,17 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     .join("\n")
     .trim();
   const text = topLevelText || nestedText;
+  const webSources = outputItems
+    .filter((item: any) => item?.type === "message")
+    .flatMap((item: any) => Array.isArray(item.content) ? item.content : [])
+    .flatMap((part: any) => Array.isArray(part?.annotations) ? part.annotations : [])
+    .filter((annotation: any) => annotation?.type === "url_citation" && typeof annotation.url === "string")
+    .map((annotation: any) => ({ title: typeof annotation.title === "string" ? annotation.title : annotation.url, url: annotation.url }))
+    .filter((source: any, index: number, all: any[]) => all.findIndex((item: any) => item.url === source.url) === index)
+    .slice(0, 6);
+  const answerWithSources = webSources.length
+    ? `${text}\\n\\nالمصادر:\\n${webSources.map((source: any, index: number) => `${index + 1}. ${source.title}\\n   ${source.url}`).join("\\n")}`
+    : text;
   const toolCalls = outputItems
     .filter((item: any) => item?.type === "function_call")
     .map((item: any) => ({ id: item.call_id || item.id, type: "function", function: { name: item.name, arguments: item.arguments || "{}" } }));
@@ -599,7 +621,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     model: result.model || params.model || "unknown",
     choices: [{
       index: 0,
-      message: { role: "assistant", content: text, ...(toolCalls.length ? { tool_calls: toolCalls } : {}) },
+      message: { role: "assistant", content: answerWithSources, ...(toolCalls.length ? { tool_calls: toolCalls } : {}) },
       finish_reason: result.status === "incomplete" ? "length" : toolCalls.length ? "tool_calls" : "stop",
     }],
     usage: result.usage ? { prompt_tokens: result.usage.input_tokens || 0, completion_tokens: result.usage.output_tokens || 0, total_tokens: result.usage.total_tokens || 0 } : undefined,
