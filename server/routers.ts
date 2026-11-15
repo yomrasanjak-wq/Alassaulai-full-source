@@ -1337,7 +1337,22 @@ export const appRouter = router({
         language: languageSchema,
         gender: z.enum(["male", "female"]).default("male"),
       }))
-      .mutation(({ input }) => synthesizeSpeech(input.text, input.language, input.gender)),
+      .mutation(async ({ input }) => {
+        try {
+          const result = await synthesizeSpeech(input.text, input.language, input.gender);
+          console.info("[ALASSAUL speech] Google TTS succeeded", {
+            language: input.language,
+            gender: input.gender,
+            chunks: result.allChunks.length,
+          });
+          return result;
+        } catch (error) {
+          // Log the provider failure safely so the browser fallback no longer hides
+          // why Google Cloud TTS failed. Never log request URLs or credential values.
+          console.error("[ALASSAUL speech] Google TTS failed", safeProviderDiagnostic(error));
+          throw error;
+        }
+      }),
     chat: publicProcedure
       .input(z.object({
         messages: z.array(chatMessageSchema).min(1).max(14),
