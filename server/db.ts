@@ -316,6 +316,7 @@ export async function enableAssistantMemory(ownerOpenId: string): Promise<Assist
     updatedAt: now,
   }).onConflictDoUpdate({
     target: assistantMemories.ownerOpenId,
+    targetWhere: sql`${assistantMemories.ownerOpenId} IS NOT NULL`,
     set: { enabled: true, consentedAt: now, updatedAt: now },
   }).returning();
   if (!rows[0]) throw new Error("تعذر تفعيل الذاكرة.");
@@ -342,4 +343,14 @@ export async function deleteAssistantMemory(ownerOpenId: string): Promise<boolea
   if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
   await db.delete(assistantMemories).where(eq(assistantMemories.ownerOpenId, ownerOpenId));
   return true;
+}
+
+
+export async function recordAssistantMemoryInteraction(ownerOpenId: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const now = new Date();
+  await db.update(assistantMemories)
+    .set({ lastInteractionAt: now, updatedAt: now })
+    .where(eq(assistantMemories.ownerOpenId, ownerOpenId));
 }
