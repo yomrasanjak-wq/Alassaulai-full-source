@@ -31,9 +31,9 @@ const normalizedEndpoint = endpoint.replace(/\/+$/, '');
 const netlifyGateway = /\/\.netlify\/ai(?:\/|$)/i.test(normalizedEndpoint);
 const responsesEndpoint = netlifyGateway || /\/v1\/responses$/i.test(normalizedEndpoint);
 const directOpenAi = /api\.openai\.com/i.test(normalizedEndpoint) && !netlifyGateway;
-const selectedKey = explicitKey || ((netlifyGateway || directOpenAi) ? openAiKey || providerKey : /generativelanguage\\.googleapis\\.com/i.test(normalizedEndpoint) ? geminiKey : providerKey || openAiKey);
-const primaryModel = first('ALASSAUL_PRIMARY_MODEL') || (netlifyGateway ? 'gpt-5.6-luna' : directOpenAi ? 'gpt-6.1-sol' : /generativelanguage\\.googleapis\\.com/i.test(normalizedEndpoint) ? 'gemini-3.8-flash' : 'qwen/qwen3.8-27b');
-const backupModel = first('ALASSAUL_BACKUP_MODEL') || (netlifyGateway ? 'gpt-5-mini' : directOpenAi ? 'gpt-6.1-terra' : /generativelanguage\\.googleapis\\.com/i.test(normalizedEndpoint) ? 'gemini-3.7-flash' : 'openai/gpt-oss-20b');
+const selectedKey = explicitKey || ((netlifyGateway || directOpenAi) ? openAiKey || providerKey : /generativelanguage\.googleapis\.com/i.test(normalizedEndpoint) ? geminiKey : providerKey || openAiKey);
+const primaryModel = first('ALASSAUL_PRIMARY_MODEL') || (netlifyGateway ? 'gpt-5.6-luna' : directOpenAi ? 'gpt-6.1-sol' : /generativelanguage\.googleapis\.com/i.test(normalizedEndpoint) ? 'gemini-3.8-flash' : 'qwen/qwen3.8-27b');
+const backupModel = first('ALASSAUL_BACKUP_MODEL') || (netlifyGateway ? 'gpt-5-mini' : directOpenAi ? 'gpt-6.1-terra' : /generativelanguage\.googleapis\.com/i.test(normalizedEndpoint) ? 'gemini-3.7-flash' : 'openai/gpt-oss-20b');
 
 const checks = [];
 const add = (status, label, detail) => checks.push({ status, label, detail });
