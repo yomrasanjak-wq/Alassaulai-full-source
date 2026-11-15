@@ -3977,3 +3977,5 @@ img { display: block; max-width: 100%; }
   .assistant-memory-actions { position: sticky; bottom: -11px; padding: 8px 0 3px; background: #f4f0e5; }
   .chat-header .chat-memory-toggle { min-width: 68px; padding: 0 8px; font-size: 9px; }
 }
+
+.assistant-memory-pause { padding: 8px 10px; border: 1px solid #d5c69f; border-radius: 999px; background: #fffdf5; color: #79643c; font-size: 10px; font-weight: 700; }
