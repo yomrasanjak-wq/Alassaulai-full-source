@@ -354,3 +354,14 @@ export async function recordAssistantMemoryInteraction(ownerOpenId: string): Pro
     .set({ lastInteractionAt: now, updatedAt: now })
     .where(eq(assistantMemories.ownerOpenId, ownerOpenId));
 }
+
+
+/** Pause memory without deleting the visitor's saved details. */
+export async function disableAssistantMemory(ownerOpenId: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  await db.update(assistantMemories)
+    .set({ enabled: false, updatedAt: new Date() })
+    .where(eq(assistantMemories.ownerOpenId, ownerOpenId));
+  return true;
+}
