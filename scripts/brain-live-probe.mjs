@@ -16,12 +16,21 @@ const first = (...names) => names.map(name => process.env[name]?.trim()).find(Bo
 const keyExplicit = first('ALASSAUL_LLM_API_KEY');
 const openAiKey = first('OPENAI_API_KEY', 'AI_API_KEY');
 const providerKey = first('FORGE_API_KEY', 'MANUS_API_KEY', 'GROQ_API_KEY', 'VITE_GROQ_API_KEY', 'BUILT_IN_FORGE_API_KEY', 'VITE_FRONTEND_FORGE_API_KEY', 'VITE_FORGE_API_KEY');
-const endpoint = (first('ALASSAUL_LLM_API_URL', 'OPENAI_BASE_URL', 'FORGE_API_URL', 'MANUS_API_URL', 'GROQ_API_URL', 'BUILT_IN_FORGE_API_URL', 'VITE_FRONTEND_FORGE_API_URL') || (openAiKey && !providerKey ? 'https://api.openai.com' : 'https://api.groq.com/openai/v1')).replace(/\/+$/, '');
-const netlify = /\/\.netlify\/ai(?:\/|$)/i.test(endpoint);
-const responses = netlify || /\/v1\/responses$/i.test(endpoint);
-const directOpenAi = /api\.openai\.com/i.test(endpoint) && !netlify;
-const key = keyExplicit || ((netlify || directOpenAi) ? openAiKey || providerKey : providerKey || openAiKey);
-const model = first('ALASSAUL_PRIMARY_MODEL') || (netlify ? 'gpt-5.6-luna' : directOpenAi ? 'gpt-5-mini' : 'qwen/qwen3.8-27b');
+const openRouterKey = first('OPENROUTER_API_KEY');
+const geminiKey = first('GEMINI_API_KEY');
+const configuredEndpoint = first('FORGE_API_URL', 'MANUS_API_URL', 'GROQ_API_URL', 'BUILT_IN_FORGE_API_URL', 'VITE_FRONTEND_FORGE_API_URL');
+const endpoint = (first('ALASSAUL_LLM_API_URL', 'OPENAI_BASE_URL') || (openAiKey
+  ? 'https://api.openai.com/v1/responses'
+  : geminiKey
+    ? 'https://generativelanguage.googleapis.com/v1beta/openai'
+    : configuredEndpoint || (openRouterKey ? 'https://openrouter.ai/api/v1' : 'https://api.groq.com/openai/v1'))).replace(/\\/+$/, '');
+const netlify = /\\/\\.netlify\\/ai(?:\\/|$)/i.test(endpoint);
+const responses = netlify || /\\/v1\\/responses$/i.test(endpoint);
+const directOpenAi = /api\\.openai\\.com/i.test(endpoint) && !netlify;
+const openRouter = /openrouter\\.ai\\/api\\/v1/i.test(endpoint);
+const gemini = /generativelanguage\\.googleapis\\.com\\/v1beta\\/openai/i.test(endpoint);
+const key = keyExplicit || (gemini ? geminiKey : openRouter ? openRouterKey : netlify ? openAiKey || providerKey : directOpenAi ? openAiKey : providerKey || openAiKey);
+const model = first('ALASSAUL_PRIMARY_MODEL') || (gemini ? 'gemini-3.8-flash' : netlify ? 'gpt-5.6-luna' : directOpenAi ? 'gpt-6.1-sol' : openRouter ? 'openai/gpt-4.1-mini' : 'qwen/qwen3.8-27b');
 
 console.log('\nALASSAUL-AI — Live brain connectivity check');
 if (process.env.ALASSAUL_RUN_LIVE_PROBE !== 'YES') {
