@@ -878,7 +878,7 @@ function getContextualFallback(
   const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
     && /(?:طرابزون|ترابزون|trabzon|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i.test(latest);
   if (asksItinerary) {
-    const durationMatch = latest.match(/(\\d{1,2})\\s*(?:أيام|ايام|يوم|days?)/i);
+    const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
     const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
     const durationNote = requestedDays && requestedDays > 1
       ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
