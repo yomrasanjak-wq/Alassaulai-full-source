@@ -713,15 +713,15 @@ async function getOfficialSaudiLeagueFixturesAnswer(language: "AR" | "TR" | "EN"
     if (!response.ok) throw new Error("SPL fixtures page returned " + response.status);
     const html = await response.text();
     const visibleText = html
-      .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, " ")
-      .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, " ")
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
       .replace(/<[^>]+>/g, " ")
       .replace(/&nbsp;|&#160;/gi, " ")
       .replace(/&amp;/gi, "&")
       .replace(/&#x27;|&#39;/gi, "'")
       .replace(/&quot;/gi, '"')
-      .replace(/\\s+/g, " ");
-    const matches = [...visibleText.matchAll(/MATCHWEEK\\s*(\\d+)\\s*(\\d{4}-\\d{2}-\\d{2})\\s*(\\d{2}:\\d{2})\\s*Home team:\\s*([A-Za-z0-9&' -]+?)\\.?\\s*Away team:\\s*([A-Za-z0-9&' -]+?)\\.?\\s*Upcoming match/gi)];
+      .replace(/\s+/g, " ");
+    const matches = [...visibleText.matchAll(/MATCHWEEK\s*(\d+)\s*(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})\s*Home team:\s*([A-Za-z0-9&' -]+?)\.?\s*Away team:\s*([A-Za-z0-9&' -]+?)\.?\s*Upcoming match/gi)];
     if (!matches.length) throw new Error("SPL fixtures page did not expose parsable upcoming match rows");
     const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
     const rows = matches.slice(0, 12).map((match) => {
@@ -741,7 +741,7 @@ async function getOfficialSaudiLeagueFixturesAnswer(language: "AR" | "TR" | "EN"
       ? "المصدر الرسمي: رابطة الدوري السعودي للمحترفين. قد تتغير المواعيد؛ راجع الجدول الرسمي قبل المباراة."
       : language === "TR" ? "Resmî kaynak: Suudi Pro Lig. Maç saatleri değişebilir; karşılaşma öncesinde resmî programı kontrol edin."
       : "Official source: Saudi Pro League. Kick-off times may change; check the official schedule before the match.";
-    return `${heading}\\n${rows.join("\\n")}\\n\\n${note}\\n${sourceUrl}`;
+    return `${heading}\n${rows.join("\n")}\n\n${note}\n${sourceUrl}`;
   } catch (error) {
     console.warn("[ALASSAUL sports] official SPL fixtures page unavailable", safeProviderDiagnostic(error));
     return undefined;
