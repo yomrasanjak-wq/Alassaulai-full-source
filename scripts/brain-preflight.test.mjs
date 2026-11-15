@@ -71,6 +71,13 @@ test('Groq endpoint recognizes the Groq credential', () => {
   assert.doesNotMatch(result.stdout, /groq-test-secret/);
 });
 
+test('OpenRouter endpoint recognizes its dedicated credential', () => {
+  const result = runChecker({ OPENROUTER_API_KEY: 'openrouter-test-secret' });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /A key is configured \\(value hidden\\)/);
+  assert.doesNotMatch(result.stdout, /openrouter-test-secret/);
+});
+
 test('same primary and backup models raise a warning', () => {
   const result = runChecker({
     GROQ_API_URL: 'https://api.groq.com/openai/v1',
