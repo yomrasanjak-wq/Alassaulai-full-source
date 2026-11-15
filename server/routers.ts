@@ -134,7 +134,7 @@ export function compactChatHistory(messages: Array<{ role: "user" | "assistant";
  * requested destination with Photon. Results are candidates, not opening-hour,
  * price, quality, or accessibility verification. */
 type TourismPhotonFeature = {
-  properties?: { name?: string; city?: string; state?: string; country?: string; countrycode?: string };
+  properties?: { name?: string; city?: string; town?: string; village?: string; state?: string; country?: string; countrycode?: string; country_code?: string; display_name?: string };
   geometry?: { coordinates?: unknown[] };
 };
 type TourismOverpassElement = {
@@ -216,21 +216,45 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
     // Photon can reject unsupported language codes (notably Arabic) with HTTP 400.
     // Keep geocoding language-neutral; OSM name:ar/name:tr tags are selected below.
     geocodeUrl.search = new URLSearchParams({ q: geocodeQuery, limit: "8" }).toString();
-    const geocodeResponse = await fetch(geocodeUrl.toString(), {
-      headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
-      signal: AbortSignal.timeout(7000),
-    });
-    if (!geocodeResponse.ok) throw new Error("Photon HTTP " + geocodeResponse.status);
-    const geocode = await geocodeResponse.json() as { features?: TourismPhotonFeature[] };
-    const resolved = (geocode.features ?? []).find((feature) => {
+    const isAcceptableGeocode = (feature: TourismPhotonFeature) => {
       const coords = feature.geometry?.coordinates;
       const country = feature.properties?.country?.toLocaleLowerCase() ?? "";
-      const countryCode = feature.properties?.countrycode?.toLocaleLowerCase() ?? "";
+      const countryCode = (feature.properties?.countrycode ?? feature.properties?.country_code)?.toLocaleLowerCase() ?? "";
       const isInTurkey = countryCode === "tr" || country === "turkey" || country === "türkiye";
-      return typeof feature.properties?.name === "string"
-        && Number.isFinite(Number(coords?.[0])) && Number.isFinite(Number(coords?.[1]))
-        && (!isKnownTurkishDestination || isInTurkey);
-    });
+      const name = feature.properties?.name ?? feature.properties?.city ?? feature.properties?.town
+        ?? feature.properties?.village ?? feature.properties?.display_name;
+      return typeof name === "string" && Number.isFinite(Number(coords?.[0]))
+        && Number.isFinite(Number(coords?.[1])) && (!isKnownTurkishDestination || isInTurkey);
+    };
+    let geocodeFeatures: TourismPhotonFeature[] = [];
+    try {
+      const geocodeResponse = await fetch(geocodeUrl.toString(), {
+        headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
+        signal: AbortSignal.timeout(6500),
+      });
+      if (!geocodeResponse.ok) throw new Error("Photon HTTP " + geocodeResponse.status);
+      const geocode = await geocodeResponse.json() as { features?: TourismPhotonFeature[] };
+      geocodeFeatures = geocode.features ?? [];
+    } catch (photonError) {
+      console.warn("[ALASSAUL tourism] Photon geocoding failed; trying Nominatim", safeProviderDiagnostic(photonError));
+    }
+    let resolved = geocodeFeatures.find(isAcceptableGeocode);
+    if (!resolved) {
+      const nominatimUrl = new URL("https://nominatim.openstreetmap.org/search");
+      nominatimUrl.search = new URLSearchParams({
+        q: geocodeQuery,
+        format: "geojson",
+        limit: "8",
+        ...(isKnownTurkishDestination ? { countrycodes: "tr" } : {}),
+      }).toString();
+      const fallbackResponse = await fetch(nominatimUrl.toString(), {
+        headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com; contact: info@alassaul.com)" },
+        signal: AbortSignal.timeout(6500),
+      });
+      if (!fallbackResponse.ok) throw new Error("Photon and Nominatim geocoding failed (Nominatim HTTP " + fallbackResponse.status + ")");
+      const fallbackData = await fallbackResponse.json() as { features?: TourismPhotonFeature[] };
+      resolved = (fallbackData.features ?? []).find(isAcceptableGeocode);
+    }
     if (!resolved) {
       return language === "AR"
         ? "لم أتمكن من تحديد «" + destination + "» جغرافياً بشكل موثوق. اذكر المدينة والدولة معاً حتى لا أخلط بين أماكن تحمل الاسم نفسه."
@@ -250,19 +274,35 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
     const overpassQuery = '[out:json][timeout:12];(nwr(around:18000,' + lat + ',' + lon + ')["name"]["tourism"~"attraction|museum|viewpoint|zoo|theme_park|gallery|artwork"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["historic"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["leisure"~"park|garden"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["natural"~"beach|waterfall|cave"];);out center 80;';
     // Keep the public endpoint replaceable without a code change; larger deployments
     // should use a managed or self-hosted Overpass service rather than a shared demo endpoint.
-    const overpassEndpoint = process.env.ALASSAUL_OVERPASS_URL?.trim() || "https://overpass-api.de/api/interpreter";
-    const placesResponse = await fetch(overpassEndpoint, {
-      method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
-      body: new URLSearchParams({ data: overpassQuery }).toString(),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (placesResponse.status === 429 || placesResponse.status === 406) {
-      tourismCooldownUntil = Date.now() + 30_000;
-      throw new Error("Overpass rate limited (" + placesResponse.status + ")");
+    const configuredOverpass = process.env.ALASSAUL_OVERPASS_URL?.trim();
+    const overpassEndpoints = configuredOverpass
+      ? [configuredOverpass]
+      : ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+    let placesData: { elements?: TourismOverpassElement[] } | undefined;
+    const overpassFailures: string[] = [];
+    for (const endpoint of overpassEndpoints) {
+      try {
+        const placesResponse = await fetch(endpoint, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
+          body: new URLSearchParams({ data: overpassQuery }).toString(),
+          signal: AbortSignal.timeout(8500),
+        });
+        if (!placesResponse.ok) throw new Error("HTTP " + placesResponse.status);
+        const candidate = await placesResponse.json() as { elements?: TourismOverpassElement[] };
+        if (!Array.isArray(candidate.elements)) throw new Error("Invalid Overpass response");
+        placesData = candidate;
+        break;
+      } catch (endpointError) {
+        const diagnostic = safeProviderDiagnostic(endpointError);
+        overpassFailures.push(endpoint + ": " + diagnostic);
+        console.warn("[ALASSAUL tourism] Overpass endpoint failed; trying fallback", endpoint, diagnostic);
+      }
     }
-    if (!placesResponse.ok) throw new Error("Overpass HTTP " + placesResponse.status);
-    const placesData = await placesResponse.json() as { elements?: TourismOverpassElement[] };
+    if (!placesData) {
+      if (overpassFailures.some((failure) => /429|406/.test(failure))) tourismCooldownUntil = Date.now() + 15_000;
+      throw new Error("All Overpass endpoints failed: " + overpassFailures.join(" | "));
+    }
     const seen = new Set<string>();
     const places = (placesData.elements ?? []).flatMap((element) => {
       const tags = element.tags ?? {};
@@ -661,12 +701,65 @@ async function getEuropeanFootballScoreboardAnswer(
 }
 
 /** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
+async function getOfficialSaudiLeagueFixturesAnswer(language: "AR" | "TR" | "EN"): Promise<string | undefined> {
+  const sourceUrl = "https://www.spl.com.sa/en/fixtures-results";
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(sourceUrl, {
+      headers: { accept: "text/html,application/xhtml+xml", "user-agent": "ALASSAUL-AI/1.0 (official SPL fixtures lookup)" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error("SPL fixtures page returned " + response.status);
+    const html = await response.text();
+    const visibleText = html
+      .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, " ")
+      .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;|&#160;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&#x27;|&#39;/gi, "'")
+      .replace(/&quot;/gi, '"')
+      .replace(/\\s+/g, " ");
+    const matches = [...visibleText.matchAll(/MATCHWEEK\\s*(\\d+)\\s*(\\d{4}-\\d{2}-\\d{2})\\s*(\\d{2}:\\d{2})\\s*Home team:\\s*([A-Za-z0-9&' -]+?)\\.?\\s*Away team:\\s*([A-Za-z0-9&' -]+?)\\.?\\s*Upcoming match/gi)];
+    if (!matches.length) throw new Error("SPL fixtures page did not expose parsable upcoming match rows");
+    const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
+    const rows = matches.slice(0, 12).map((match) => {
+      const [, week, datePart, timePart, home, away] = match;
+      const localDate = new Date(datePart + "T" + timePart + ":00+03:00");
+      const dateText = new Intl.DateTimeFormat(locale, {
+        weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Riyadh",
+      }).format(localDate);
+      return language === "AR"
+        ? `• ${home.trim()} × ${away.trim()} — ${dateText}، الساعة ${timePart} (بتوقيت السعودية) · الجولة ${week}`
+        : `• ${home.trim()} vs ${away.trim()} — ${dateText}, ${timePart} (Riyadh time) · Matchweek ${week}`;
+    });
+    const heading = language === "AR"
+      ? "المباريات القادمة المنشورة في جدول رابطة الدوري السعودي"
+      : language === "TR" ? "Suudi Pro Lig'in resmi fikstüründeki yaklaşan maçlar" : "Upcoming fixtures published by the Saudi Pro League";
+    const note = language === "AR"
+      ? "المصدر الرسمي: رابطة الدوري السعودي للمحترفين. قد تتغير المواعيد؛ راجع الجدول الرسمي قبل المباراة."
+      : language === "TR" ? "Resmî kaynak: Suudi Pro Lig. Maç saatleri değişebilir; karşılaşma öncesinde resmî programı kontrol edin."
+      : "Official source: Saudi Pro League. Kick-off times may change; check the official schedule before the match.";
+    return `${heading}\\n${rows.join("\\n")}\\n\\n${note}\\n${sourceUrl}`;
+  } catch (error) {
+    console.warn("[ALASSAUL sports] official SPL fixtures page unavailable", safeProviderDiagnostic(error));
+    return undefined;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", message: string) {
   const scheduleQuestion = isSaudiLeagueScheduleQuestion(message);
   const scoreQuestion = /(?:نتيجة|نتائج|مباشر|الآن|الان|من فاز|score|scores|results|live)/i.test(message);
   if (scheduleQuestion) {
     const scoreboard = await getSaudiLeagueScoreboardAnswer(language, message, scoreQuestion);
     if (scoreboard) return scoreboard;
+    if (!scoreQuestion) {
+      const officialFixtures = await getOfficialSaudiLeagueFixturesAnswer(language);
+      if (officialFixtures) return officialFixtures;
+    }
     if (scoreQuestion) {
       return language === "AR"
         ? "تعذر جلب نتيجة موثوقة من لوحة مباريات دوري روشن الآن؛ لن أخمّن نتيجة أو أذكر خبراً على أنه نتيجة مباراة. حاول بعد قليل.\\nالمصدر: https://www.espn.com/soccer/scoreboard/_/league/ksa.1"
