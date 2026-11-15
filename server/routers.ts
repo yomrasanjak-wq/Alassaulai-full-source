@@ -1528,10 +1528,13 @@ ${newsContext}`);
             ],
           };
         }
+        const needsLiveWebSearch = isGoogleGroundingQuestion(latestText)
+          || /(?:سعر|أسعار|اسعار|حراج|مستعمل|قيمة السوق|حارس|لاعب|تشكيلة|مدرب|كم.*(?:السوق|حراج)|current|latest|today)/i.test(latestText);
         const llmRequest = {
           model: ENV.primaryModel,
           max_completion_tokens: isItineraryPlanningQuestion(latestText) ? 1200 : 512,
           reasoning: { effort: "minimal" },
+          webSearch: needsLiveWebSearch,
           messages: llmMessages,
         };
         const backupModel = getDistinctBackupModel(llmRequest.model, ENV.backupModel);
