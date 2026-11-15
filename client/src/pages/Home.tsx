@@ -2119,7 +2119,7 @@ export default function Home() {
                 <div className="assistant-memory-actions"><button type="button" className="button button-primary" disabled={assistantMemoryUpdateMutation.isPending} onClick={() => assistantMemoryUpdateMutation.mutate({ displayName: memoryDisplayName.trim() || null, preferences: memoryPreferences.split("\n").map((item) => item.trim()).filter(Boolean), activeTopics: memoryTopics.split("\n").map((item) => item.trim()).filter(Boolean), recentSummary: memorySummary.trim() || null })}>{assistantMemoryUpdateMutation.isPending ? "جارٍ الحفظ…" : "حفظ التعديلات"}</button><button type="button" className="assistant-memory-pause" disabled={assistantMemoryDisableMutation.isPending} onClick={() => { if (window.confirm("سيتم إيقاف استخدام ذاكرتك مع الاحتفاظ بالمعلومات لتتمكن من تفعيلها لاحقاً. هل توافق؟")) assistantMemoryDisableMutation.mutate(); }}>{assistantMemoryDisableMutation.isPending ? "جارٍ الإيقاف…" : "إيقاف الذاكرة"}</button><button type="button" className="assistant-memory-delete" disabled={assistantMemoryDeleteMutation.isPending} onClick={() => { if (window.confirm("هل تريد حذف كل المعلومات التي حفظتها الذاكرة لهذا الحساب نهائياً؟")) assistantMemoryDeleteMutation.mutate(); }}>{assistantMemoryDeleteMutation.isPending ? "جارٍ الحذف…" : "حذف ذاكرتي"}</button></div>
               </>}
             </div>}
-        </section>
+        </section>}
         <div className="chat-layout">
           <section className="chat-conversation">
             <div className="chat-body">
