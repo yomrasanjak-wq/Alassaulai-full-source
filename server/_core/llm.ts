@@ -505,7 +505,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     }
   }
 
-  const isGeminiProvider = /generativelanguage\\.googleapis\\.com\\/v1beta\\/openai/i.test(ENV.llmApiUrl);
+  const isGeminiProvider = /generativelanguage\.googleapis\.com\/v1beta\/openai/i.test(ENV.llmApiUrl);
   const response = await fetchWithBackoff(useResponsesApi ? resolveResponsesEndpoint() : resolveApiUrl(), {
     method: "POST",
     headers: {
