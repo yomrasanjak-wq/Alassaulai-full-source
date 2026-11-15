@@ -28,6 +28,7 @@ import {
   Bell,
   BookOpen,
   Bot,
+  BrainCircuit,
   BriefcaseBusiness,
   Camera,
   CarFront,
@@ -796,6 +797,11 @@ export default function Home() {
   const [selectedPlace, setSelectedPlace] = useState<CityDestination | null>(null);
   const [liveStatus, setLiveStatus] = useState<LiveStatus>("loading");
   const [chatOpen, setChatOpen] = useState(false);
+  const [memoryPanelOpen, setMemoryPanelOpen] = useState(false);
+  const [memoryDisplayName, setMemoryDisplayName] = useState("");
+  const [memoryPreferences, setMemoryPreferences] = useState("");
+  const [memoryTopics, setMemoryTopics] = useState("");
+  const [memorySummary, setMemorySummary] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [chatImageDataUrl, setChatImageDataUrl] = useState<string | undefined>();
   const [chatImageBusy, setChatImageBusy] = useState(false);
@@ -908,6 +914,30 @@ export default function Home() {
   const dir = language === "AR" ? "rtl" : "ltr";
   const season = getSeason();
   const chatMutation = trpc.ai.chat.useMutation();
+  const assistantMemoryStatusQuery = trpc.ai.memoryStatus.useQuery(undefined, {
+    enabled: Boolean(auth.user), staleTime: 15_000,
+  });
+  const assistantMemoryQuery = trpc.ai.getMemory.useQuery(undefined, {
+    enabled: Boolean(auth.user) && memoryPanelOpen, staleTime: 10_000,
+    onSuccess: (result) => {
+      if (!result.memory) return;
+      setMemoryDisplayName(result.memory.displayName ?? "");
+      setMemoryPreferences(result.memory.preferences.join("\\n"));
+      setMemoryTopics(result.memory.activeTopics.join("\\n"));
+      setMemorySummary(result.memory.recentSummary ?? "");
+    },
+  });
+  const assistantMemoryEnableMutation = trpc.ai.enableMemory.useMutation({
+    onSuccess: () => { void assistantMemoryStatusQuery.refetch(); void assistantMemoryQuery.refetch(); },
+  });
+  const assistantMemoryUpdateMutation = trpc.ai.updateMemory.useMutation({
+    onSuccess: () => { void assistantMemoryQuery.refetch(); void assistantMemoryStatusQuery.refetch(); notify("تم حفظ ذاكرتك", "سيستخدم المساعد هذه المعلومات في محادثاتك القادمة.", "success"); },
+    onError: (error) => notify("تعذر حفظ الذاكرة", error.message, "error"),
+  });
+  const assistantMemoryDeleteMutation = trpc.ai.deleteMemory.useMutation({
+    onSuccess: () => { void assistantMemoryStatusQuery.refetch(); void assistantMemoryQuery.refetch(); setMemoryDisplayName(""); setMemoryPreferences(""); setMemoryTopics(""); setMemorySummary(""); notify("تم حذف الذاكرة", "حُذفت المعلومات المحفوظة لهذا الحساب.", "success"); },
+    onError: (error) => notify("تعذر حذف الذاكرة", error.message, "error"),
+  });
   const controlMutation = trpc.control.submit.useMutation();
   const controlCreateTaskMutation = trpc.control.createTask.useMutation();
   const controlRequestsQuery = trpc.control.list.useQuery(undefined, { staleTime: 10_000, enabled: modal === "control" && Boolean(auth.user) });
