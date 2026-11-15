@@ -39,10 +39,10 @@ const resolvedLlmBaseUrl = explicitLlmBaseUrl ||
         : openAiKey && !explicitProviderKey
           ? "https://api.openai.com"
           : "https://api.groq.com/openai/v1"));
-const usesNetlifyAiGateway = /\\/\\.netlify\\/ai(?:\\/|$)/i.test(resolvedLlmBaseUrl);
-const usesDirectOpenAi = /api\\.openai\\.com/i.test(resolvedLlmBaseUrl) && !usesNetlifyAiGateway;
-const usesOpenRouter = /openrouter\\.ai\\/api\\/v1/i.test(resolvedLlmBaseUrl);
-const usesGemini = /generativelanguage\\.googleapis\\.com\\/v1beta\\/openai/i.test(resolvedLlmBaseUrl);
+const usesNetlifyAiGateway = /\/\.netlify\/ai(?:\/|$)/i.test(resolvedLlmBaseUrl);
+const usesDirectOpenAi = /api\.openai\.com/i.test(resolvedLlmBaseUrl) && !usesNetlifyAiGateway;
+const usesOpenRouter = /openrouter\.ai\/api\/v1/i.test(resolvedLlmBaseUrl);
+const usesGemini = /generativelanguage\.googleapis\.com\/v1beta\/openai/i.test(resolvedLlmBaseUrl);
 const resolvedLlmApiKey = firstConfigured("ALASSAUL_LLM_API_KEY") ||
   (usesGemini
     ? geminiKey
