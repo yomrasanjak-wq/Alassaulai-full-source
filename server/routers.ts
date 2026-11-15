@@ -232,7 +232,7 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
     try {
       const geocodeResponse = await fetch(geocodeUrl.toString(), {
         headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
-        signal: AbortSignal.timeout(6500),
+        signal: AbortSignal.timeout(4000),
       });
       if (!geocodeResponse.ok) throw new Error("Photon HTTP " + geocodeResponse.status);
       const geocode = await geocodeResponse.json() as { features?: TourismPhotonFeature[] };
@@ -251,7 +251,7 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
       }).toString();
       const fallbackResponse = await fetch(nominatimUrl.toString(), {
         headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com; contact: info@alassaul.com)" },
-        signal: AbortSignal.timeout(6500),
+        signal: AbortSignal.timeout(4000),
       });
       if (!fallbackResponse.ok) throw new Error("Photon and Nominatim geocoding failed (Nominatim HTTP " + fallbackResponse.status + ")");
       const fallbackData = await fallbackResponse.json() as { features?: TourismPhotonFeature[] };
@@ -281,13 +281,16 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
       ? [configuredOverpass]
       : ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
     let placesData: { elements?: TourismOverpassElement[] } | undefined;
+    // Start the independent Wikipedia fallback alongside Overpass so a slow map server
+    // does not add another full network timeout before a useful answer can be returned.
+    const wikimediaFallback = getWikimediaNearbyAttractions(lat, lon, language);
     const attempts = await Promise.all(overpassEndpoints.map(async (endpoint) => {
       try {
         const placesResponse = await fetch(endpoint, {
           method: "POST",
           headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
           body: new URLSearchParams({ data: overpassQuery }).toString(),
-          signal: AbortSignal.timeout(8500),
+          signal: AbortSignal.timeout(5000),
         });
         if (!placesResponse.ok) throw new Error("HTTP " + placesResponse.status);
         const candidate = await placesResponse.json() as { elements?: TourismOverpassElement[] };
@@ -306,7 +309,7 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
       return failure.endpoint + ": " + (failure.error.diagnostic ?? "unknown error");
     });
     if (!placesData) {
-      const wikimediaPlaces = await getWikimediaNearbyAttractions(lat, lon, language);
+      const wikimediaPlaces = await wikimediaFallback;
       if (wikimediaPlaces.length) {
         const items = wikimediaPlaces.map((place, index) => {
           const directions = "https://www.google.com/maps/dir/?api=1&destination=" + place.lat + "," + place.lon;
@@ -1354,6 +1357,10 @@ export const appRouter = router({
         // Keep simple identity and supported live-data questions available even
         // when the external language-model provider is temporarily unavailable.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
+          if (/^(?:السلام عليكم(?: ورحمة الله وبركاته)?|مرحبا|مرحباً|هلا|أهلاً وسهلاً|صباح الخير|مساء الخير)[\\s.!،؟]*$/i.test(latestText.trim())) {
+            return { text: "وعليكم السلام ورحمة الله وبركاته، حيّاك الله! كيف أقدر أساعدك؟" };
+          }
+
           if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|صاحب.{0,18}(?:المنصة|الموقع|العسول)|مؤسس.{0,18}(?:المنصة|الموقع|العسول)|مالك.{0,18}(?:المنصة|الموقع|العسول)|who are you|what is alassaul)/i.test(latestText)) {
             // Answer common platform identity questions without depending on the model provider.
             if (/(?:صاحب|مؤسس|مالك).{0,18}(?:المنصة|الموقع|العسول|alassaul)|(?:من هو|مين هو).{0,18}(?:صاحب|مؤسس|مالك)/i.test(latestText)) {
@@ -1420,7 +1427,8 @@ ${weatherContext}`);
             if (directTourismAnswer) {
               const lookupUnavailable = /(?:تعذر جلب|لم أتمكن من تحديد|لم أتمكن من جلب|لم تُرجع معالم|لم أضع أسماء غير متحققة|مصدر الخرائط مزدحم|Verified attractions .* unavailable|couldn't reliably locate|returned no sufficiently named)/i.test(directTourismAnswer);
               if (isItineraryPlanningQuestion(latestText) && lookupUnavailable) {
-                return { text: directTourismAnswer };
+                const practicalFallback = getContextualFallback(input.messages, input.language);
+                return { text: practicalFallback ?? directTourismAnswer };
               }
               liveContext.push((isItineraryPlanningQuestion(latestText)
                 ? "أماكن موثقة لتخطيط الرحلة من OpenStreetMap:"
