@@ -17,6 +17,7 @@ const explicitProviderKey = firstConfigured(
 );
 const openAiKey = firstConfigured("OPENAI_API_KEY", "AI_API_KEY");
 const openRouterKey = firstConfigured("OPENROUTER_API_KEY");
+const geminiKey = firstConfigured("GEMINI_API_KEY");
 const configuredBaseUrl = firstConfigured(
   "FORGE_API_URL",
   "MANUS_API_URL",
@@ -29,12 +30,15 @@ const configuredBaseUrl = firstConfigured(
 // Prefer an explicitly configured LLM endpoint; otherwise use OpenRouter when
 // its key exists because the model IDs below are OpenRouter model identifiers.
 const explicitLlmBaseUrl = firstConfigured("ALASSAUL_LLM_API_URL", "OPENAI_BASE_URL");
-const resolvedLlmBaseUrl = explicitLlmBaseUrl || configuredBaseUrl ||
-  (openRouterKey
-    ? "https://openrouter.ai/api/v1"
-    : openAiKey && !explicitProviderKey
-      ? "https://api.openai.com"
-      : "https://api.groq.com/openai/v1");
+const resolvedLlmBaseUrl = explicitLlmBaseUrl ||
+  (geminiKey
+    ? "https://generativelanguage.googleapis.com/v1beta/openai"
+    : configuredBaseUrl ||
+      (openRouterKey
+        ? "https://openrouter.ai/api/v1"
+        : openAiKey && !explicitProviderKey
+          ? "https://api.openai.com"
+          : "https://api.groq.com/openai/v1"));
 const usesNetlifyAiGateway = /\/\.netlify\/ai(?:\/|$)/i.test(resolvedLlmBaseUrl);
 const usesDirectOpenAi = /api\.openai\.com/i.test(resolvedLlmBaseUrl) && !usesNetlifyAiGateway;
 const usesOpenRouter = /openrouter\.ai\/api\/v1/i.test(resolvedLlmBaseUrl);
@@ -61,20 +65,24 @@ export const ENV = {
   storageApiKey: firstConfigured("BUILT_IN_FORGE_API_KEY"),
   llmApiUrl: resolvedLlmBaseUrl,
   llmApiKey: resolvedLlmApiKey,
-  primaryModel: firstConfigured("ALASSAUL_PRIMARY_MODEL") || (usesNetlifyAiGateway
-    ? "gpt-5.6-luna"
-    : usesDirectOpenAi
+  primaryModel: firstConfigured("ALASSAUL_PRIMARY_MODEL") || (usesGemini
+    ? "gemini-3.8-flash"
+    : usesNetlifyAiGateway
+      ? "gpt-5.6-luna"
+      : usesDirectOpenAi
+        ? "gpt-5-mini"
+        : usesOpenRouter
+          ? "openai/gpt-4.1-mini"
+          : "qwen/qwen3.8-27b"),
+  backupModel: firstConfigured("ALASSAUL_BACKUP_MODEL") || (usesGemini
+    ? "gemini-3.7-flash"
+    : usesNetlifyAiGateway
       ? "gpt-5-mini"
-      : usesOpenRouter
-        ? "openai/gpt-4.1-mini"
-        : "qwen/qwen3.8-27b"),
-  backupModel: firstConfigured("ALASSAUL_BACKUP_MODEL") || (usesNetlifyAiGateway
-    ? "gpt-5-mini"
-    : usesDirectOpenAi
-      ? "gpt-4.1-mini"
-      : usesOpenRouter
-        ? "openai/gpt-oss-20b"
-        : "openai/gpt-oss-20b"),
+      : usesDirectOpenAi
+        ? "gpt-4.1-mini"
+        : usesOpenRouter
+          ? "openai/gpt-oss-20b"
+          : "openai/gpt-oss-20b"),
   googleTtsApiKey: firstConfigured(
     "GOOGLE_TTS_API_KEY",
     "GOOGLE_CLOUD_TTS_API_KEY",
