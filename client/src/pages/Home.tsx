@@ -1099,7 +1099,7 @@ export default function Home() {
     if (!chatOpen || welcomeAddedRef.current || chatMessages.length > 0) return;
     welcomeAddedRef.current = true;
     const welcomeText = language === "AR"
-      ? "أهلاً بك في ALASSAUL-AI، بوابتك للشمال التركي. أنا مساعدك الذكي، اسألني عمّا تريد."
+      ? "أهلاً بك في ALASSAUL-AI، مساعدك الذكي."
       : language === "TR"
         ? "ALASSAUL-AI'ye hoş geldiniz. Ben akıllı asistanınızım; Karadeniz destinasyonları, haritalar, geziler, haberler ve daha fazlası hakkında bana soru sorabilirsiniz."
         : "Welcome to ALASSAUL-AI, your gateway to Türkiye's Black Sea region. I'm your AI assistant. Ask me about destinations, maps, trips, news, and much more.";
