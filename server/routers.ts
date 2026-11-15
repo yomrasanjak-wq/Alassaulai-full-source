@@ -78,7 +78,7 @@ export function getDistinctBackupModel(primaryModel: string | undefined, backupM
 export function getAdaptiveTaskInstruction(message: string): string {
   const text = message.normalize("NFKC").toLowerCase();
   if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|أخبار السعودية|اخبار السعودية|السعودية اليوم|أخبار اليمن|اخبار اليمن|اليمن اليوم|latest news|world news|breaking news)/i.test(text)) {
-    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. إذا طلب موجز أخبار دولة أو العالم، اعرض حتى 5 عناوين حديثة مستقلة، ولكل عنوان ملخصاً واضحاً من سطرين تقريباً، مع تاريخ النشر والمصدر عندما يتوفران. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. افصل الخبر المؤكد عن الخلفية والتحليل، ولا تعرض حدثاً على أنه جديد دون نتيجة بحث حديثة موثوقة. إذا لم تتوفر أداة بحث حي، قل ذلك بوضوح وقدّم خلفية مؤرخة بدلاً من اختلاق عناوين أو أرقام.";
+    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. التزم بالعدد الذي يطلبه المستخدم حرفياً؛ إذا طلب ثلاثة أخبار فاعرض ثلاثة فقط، وإذا لم يحدد عدداً فاعرض ثلاثة أخبار كحد افتراضي. في موجز أخبار العالم نوّع التغطية جغرافياً وموضوعياً ولا تجعل العناوين كلها من منطقة واحدة ما لم يطلب ذلك. لكل خبر عنوان وملخص موجز وتاريخ النشر واسم الناشر ورابط مباشر إلى صفحة الخبر لدى الناشر الأصلي. لا تعرض روابط Google News أو RSS أو صفحات تجميع الأخبار على أنها مصادر أصلية، ولا تنسب خبراً إلى ناشر لمجرد ظهوره في نتيجة بحث. ميّز بوضوح بين الوقائع المؤكدة والادعاءات والتقارير الأولية، ولا تكرر الخبر نفسه بصيغ مختلفة. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. إذا لم تتوفر أداة بحث حي أو روابط ناشر أصلية، صرّح بذلك ولا تختلق عناوين أو مصادر.";
   }
   if (/(كيف أصلح|كيف اصلح|متعطل|عطل|لا يعمل|ما يشتغل|ما يفتح|خطأ|مشكلة|حل المشكلة|تشخيص)/i.test(text)) {
     return "نمط معالجة مشكلة: حدّد الاحتمال الأقرب دون الجزم، ثم أعطِ خطوات تشخيص مرتبة من الأبسط والأكثر أماناً إلى المتقدم. اذكر ما ينبغي عدم فعله، واسأل عن معلومة واحدة فقط إذا كانت ضرورية.";
@@ -1414,7 +1414,10 @@ export const appRouter = router({
             }
           }
 
-          if (isWorldNewsQuestion(latestText)) {
+          // OpenAI Responses API has native web search. Do not short-circuit
+          // news requests with the legacy Google News RSS headline feed.
+          const usesResponsesWebSearch = /\/v1\/responses$/i.test(ENV.llmApiUrl ?? "");
+          if (isWorldNewsQuestion(latestText) && !usesResponsesWebSearch) {
             const directNews = await getWorldNewsAnswer(latestText, input.language);
             if (directNews) return { text: directNews };
           }
@@ -1459,7 +1462,7 @@ ${mapsContext}`);
             }
           }
 
-          if (isGoogleGroundingQuestion(latestText)) {
+          if (isGoogleGroundingQuestion(latestText) && !(usesResponsesWebSearch && isWorldNewsQuestion(latestText))) {
             if (process.env.GEMINI_API_KEY?.trim()) {
               try {
                 const searchContext = await getGoogleGroundedAnswer(latestText, input.language);
@@ -1481,7 +1484,7 @@ ${newsContext}`);
               const scheduleContext = await getSaudiLeagueScheduleAnswer(input.language, latestText);
               if (scheduleContext) liveContext.push(`نتيجة بحث حديثة عن جدول دوري روشن السعودي:\n${scheduleContext}`);
             }
-          } else if (isWorldNewsQuestion(latestText)) {
+          } else if (isWorldNewsQuestion(latestText) && !usesResponsesWebSearch) {
             const newsContext = await getWorldNewsAnswer(latestText, input.language);
             if (newsContext) liveContext.push(`نتيجة أو حالة موجز الأخبار الحي:
 ${newsContext}`);
@@ -1528,11 +1531,12 @@ ${newsContext}`);
             ],
           };
         }
-        const needsLiveWebSearch = isGoogleGroundingQuestion(latestText)
+        const needsLiveWebSearch = isWorldNewsQuestion(latestText)
+          || isGoogleGroundingQuestion(latestText)
           || /(?:سعر|أسعار|اسعار|حراج|مستعمل|قيمة السوق|حارس|لاعب|تشكيلة|مدرب|كم.*(?:السوق|حراج)|current|latest|today)/i.test(latestText);
         const llmRequest = {
           model: ENV.primaryModel,
-          max_completion_tokens: isItineraryPlanningQuestion(latestText) ? 1200 : 512,
+          max_completion_tokens: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText)) ? 1200 : 512,
           reasoning: { effort: "minimal" },
           webSearch: needsLiveWebSearch,
           messages: llmMessages,
