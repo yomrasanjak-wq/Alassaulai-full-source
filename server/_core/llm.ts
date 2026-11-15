@@ -506,6 +506,8 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   }
 
   const isGeminiProvider = /generativelanguage\.googleapis\.com\/v1beta\/openai/i.test(ENV.llmApiUrl);
+  // Gemini 3.8 defaults to medium thinking; low keeps everyday chat responsive.
+  if (isGeminiProvider && !("reasoning_effort" in payload)) payload.reasoning_effort = "low";
   const response = await fetchWithBackoff(useResponsesApi ? resolveResponsesEndpoint() : resolveApiUrl(), {
     method: "POST",
     headers: {
@@ -513,7 +515,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       authorization: `Bearer ${ENV.llmApiKey || ENV.forgeApiKey}`,
     },
     body: JSON.stringify(payload),
-  }, isGeminiProvider ? { maxRetries: 0, requestTimeoutMs: 7_000, requestBudgetMs: 8_000 } : undefined);
+  }, isGeminiProvider ? { maxRetries: 0, requestTimeoutMs: 10_000, requestBudgetMs: 11_000 } : undefined);
 
   if (!response.ok) {
     const errorText = await response.text();
