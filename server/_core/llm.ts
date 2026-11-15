@@ -216,6 +216,9 @@ const normalizeToolChoice = (
 
 const resolveOpenAiEndpoint = (path: "chat/completions" | "models") => {
   const base = (ENV.llmApiUrl || ENV.forgeApiUrl || "https://forge.manus.ai").replace(/\/+$/, "");
+  // Gemini's OpenAI-compatible endpoint already includes /v1beta/openai;
+  // unlike the other providers, it must not receive an extra /v1 segment.
+  if (/\\/v1beta\\/openai$/i.test(base)) return `${base}/${path}`;
   if (isResponsesGateway() && path === "models") {
     if (/\/v1\/responses$/i.test(base)) return base.replace(/\/responses$/i, "/models");
     if (/\/v1$/i.test(base)) return `${base}/models`;
