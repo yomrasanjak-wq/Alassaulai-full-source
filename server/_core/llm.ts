@@ -610,7 +610,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     .filter((source: any, index: number, all: any[]) => all.findIndex((item: any) => item.url === source.url) === index)
     .slice(0, 6);
   const answerWithSources = webSources.length
-    ? `${text}\\n\\nالمصادر:\\n${webSources.map((source: any, index: number) => `${index + 1}. ${source.title}\\n   ${source.url}`).join("\\n")}`
+    ? `${text}\n\nالمصادر:\n${webSources.map((source: any, index: number) => `${index + 1}. ${source.title}\n   ${source.url}`).join("\n")}`
     : text;
   const toolCalls = outputItems
     .filter((item: any) => item?.type === "function_call")
