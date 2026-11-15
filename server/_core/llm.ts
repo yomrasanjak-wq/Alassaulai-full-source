@@ -412,6 +412,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     response_format,
     model,
     thinking,
+    reasoning,
     maxTokens,
     max_tokens,
     maxCompletionTokens,
@@ -477,12 +478,19 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.max_tokens = resolvedMaxTokens;
   }
 
-  if (thinking && !useResponsesApi) {
+  if (useResponsesApi) {
+    const requestedEffort = reasoning?.effort ?? thinking?.effort;
+    const normalizedEffort = requestedEffort === "minimal" ? "low" : requestedEffort;
+    // GPT-6.1 Sol supports low/medium/high/xhigh/max. Keep routine visitor
+    // questions responsive while allowing the caller to request more effort.
+    payload.reasoning = {
+      effort: typeof normalizedEffort === "string" ? normalizedEffort : "low",
+    };
+  } else if (thinking) {
     payload.thinking = thinking;
   }
-  // Do not forward the generic `reasoning` option to OpenAI-compatible
-  // chat-completions providers. Groq rejects that field with HTTP 400.
-  // Provider-specific reasoning controls must be added only when supported.
+  // Do not forward generic reasoning controls to Chat Completions providers.
+  // Responses API receives the provider-supported reasoning.effort field.
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
