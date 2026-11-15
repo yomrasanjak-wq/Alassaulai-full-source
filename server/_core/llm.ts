@@ -296,8 +296,11 @@ const normalizeResponseFormat = ({
 const RETRY_MAX_RETRIES = 2;
 const RETRY_BASE_DELAY_MS = 300;
 const RETRY_MAX_DELAY_MS = 2_000;
-const REQUEST_TIMEOUT_MS = 10_000;
-const REQUEST_BUDGET_MS = 18_000;
+// The Vercel function has a 30s ceiling. Give Responses API enough time
+// for real answers (especially multi-day itineraries) while leaving a small
+// margin for server-side normalization and the tRPC response.
+const REQUEST_TIMEOUT_MS = 22_000;
+const REQUEST_BUDGET_MS = 23_000;
 
 type FetchInit = NonNullable<Parameters<typeof fetch>[1]>;
 
@@ -551,7 +554,15 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       authorization: `Bearer ${ENV.llmApiKey || ENV.forgeApiKey}`,
     },
     body: JSON.stringify(payload),
-  }, isGeminiProvider ? { maxRetries: 0, requestTimeoutMs: 10_000, requestBudgetMs: 11_000 } : undefined);
+  }, (isGeminiProvider || useResponsesApi)
+    ? {
+        // Avoid retrying a slow Responses request inside the short serverless
+        // window; one bounded attempt is more useful than duplicate latency.
+        maxRetries: 0,
+        requestTimeoutMs: useResponsesApi ? 22_000 : 10_000,
+        requestBudgetMs: useResponsesApi ? 23_000 : 11_000,
+      }
+    : undefined);
 
   if (!response.ok) {
     const errorText = await response.text();
