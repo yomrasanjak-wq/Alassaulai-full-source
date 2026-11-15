@@ -302,6 +302,7 @@ describe("live worldwide tourism place lookup", () => {
       const url = String(input);
       if (url.startsWith("https://photon.komoot.io/api/")) {
         expect(decodeURIComponent(url)).toContain("طرابزون, Türkiye");
+        expect(new URL(url).searchParams.has("lang")).toBe(false);
         return new Response(JSON.stringify({
           features: [
             { properties: { name: "Wrong Trabzon", city: "Other", country: "Georgia", countrycode: "ge" }, geometry: { coordinates: [41, 41] } },
@@ -807,6 +808,28 @@ describe("ai.chat", () => {
       expect(result.text).not.toContain("النتائج وحالة المباريات");
       expect(invokeLLM).not.toHaveBeenCalled();
       expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not replace an unavailable Saudi Pro League fixture list with news articles", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      expect(url.hostname).toBe("site.api.espn.com");
+      expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      return new Response("temporarily unavailable", { status: 503 });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "جدول مباريات دوري روشن" }],
+      });
+      expect(result.text).toContain("تعذر جلب جدول مباريات دوري روشن");
+      expect(result.text).not.toContain("أحدث أخبار دوري روشن");
+      expect(result.text).not.toContain("روابط تقارير حديثة");
+      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
     }
