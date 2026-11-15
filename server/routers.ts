@@ -762,7 +762,7 @@ async function getOfficialSaudiLeagueFixturesAnswer(language: "AR" | "TR" | "EN"
     const bootstrap = bootstrapPayload as { teams?: Array<{ id?: number; name?: string; short_name?: string }> };
     const teams = new Map((bootstrap.teams ?? [])
       .filter((team) => Number.isFinite(team.id) && team.name)
-      .map((team) => [team.id as number, team.name as string]));
+      .map((team): [number, string] => [team.id as number, team.name as string]));
     const now = Date.now();
     const upcoming = fixtures
       .filter((fixture) => fixture.kickoff_time && Number.isFinite(Date.parse(fixture.kickoff_time)))
