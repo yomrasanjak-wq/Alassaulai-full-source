@@ -6,6 +6,7 @@ import {
   timestamp,
   varchar,
   jsonb,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["user", "admin", "secretary", "assistant", "it"]);
@@ -96,7 +97,7 @@ export const assistantMemories = pgTable("assistantMemories", {
   ownerOpenId: varchar("ownerOpenId", { length: 64 }),
   visitorSubjectHash: varchar("visitorSubjectHash", { length: 64 }),
   consentedAt: timestamp("consentedAt", { withTimezone: true, mode: "date" }),
-  enabled: varchar("enabled", { length: 8 }).notNull().default("false"),
+  enabled: boolean("enabled").notNull().default(false),
   displayName: varchar("displayName", { length: 80 }),
   preferences: jsonb("preferences").$type<string[]>().notNull().default([]),
   activeTopics: jsonb("activeTopics").$type<string[]>().notNull().default([]),
