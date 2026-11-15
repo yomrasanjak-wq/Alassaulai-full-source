@@ -422,7 +422,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   const useResponsesApi = isResponsesGateway();
   const payload: Record<string, unknown> = useResponsesApi
     ? {
-        input: messages.flatMap((message) => {
+        input: messages.flatMap((message): Array<Record<string, unknown>> => {
           const rawContent = message.content;
 
           // Responses API represents tool results as function_call_output items,
