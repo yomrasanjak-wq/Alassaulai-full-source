@@ -41,3 +41,12 @@ This commit records a safety and architecture review only. No application source
 - The offline preflight mirrors most of the provider selection logic, but the live probe's default model selection differs from `server/_core/env.ts` for a direct OpenAI endpoint: the runtime defaults to `gpt-6.1-sol` while the live probe defaults to `gpt-5-mini`. This can make the probe test a different model from the one the application actually uses.
 - Before enabling live checks, align the probe's endpoint/key/model resolution with the runtime in a unit-tested helper. Keep live provider calls opt-in because they can incur usage charges. No live request was sent in this review.
 - GitHub's combined commit status for this documentation update reports Vercel success. This is a status on the documentation commit only; it does not demonstrate runtime behavior or a successful test suite for application code.
+
+
+## Follow-up implementation — provider alignment and CI
+- Updated the offline brain preflight and opt-in live probe to follow the same provider precedence and default primary model selection as `server/_core/env.ts`, including direct OpenAI, Netlify Responses, Gemini, OpenRouter, and fallback provider routes.
+- Added a regression test for OpenRouter credential selection and its runtime-matching default model. The tests are committed but have not yet been observed running in GitHub Actions; do not call them passed until a workflow result confirms it.
+- Added `.github/workflows/review-checks.yml` for the isolated `migration/**` branch. It runs TypeScript check, preflight tests, application tests, and production build; it does not deploy or touch production.
+- Vercel preview deployment for commit `2c05c875084b239e590b47196a7bcca7675eacb1` reached READY. It remains `target: null` (preview only).
+- Vercel build logs showed existing TypeScript diagnostics in `server/_core/storageProxy.ts` and `server/_core/oauth.ts` (Express request/application/response members and callback parameter typing). Vercel still marked the deployment READY, so this is not evidence that `pnpm check` passed. Investigate the type-resolution cause before declaring the codebase clean.
+- The Vercel build also reports a large client JS chunk (~1.4 MB minified), and missing optional analytics placeholders. These are non-blocking warnings, but worth addressing after correctness checks.
