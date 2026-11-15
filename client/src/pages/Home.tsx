@@ -919,14 +919,15 @@ export default function Home() {
   });
   const assistantMemoryQuery = trpc.ai.getMemory.useQuery(undefined, {
     enabled: Boolean(auth.user) && memoryPanelOpen, staleTime: 10_000,
-    onSuccess: (result) => {
-      if (!result.memory) return;
-      setMemoryDisplayName(result.memory.displayName ?? "");
-      setMemoryPreferences(result.memory.preferences.join("\\n"));
-      setMemoryTopics(result.memory.activeTopics.join("\\n"));
-      setMemorySummary(result.memory.recentSummary ?? "");
-    },
   });
+  useEffect(() => {
+    const memory = assistantMemoryQuery.data?.memory;
+    if (!memory) return;
+    setMemoryDisplayName(memory.displayName ?? "");
+    setMemoryPreferences(memory.preferences.join("\n"));
+    setMemoryTopics(memory.activeTopics.join("\n"));
+    setMemorySummary(memory.recentSummary ?? "");
+  }, [assistantMemoryQuery.data]);
   const assistantMemoryEnableMutation = trpc.ai.enableMemory.useMutation({
     onSuccess: () => { void assistantMemoryStatusQuery.refetch(); void assistantMemoryQuery.refetch(); },
   });
