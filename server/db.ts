@@ -2,11 +2,13 @@ import { count, desc, eq, ilike, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
+  AssistantMemory,
   ControlRequest,
   GuestMemory,
   InsertUser,
   User,
   MediaItem,
+  assistantMemories,
   controlRequests,
   controlAuditLogs,
   guestMemories,
@@ -289,5 +291,55 @@ export async function deleteGuestMemory(id: number): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
   await db.delete(guestMemories).where(eq(guestMemories.id, id));
+  return true;
+}
+
+
+/** Read private assistant memory for an authenticated account only. */
+export async function getAssistantMemory(ownerOpenId: string): Promise<AssistantMemory | undefined> {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const rows = await db.select().from(assistantMemories)
+    .where(eq(assistantMemories.ownerOpenId, ownerOpenId)).limit(1);
+  return rows[0];
+}
+
+/** Explicit opt-in: creating or re-enabling memory always records consent time. */
+export async function enableAssistantMemory(ownerOpenId: string): Promise<AssistantMemory> {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const now = new Date();
+  const rows = await db.insert(assistantMemories).values({
+    ownerOpenId,
+    enabled: true,
+    consentedAt: now,
+    updatedAt: now,
+  }).onConflictDoUpdate({
+    target: assistantMemories.ownerOpenId,
+    set: { enabled: true, consentedAt: now, updatedAt: now },
+  }).returning();
+  if (!rows[0]) throw new Error("تعذر تفعيل الذاكرة.");
+  return rows[0];
+}
+
+/** Update only user-editable, non-sensitive memory fields. */
+export async function updateAssistantMemory(
+  ownerOpenId: string,
+  input: Partial<Pick<AssistantMemory, "displayName" | "preferences" | "activeTopics" | "recentSummary">>,
+): Promise<AssistantMemory | undefined> {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const rows = await db.update(assistantMemories)
+    .set({ ...input, updatedAt: new Date() })
+    .where(eq(assistantMemories.ownerOpenId, ownerOpenId))
+    .returning();
+  return rows[0];
+}
+
+/** Delete the account's complete assistant memory, including consent state. */
+export async function deleteAssistantMemory(ownerOpenId: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  await db.delete(assistantMemories).where(eq(assistantMemories.ownerOpenId, ownerOpenId));
   return true;
 }
