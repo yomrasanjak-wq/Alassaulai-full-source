@@ -13,6 +13,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
 import { parseOfficialSaudiLeagueFixturesHtml } from "./liveFixtures";
+import { getWikimediaNearbyAttractions } from "./liveTourismFallback";
 
 const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -305,8 +306,25 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
       return failure.endpoint + ": " + (failure.error.diagnostic ?? "unknown error");
     });
     if (!placesData) {
+      const wikimediaPlaces = await getWikimediaNearbyAttractions(lat, lon, language);
+      if (wikimediaPlaces.length) {
+        const items = wikimediaPlaces.map((place, index) => {
+          const directions = "https://www.google.com/maps/dir/?api=1&destination=" + place.lat + "," + place.lon;
+          return (index + 1) + ". **" + place.name + "**\n   "
+            + "[صفحة المعلم](" + place.url + ") · [الاتجاهات](" + directions + ")";
+        }).join("\n\n");
+        const answer = language === "AR"
+          ? "تعذّر الوصول إلى خوادم OpenStreetMap، لذلك استخدمت بديلاً مستقلاً: معالم قريبة لها صفحات موسوعية وتصنيفات سياحية أو تاريخية في ويكيبيديا، حول "
+            + resolvedName + (locality ? "، " + locality : "") + ".\n\n" + items
+            + "\n\nالمصدر: ويكيبيديا (تصنيفات المقالات وإحداثياتها). هذه قائمة بديلة وليست تحققاً من ساعات العمل أو حالة الافتتاح."
+          : "OpenStreetMap servers were unavailable, so I used an independent fallback: nearby Wikipedia articles with tourism or heritage categories around "
+            + resolvedName + (locality ? ", " + locality : "") + ".\n\n" + items
+            + "\n\nSource: Wikipedia article categories and coordinates. This does not verify opening hours or current access.";
+        tourismResultCache.set(cacheKey, { expiresAt: Date.now() + 60 * 60 * 1000, answer });
+        return answer;
+      }
       if (overpassFailures.some((failure) => /429|406/.test(failure))) tourismCooldownUntil = Date.now() + 15_000;
-      throw new Error("All Overpass endpoints failed: " + overpassFailures.join(" | "));
+      throw new Error("All attraction sources failed: Overpass unavailable and Wikimedia returned no verified nearby attractions. " + overpassFailures.join(" | "));
     }
     const seen = new Set<string>();
     const places = (placesData.elements ?? []).flatMap((element) => {
