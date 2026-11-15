@@ -12,6 +12,8 @@ import { adminProcedure, controlStaffProcedure, ownerProcedure, protectedProcedu
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
+import { parseOfficialSaudiLeagueFixturesHtml } from "./liveFixtures";
+import { getWikimediaNearbyAttractions } from "./liveTourismFallback";
 
 const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -75,14 +77,17 @@ export function getDistinctBackupModel(primaryModel: string | undefined, backupM
  * not grant tools or authority to perform external actions. */
 export function getAdaptiveTaskInstruction(message: string): string {
   const text = message.normalize("NFKC").toLowerCase();
-  if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|latest news|world news|breaking news)/i.test(text)) {
-    return "نمط الأخبار: الأخبار تتغير بسرعة؛ لا تعرض معلومة على أنها حدث اليوم ما لم تتوفر نتيجة بحث حديثة موثوقة. افصل بين الخبر المؤكد والخلفية والتحليل، واذكر تاريخ الخبر ومصدره إذا كانا متاحين. إذا لم تتوفر لديك أداة بحث حي في هذه الجلسة، صرّح بذلك بوضوح واطلب من المستخدم رابط الخبر أو حدّد ما يمكنك شرحه من الخلفية دون اختلاق عناوين أو أرقام.";
+  if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|أخبار السعودية|اخبار السعودية|السعودية اليوم|أخبار اليمن|اخبار اليمن|اليمن اليوم|latest news|world news|breaking news)/i.test(text)) {
+    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. إذا طلب موجز أخبار دولة أو العالم، اعرض حتى 5 عناوين حديثة مستقلة، ولكل عنوان ملخصاً واضحاً من سطرين تقريباً، مع تاريخ النشر والمصدر عندما يتوفران. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. افصل الخبر المؤكد عن الخلفية والتحليل، ولا تعرض حدثاً على أنه جديد دون نتيجة بحث حديثة موثوقة. إذا لم تتوفر أداة بحث حي، قل ذلك بوضوح وقدّم خلفية مؤرخة بدلاً من اختلاق عناوين أو أرقام.";
   }
   if (/(كيف أصلح|كيف اصلح|متعطل|عطل|لا يعمل|ما يشتغل|ما يفتح|خطأ|مشكلة|حل المشكلة|تشخيص)/i.test(text)) {
     return "نمط معالجة مشكلة: حدّد الاحتمال الأقرب دون الجزم، ثم أعطِ خطوات تشخيص مرتبة من الأبسط والأكثر أماناً إلى المتقدم. اذكر ما ينبغي عدم فعله، واسأل عن معلومة واحدة فقط إذا كانت ضرورية.";
   }
+  if (/(نتائج? المباريات|نتيجة المباراة|الدوري السعودي|دوري روشن|الدوري الأوروبي|دوري أبطال أوروبا|دوري ابطال اوروبا|كأس العالم|كاس العالم|مباراة اليوم|جدول المباريات|ترتيب الدوري|من فاز|live score|football results|league standings)/i.test(text)) {
+    return "نمط الرياضة الحية: حدّد البطولة والتاريخ المقصود، واستخدم أحدث بيانات موثوقة متاحة. عند طلب مباريات اليوم أو جدول دوري روشن، اعرض جدولاً واضحاً بأعمدة: المباراة | الساعة بتوقيت السعودية | القناة الناقلة. حوّل الأوقات إلى توقيت Asia/Riyadh وتحقق من التاريخ وحالة المباراة. لا تذكر قناة إلا إذا أكدها مصدر موثوق؛ وإلا اكتب «غير معلنة في المصدر المتاح». أدرج تاريخ ووقت آخر تحديث والمصدر عند توفرهما. لا تخلط الأخبار بجدول المباريات ولا تخمّن مباراة أو نتيجة أو موعداً؛ إذا فشل المصدر فقل ذلك صراحة.";
+  }
   if (/(رتب لي|برنامج|خطة|جدول|خطط|نظم|نظّم|رحلة|بكج|ميزانية|خلال \d+ أيام)/i.test(text)) {
-    const itinerary = "نمط التخطيط: قدّم خطة قابلة للتنفيذ بترتيب زمني واضح، وراعِ المسافات والوقت والتكلفة التقريبية والبدائل. إذا ذكر المستخدم عدد الأشخاص والمدن وترتيبها ومدة كل محطة، التزم بها كما هي، واحسب الأيام بوضوح ولا تضف مدناً غير مطلوبة. اجمع الوجهات المتقاربة في اليوم نفسه، وتجنب وضع زيارات بعيدة في اليوم نفسه. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، وبيّن الافتراضات المهمة.";
+    const itinerary = "نمط التخطيط: لا تكتفِ بالقول إنك تستطيع التخطيط؛ أنشئ البرنامج مباشرة عندما تكون الوجهة والمدة واضحتين. قسّم الرحلة يوماً بيوم، وبترتيب صباحي ومسائي مع أوقات تقريبية، وأسماء الوجهات والأنشطة، واقتراح مطاعم أو استراحات عند ملاءمة المسار، ومدة التنقل الواقعية بين المحطات. اجمع المواقع المتقاربة جغرافياً ولا تحشر وجهات بعيدة في يوم واحد. أضف ميزانية تقريبية ونصائح توفير عندما تفيد، واذكر افتراضاتك بوضوح. إذا ذكر المستخدم أشخاصاً أو مدناً أو ترتيباً أو محطات محددة فالتزم بها. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، ولا تخترع ساعات عمل أو أنشطة موسمية.";
     if (/(طرابزون|ترابزون|أوزنجول|اوزنجول|أيدر|ايدر|ريزه|سامسون|أوردو|جيرسون|إسطنبول|اسطنبول|شمال تركيا|سورميني|أراكلي)/i.test(text)) {
       return `${itinerary} خصّص الخطة لشمال تركيا: اجمع الوجهات المتقاربة في اليوم نفسه، وراعِ وقت القيادة والطقس الجبلي، وضمّن عند ملاءمة المسار سامسون وأوردو وجيرسون وأرسين وسورميني وأراكلي وإسطنبول، ولا تضعها كلها في مسار واحد إن كان الوقت لا يسمح.`;
     }
@@ -102,9 +107,6 @@ export function getAdaptiveTaskInstruction(message: string): string {
   }
   if (/(طيران|طيارة|طائرة|الملاحة الجوية|الفضاء|الكون|الثقوب السوداء|ناسا|NASA|astronomy|aviation|space exploration|black hole)/i.test(text)) {
     return "نمط علوم الطيران والفضاء: اشرح المفهوم علمياً وبأسلوب مفهوم، وميّز بين الحقائق الراسخة والنظريات والفرضيات. في أخبار المهمات الفضائية أو الرحلات أو الاكتشافات الحديثة، استخدم مصدراً حديثاً إن توفر ولا تعرض التوقعات كأنها نتائج مؤكدة.";
-  }
-  if (/(نتائج? المباريات|نتيجة المباراة|الدوري السعودي|دوري روشن|الدوري الأوروبي|دوري أبطال أوروبا|دوري ابطال اوروبا|كأس العالم|كاس العالم|مباراة اليوم|جدول المباريات|ترتيب الدوري|من فاز|live score|football results|league standings)/i.test(text)) {
-    return "نمط الرياضة الحية: حدّد البطولة والفريق والتاريخ المقصود. استخدم سياق البحث الحي إذا توفر، واذكر النتيجة وحالة المباراة وتاريخ التحديث والمصدر. لا تخمّن نتيجة مباشرة أو جدولاً من الذاكرة؛ إذا لم تتوفر بيانات موثوقة فقل ذلك صراحة.";
   }
   if (/(?:^|[\s،,.])(?:صحة|طبي|طبية|دوخة|دوخه|ألم|الم|وجع|دواء|علاج|أعراض|اعراض|مستوصف|مستشفى|طوارئ)(?=$|[\s،,.])/i.test(text)) {
     return "نمط معلومات صحية: ابدأ بإرشاد آمن ومحدد، فرّق بين المعلومات العامة والتشخيص، ونبّه بوضوح إلى علامات الخطر التي تستلزم رعاية عاجلة. لا تصف دواءً أو جرعة على أساس معلومات ناقصة.";
@@ -134,7 +136,7 @@ export function compactChatHistory(messages: Array<{ role: "user" | "assistant";
  * requested destination with Photon. Results are candidates, not opening-hour,
  * price, quality, or accessibility verification. */
 type TourismPhotonFeature = {
-  properties?: { name?: string; city?: string; state?: string; country?: string };
+  properties?: { name?: string; city?: string; town?: string; village?: string; state?: string; country?: string; countrycode?: string; country_code?: string; display_name?: string };
   geometry?: { coordinates?: unknown[] };
 };
 type TourismOverpassElement = {
@@ -145,13 +147,20 @@ const tourismResultCache = new Map<string, { expiresAt: number; answer: string }
 let tourismLastRequestAt = 0;
 let tourismCooldownUntil = 0;
 
+export function isItineraryPlanningQuestion(message: string): boolean {
+  const text = message.normalize("NFKC");
+  return /(?:رتب لي|رتب|سو[ّ]? لي|اعمل لي|جهز لي|خطط لي|برنامج|خطة|جدول|رحلة|itinerary|trip plan|travel plan)/i.test(text)
+    && /(?:في|إلى|الى|بـ|بمدينة|بمدينه|in|to)\s+.{2,}/i.test(text);
+}
+
 export function isTourismPlacesQuestion(message: string): boolean {
   return /(?:أماكن سياحية|اماكن سياحية|مكان سياحي|معالم سياحية|معالم سياحيه|وجهات سياحية|وجهات سياحيه|ماذا أزور|ماذا ازور|وش أزور|وين أروح|أين أذهب|tourist attractions|places to visit|things to do)/i.test(message)
+    && !isItineraryPlanningQuestion(message)
     && !/(?:رتب لي|برنامج|خطة|جدول|رحلة|itinerary|trip plan)/i.test(message);
 }
 
 export function extractTourismDestination(message: string): string | undefined {
-  if (!isTourismPlacesQuestion(message)) return undefined;
+  if (!isTourismPlacesQuestion(message) && !isItineraryPlanningQuestion(message)) return undefined;
   const normalized = message.normalize("NFKC").replace(/[؟?!،,؛;]+/g, " ").trim();
   const match = normalized.match(/(?:في|داخل|بمدينة|بمدينه|in|at)\s+(.+)$/i);
   const destination = match?.[1]?.trim().replace(/\s+/g, " ");
@@ -202,18 +211,52 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
   try {
     await waitForTourismRequestSlot();
     const geocodeUrl = new URL("https://photon.komoot.io/api/");
-    geocodeUrl.search = new URLSearchParams({ q: destination, limit: "5", lang: language === "AR" ? "ar" : language === "TR" ? "tr" : "en" }).toString();
-    const geocodeResponse = await fetch(geocodeUrl.toString(), {
-      headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
-      signal: AbortSignal.timeout(7000),
-    });
-    if (!geocodeResponse.ok) throw new Error("Photon HTTP " + geocodeResponse.status);
-    const geocode = await geocodeResponse.json() as { features?: TourismPhotonFeature[] };
-    const resolved = (geocode.features ?? []).find((feature) => {
+    const isKnownTurkishDestination = /(?:طرابزون|ترابزون|trabzon|أوزنجول|اوزنجول|uzung[oö]l|أيدر|ايدر|ayder|ريزه|ريزة|rize|سامسون|samsun|أوردو|ordu|جيرسون|giresun|سورميني|sürmene|surmene|أراكلي|araklı|arakli)/i.test(destination);
+    const geocodeQuery = isKnownTurkishDestination && !/(?:تركيا|turkey|türkiye)/i.test(destination)
+      ? destination + ", Türkiye"
+      : destination;
+    // Photon can reject unsupported language codes (notably Arabic) with HTTP 400.
+    // Keep geocoding language-neutral; OSM name:ar/name:tr tags are selected below.
+    geocodeUrl.search = new URLSearchParams({ q: geocodeQuery, limit: "8" }).toString();
+    const isAcceptableGeocode = (feature: TourismPhotonFeature) => {
       const coords = feature.geometry?.coordinates;
-      return typeof feature.properties?.name === "string"
-        && Number.isFinite(Number(coords?.[0])) && Number.isFinite(Number(coords?.[1]));
-    });
+      const country = feature.properties?.country?.toLocaleLowerCase() ?? "";
+      const countryCode = (feature.properties?.countrycode ?? feature.properties?.country_code)?.toLocaleLowerCase() ?? "";
+      const isInTurkey = countryCode === "tr" || country === "turkey" || country === "türkiye";
+      const name = feature.properties?.name ?? feature.properties?.city ?? feature.properties?.town
+        ?? feature.properties?.village ?? feature.properties?.display_name;
+      return typeof name === "string" && Number.isFinite(Number(coords?.[0]))
+        && Number.isFinite(Number(coords?.[1])) && (!isKnownTurkishDestination || isInTurkey);
+    };
+    let geocodeFeatures: TourismPhotonFeature[] = [];
+    try {
+      const geocodeResponse = await fetch(geocodeUrl.toString(), {
+        headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
+        signal: AbortSignal.timeout(6500),
+      });
+      if (!geocodeResponse.ok) throw new Error("Photon HTTP " + geocodeResponse.status);
+      const geocode = await geocodeResponse.json() as { features?: TourismPhotonFeature[] };
+      geocodeFeatures = geocode.features ?? [];
+    } catch (photonError) {
+      console.warn("[ALASSAUL tourism] Photon geocoding failed; trying Nominatim", safeProviderDiagnostic(photonError));
+    }
+    let resolved = geocodeFeatures.find(isAcceptableGeocode);
+    if (!resolved) {
+      const nominatimUrl = new URL("https://nominatim.openstreetmap.org/search");
+      nominatimUrl.search = new URLSearchParams({
+        q: geocodeQuery,
+        format: "geojson",
+        limit: "8",
+        ...(isKnownTurkishDestination ? { countrycodes: "tr" } : {}),
+      }).toString();
+      const fallbackResponse = await fetch(nominatimUrl.toString(), {
+        headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com; contact: info@alassaul.com)" },
+        signal: AbortSignal.timeout(6500),
+      });
+      if (!fallbackResponse.ok) throw new Error("Photon and Nominatim geocoding failed (Nominatim HTTP " + fallbackResponse.status + ")");
+      const fallbackData = await fallbackResponse.json() as { features?: TourismPhotonFeature[] };
+      resolved = (fallbackData.features ?? []).find(isAcceptableGeocode);
+    }
     if (!resolved) {
       return language === "AR"
         ? "لم أتمكن من تحديد «" + destination + "» جغرافياً بشكل موثوق. اذكر المدينة والدولة معاً حتى لا أخلط بين أماكن تحمل الاسم نفسه."
@@ -233,19 +276,56 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
     const overpassQuery = '[out:json][timeout:12];(nwr(around:18000,' + lat + ',' + lon + ')["name"]["tourism"~"attraction|museum|viewpoint|zoo|theme_park|gallery|artwork"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["historic"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["leisure"~"park|garden"];nwr(around:18000,' + lat + ',' + lon + ')["name"]["natural"~"beach|waterfall|cave"];);out center 80;';
     // Keep the public endpoint replaceable without a code change; larger deployments
     // should use a managed or self-hosted Overpass service rather than a shared demo endpoint.
-    const overpassEndpoint = process.env.ALASSAUL_OVERPASS_URL?.trim() || "https://overpass-api.de/api/interpreter";
-    const placesResponse = await fetch(overpassEndpoint, {
-      method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
-      body: new URLSearchParams({ data: overpassQuery }).toString(),
-      signal: AbortSignal.timeout(15000),
+    const configuredOverpass = process.env.ALASSAUL_OVERPASS_URL?.trim();
+    const overpassEndpoints = configuredOverpass
+      ? [configuredOverpass]
+      : ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+    let placesData: { elements?: TourismOverpassElement[] } | undefined;
+    const attempts = await Promise.all(overpassEndpoints.map(async (endpoint) => {
+      try {
+        const placesResponse = await fetch(endpoint, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
+          body: new URLSearchParams({ data: overpassQuery }).toString(),
+          signal: AbortSignal.timeout(8500),
+        });
+        if (!placesResponse.ok) throw new Error("HTTP " + placesResponse.status);
+        const candidate = await placesResponse.json() as { elements?: TourismOverpassElement[] };
+        if (!Array.isArray(candidate.elements)) throw new Error("Invalid Overpass response");
+        return { endpoint, data: candidate };
+      } catch (endpointError) {
+        const diagnostic = safeProviderDiagnostic(endpointError);
+        console.warn("[ALASSAUL tourism] Overpass endpoint failed", endpoint, diagnostic);
+        return { endpoint, error: diagnostic };
+      }
+    }));
+    const successfulAttempt = attempts.find((attempt): attempt is { endpoint: string; data: { elements?: TourismOverpassElement[] } } => "data" in attempt);
+    placesData = successfulAttempt?.data;
+    const overpassFailures = attempts.filter((attempt) => "error" in attempt).map((attempt) => {
+      const failure = attempt as { endpoint: string; error: { diagnostic?: string } };
+      return failure.endpoint + ": " + (failure.error.diagnostic ?? "unknown error");
     });
-    if (placesResponse.status === 429 || placesResponse.status === 406) {
-      tourismCooldownUntil = Date.now() + 30_000;
-      throw new Error("Overpass rate limited (" + placesResponse.status + ")");
+    if (!placesData) {
+      const wikimediaPlaces = await getWikimediaNearbyAttractions(lat, lon, language);
+      if (wikimediaPlaces.length) {
+        const items = wikimediaPlaces.map((place, index) => {
+          const directions = "https://www.google.com/maps/dir/?api=1&destination=" + place.lat + "," + place.lon;
+          return (index + 1) + ". **" + place.name + "**\n   "
+            + "[صفحة المعلم](" + place.url + ") · [الاتجاهات](" + directions + ")";
+        }).join("\n\n");
+        const answer = language === "AR"
+          ? "تعذّر الوصول إلى خوادم OpenStreetMap، لذلك استخدمت بديلاً مستقلاً: معالم قريبة لها صفحات موسوعية وتصنيفات سياحية أو تاريخية في ويكيبيديا، حول "
+            + resolvedName + (locality ? "، " + locality : "") + ".\n\n" + items
+            + "\n\nالمصدر: ويكيبيديا (تصنيفات المقالات وإحداثياتها). هذه قائمة بديلة وليست تحققاً من ساعات العمل أو حالة الافتتاح."
+          : "OpenStreetMap servers were unavailable, so I used an independent fallback: nearby Wikipedia articles with tourism or heritage categories around "
+            + resolvedName + (locality ? ", " + locality : "") + ".\n\n" + items
+            + "\n\nSource: Wikipedia article categories and coordinates. This does not verify opening hours or current access.";
+        tourismResultCache.set(cacheKey, { expiresAt: Date.now() + 60 * 60 * 1000, answer });
+        return answer;
+      }
+      if (overpassFailures.some((failure) => /429|406/.test(failure))) tourismCooldownUntil = Date.now() + 15_000;
+      throw new Error("All attraction sources failed: Overpass unavailable and Wikimedia returned no verified nearby attractions. " + overpassFailures.join(" | "));
     }
-    if (!placesResponse.ok) throw new Error("Overpass HTTP " + placesResponse.status);
-    const placesData = await placesResponse.json() as { elements?: TourismOverpassElement[] };
     const seen = new Set<string>();
     const places = (placesData.elements ?? []).flatMap((element) => {
       const tags = element.tags ?? {};
@@ -644,12 +724,78 @@ async function getEuropeanFootballScoreboardAnswer(
 }
 
 /** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
+async function getOfficialSaudiLeagueFixturesAnswer(language: "AR" | "TR" | "EN"): Promise<string | undefined> {
+  const sourceUrls = [
+    "https://www.spl.com.sa/ar/fixtures-results",
+    "https://www.spl.com.sa/en/fixtures-results",
+    "https://www.spl.com.sa/ar/teams/%D8%A7%D9%84%D8%A7%D9%87%D9%84%D9%8A/matches",
+  ];
+  try {
+    const pageResults = await Promise.all(sourceUrls.map(async (sourceUrl) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 7000);
+      try {
+        const response = await fetch(sourceUrl, {
+          headers: {
+            accept: "text/html,application/xhtml+xml",
+            "accept-language": language === "AR" ? "ar-SA,ar;q=0.9,en;q=0.8" : "en-US,en;q=0.9",
+            "user-agent": "Mozilla/5.0 (compatible; ALASSAUL-AI/1.0; +https://alassaul.com)",
+          },
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("SPL page returned " + response.status);
+        const html = await response.text();
+        return { sourceUrl, fixtures: parseOfficialSaudiLeagueFixturesHtml(html) };
+      } catch (error) {
+        console.warn("[ALASSAUL sports] SPL source page unavailable", sourceUrl, safeProviderDiagnostic(error));
+        return { sourceUrl, fixtures: [] as ReturnType<typeof parseOfficialSaudiLeagueFixturesHtml> };
+      } finally {
+        clearTimeout(timer);
+      }
+    }));
+    const unique = new Map<string, ReturnType<typeof parseOfficialSaudiLeagueFixturesHtml>[number]>();
+    for (const result of pageResults) {
+      for (const fixture of result.fixtures) {
+        const key = [fixture.date, fixture.time, fixture.home, fixture.away].join("|").toLocaleLowerCase();
+        if (!unique.has(key)) unique.set(key, fixture);
+      }
+    }
+    const matches = [...unique.values()].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    if (!matches.length) throw new Error("Official SPL pages returned no parsable fixture cards");
+    const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
+    const rows = matches.slice(0, 15).map((match) => {
+      const localDate = new Date(match.date + "T" + match.time + ":00+03:00");
+      const dateText = new Intl.DateTimeFormat(locale, {
+        weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Riyadh",
+      }).format(localDate);
+      return language === "AR"
+        ? `• ${match.home} × ${match.away} — ${dateText}، الساعة ${match.time} (بتوقيت السعودية) · الجولة ${match.week}`
+        : `• ${match.home} vs ${match.away} — ${dateText}, ${match.time} (Riyadh time) · Matchweek ${match.week}`;
+    });
+    const heading = language === "AR"
+      ? "المباريات القادمة المنشورة في جدول رابطة الدوري السعودي"
+      : language === "TR" ? "Suudi Pro Lig'in resmi fikstüründeki yaklaşan maçlar" : "Upcoming fixtures published by the Saudi Pro League";
+    const note = language === "AR"
+      ? "المصدر الرسمي: رابطة الدوري السعودي للمحترفين. قد تتغير المواعيد؛ راجع الجدول الرسمي قبل المباراة."
+      : language === "TR" ? "Resmî kaynak: Suudi Pro Lig. Maç saatleri değişebilir; karşılaşma öncesinde resmî programı kontrol edin."
+      : "Official source: Saudi Pro League. Kick-off times may change; check the official schedule before the match.";
+    return `${heading}\n${rows.join("\n")}\n\n${note}\nhttps://www.spl.com.sa/ar/fixtures-results`;
+  } catch (error) {
+    console.warn("[ALASSAUL sports] official SPL fixtures unavailable", safeProviderDiagnostic(error));
+    return undefined;
+  }
+}
+
 async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", message: string) {
   const scheduleQuestion = isSaudiLeagueScheduleQuestion(message);
   const scoreQuestion = /(?:نتيجة|نتائج|مباشر|الآن|الان|من فاز|score|scores|results|live)/i.test(message);
   if (scheduleQuestion) {
     const scoreboard = await getSaudiLeagueScoreboardAnswer(language, message, scoreQuestion);
     if (scoreboard) return scoreboard;
+    if (!scoreQuestion) {
+      const officialFixtures = await getOfficialSaudiLeagueFixturesAnswer(language);
+      if (officialFixtures) return officialFixtures;
+    }
     if (scoreQuestion) {
       return language === "AR"
         ? "تعذر جلب نتيجة موثوقة من لوحة مباريات دوري روشن الآن؛ لن أخمّن نتيجة أو أذكر خبراً على أنه نتيجة مباراة. حاول بعد قليل.\\nالمصدر: https://www.espn.com/soccer/scoreboard/_/league/ksa.1"
@@ -657,6 +803,13 @@ async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", messag
           ? "Suudi Pro Lig için doğrulanmış skor alınamadı; sonuç tahmin etmeyeceğim. Daha sonra tekrar deneyin."
           : "A verified Saudi Pro League score is unavailable right now; I won't guess a result. Please try again shortly.";
     }
+  }
+  if (scheduleQuestion) {
+    return language === "AR"
+      ? "تعذر جلب جدول مباريات دوري روشن من لوحة المواعيد الآن؛ لن أستبدل الجدول بأخبار أو روابط بحثية، ولن أخمّن مواعيد المباريات. حاول بعد قليل.\\nالمصدر: https://www.espn.com/soccer/scoreboard/_/league/ksa.1"
+      : language === "TR"
+        ? "Suudi Pro Lig fikstürü şu anda doğrulanamadı; haber bağlantılarını maç programı gibi sunmayacağım. Lütfen daha sonra tekrar deneyin."
+        : "A verified Saudi Pro League fixture list is unavailable right now; I will not substitute news links for a schedule or guess match times. Please try again shortly.";
   }
   const query = language === "AR"
     ? scheduleQuestion ? "دوري روشن السعودي جدول مباريات الجولة القادمة مواعيد" : "أخبار دوري روشن السعودي اليوم"
@@ -1262,9 +1415,17 @@ export const appRouter = router({
           if (weatherContext) liveContext.push(`سياق من مصدر الطقس الحي:
 ${weatherContext}`);
 
-          if (isTourismPlacesQuestion(latestText)) {
+          if (isTourismPlacesQuestion(latestText) || isItineraryPlanningQuestion(latestText)) {
             directTourismAnswer = await getLiveTourismPlacesAnswer(latestText, input.language);
-            if (directTourismAnswer) liveContext.push("نتائج المعالم السياحية من OpenStreetMap:\n" + directTourismAnswer);
+            if (directTourismAnswer) {
+              const lookupUnavailable = /(?:تعذر جلب|لم أتمكن من تحديد|لم أتمكن من جلب|لم تُرجع معالم|لم أضع أسماء غير متحققة|مصدر الخرائط مزدحم|Verified attractions .* unavailable|couldn't reliably locate|returned no sufficiently named)/i.test(directTourismAnswer);
+              if (isItineraryPlanningQuestion(latestText) && lookupUnavailable) {
+                return { text: directTourismAnswer };
+              }
+              liveContext.push((isItineraryPlanningQuestion(latestText)
+                ? "أماكن موثقة لتخطيط الرحلة من OpenStreetMap:"
+                : "نتائج المعالم السياحية من OpenStreetMap:") + "\n" + directTourismAnswer);
+            }
           }
 
           let grounded = false;
@@ -1329,7 +1490,9 @@ ${newsContext}`);
             : "Answer in clear, concise English.";
         const taskInstruction = latestMessage?.imageDataUrl
           ? "نمط تحليل صورة: صف العناصر الواضحة أولاً، ثم اشرح ما يمكن استنتاجه وما لا يمكن الجزم به. إذا طلب المستخدم التعرف على شيء، اذكر الاحتمالات وعلامات التمييز، ولا تخترع تفاصيل غير ظاهرة."
-          : getAdaptiveTaskInstruction(latestText);
+          : isItineraryPlanningQuestion(latestText)
+            ? getAdaptiveTaskInstruction(latestText) + " ضابط صارم للوجهات: استخدم أسماء الأماكن الواردة حصراً في قائمة OpenStreetMap المرفقة في السياق. لا تضف أي معلم أو قرية أو بحيرة أو شلال من الذاكرة، ولا تخلط بين المدن أو الأقاليم. إذا كانت القائمة لا تكفي لملء أربعة أيام، قل ذلك بوضوح واقترح تقليل عدد الأيام أو طلب منطقة إضافية؛ لا تملأ الفراغ بأسماء غير موثقة. لا تفترض أن المواقع متجاورة لمجرد أنها في المدينة نفسها؛ راعِ الإحداثيات ونطاق البحث."
+            : getAdaptiveTaskInstruction(latestText);
         const sourceInstruction = liveContext.length
           ? `\n\nبيانات داعمة من الأدوات الحية (ليست جواباً بديلاً عنك):\n${liveContext.join("\n\n")}\nاستخدم هذه البيانات عند صلتها بالسؤال، وانسب المصدر ووقت القراءة إن وُجدا، ولا تضف حقائق آنية غير موجودة فيها.`
           : "\n\nأجب بصفتك نموذجاً لغوياً عن السؤال الجديد مباشرة. لا تستبدل الإجابة بترحيب عام أو نص محفوظ أو رد مبني على مطابقة كلمات. في المعلومات الآنية لا تخترع؛ اذكر بوضوح إن لم يتوفر مصدر حي.";
