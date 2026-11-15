@@ -1347,6 +1347,7 @@ export const appRouter = router({
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
         const contextualWeatherText = getContextualWeatherQuestion(input.messages);
+        const usesResponsesWebSearch = /\/v1\/responses$/i.test(ENV.llmApiUrl ?? "");
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
@@ -1416,7 +1417,6 @@ export const appRouter = router({
 
           // OpenAI Responses API has native web search. Do not short-circuit
           // news requests with the legacy Google News RSS headline feed.
-          const usesResponsesWebSearch = /\/v1\/responses$/i.test(ENV.llmApiUrl ?? "");
           if (isWorldNewsQuestion(latestText) && !usesResponsesWebSearch) {
             const directNews = await getWorldNewsAnswer(latestText, input.language);
             if (directNews) return { text: directNews };
