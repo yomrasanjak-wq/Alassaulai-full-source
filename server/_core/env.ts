@@ -27,8 +27,8 @@ const configuredBaseUrl = firstConfigured(
 );
 
 // Keep platform storage/maps credentials separate from the language model.
-// Prefer an explicitly configured LLM endpoint; otherwise use OpenRouter when
-// its key exists because the model IDs below are OpenRouter model identifiers.
+// An explicit ALASSAUL provider override always wins; otherwise Gemini is
+// selected when its dedicated server-side key is present.
 const explicitLlmBaseUrl = firstConfigured("ALASSAUL_LLM_API_URL", "OPENAI_BASE_URL");
 const resolvedLlmBaseUrl = explicitLlmBaseUrl ||
   (geminiKey
@@ -39,17 +39,20 @@ const resolvedLlmBaseUrl = explicitLlmBaseUrl ||
         : openAiKey && !explicitProviderKey
           ? "https://api.openai.com"
           : "https://api.groq.com/openai/v1"));
-const usesNetlifyAiGateway = /\/\.netlify\/ai(?:\/|$)/i.test(resolvedLlmBaseUrl);
-const usesDirectOpenAi = /api\.openai\.com/i.test(resolvedLlmBaseUrl) && !usesNetlifyAiGateway;
-const usesOpenRouter = /openrouter\.ai\/api\/v1/i.test(resolvedLlmBaseUrl);
+const usesNetlifyAiGateway = /\\/\\.netlify\\/ai(?:\\/|$)/i.test(resolvedLlmBaseUrl);
+const usesDirectOpenAi = /api\\.openai\\.com/i.test(resolvedLlmBaseUrl) && !usesNetlifyAiGateway;
+const usesOpenRouter = /openrouter\\.ai\\/api\\/v1/i.test(resolvedLlmBaseUrl);
+const usesGemini = /generativelanguage\\.googleapis\\.com\\/v1beta\\/openai/i.test(resolvedLlmBaseUrl);
 const resolvedLlmApiKey = firstConfigured("ALASSAUL_LLM_API_KEY") ||
-  (usesOpenRouter
-    ? openRouterKey
-    : usesNetlifyAiGateway
-      ? openAiKey || explicitProviderKey
-      : usesDirectOpenAi
-        ? openAiKey
-        : explicitProviderKey || openAiKey);
+  (usesGemini
+    ? geminiKey
+    : usesOpenRouter
+      ? openRouterKey
+      : usesNetlifyAiGateway
+        ? openAiKey || explicitProviderKey
+        : usesDirectOpenAi
+          ? openAiKey
+          : explicitProviderKey || openAiKey);
 
 export const ENV = {
   appId: process.env.VITE_APP_ID ?? "",
