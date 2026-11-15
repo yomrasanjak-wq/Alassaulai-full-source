@@ -27,3 +27,11 @@ Base: `feat/openai-responses-brain` (`211d8a63a0d33dc3e76f7b40b4c291c8d9941314`)
 
 ## Current status
 This commit records a safety and architecture review only. No application source, database, credentials, Vercel settings, domains, or production deployments were changed.
+
+
+## Authorization review
+- `ownerProcedure` checks the configured owner OpenID and fails closed when it is missing; this is the required guard for consequential governance actions.
+- `controlStaffProcedure` permits only the owner or the secretary/assistant/IT roles. Ordinary admin accounts are not implicitly treated as the platform owner.
+- `adminProcedure` is separate and admits admin-role users or the explicitly configured owner.
+- Preserve these distinctions exactly. Do not promote a user, broaden a role, or change owner identity as part of repository integration.
+- `ChatComposer` uses real file inputs for gallery and camera capture, not decorative buttons; preserve its callbacks and loading-state guards when changing chat UI.
