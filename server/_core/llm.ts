@@ -422,21 +422,49 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   const useResponsesApi = isResponsesGateway();
   const payload: Record<string, unknown> = useResponsesApi
     ? {
-        input: messages.map((message) => {
+        input: messages.flatMap((message) => {
           const rawContent = message.content;
-          const contentParts: Array<{ type: "input_text"; text: string } | { type: "input_image"; image_url: string; detail: "auto" | "low" | "high" }> = [];
+
+          // Responses API represents tool results as function_call_output items,
+          // not assistant messages. Preserve the original call_id so the model
+          // can associate each result with the function call it issued.
+          if (message.role === "tool" || message.role === "function") {
+            if (!message.tool_call_id) {
+              throw new Error("Responses API tool output is missing tool_call_id");
+            }
+            const output = ensureArray(rawContent)
+              .map((part) =>
+                typeof part === "string"
+                  ? part
+                  : part.type === "text"
+                    ? part.text
+                    : JSON.stringify(part)
+              )
+              .join("\n");
+            return [{
+              type: "function_call_output",
+              call_id: message.tool_call_id,
+              output,
+            }];
+          }
+
+          const contentParts: Array<
+            | { type: "input_text"; text: string }
+            | { type: "output_text"; text: string }
+            | { type: "input_image"; image_url: string; detail: "auto" | "low" | "high" }
+          > = [];
+          const textType = message.role === "assistant" ? "output_text" : "input_text";
           if (typeof rawContent === "string") {
-            contentParts.push({ type: "input_text", text: rawContent });
+            contentParts.push({ type: textType, text: rawContent });
           } else {
             for (const part of ensureArray(rawContent)) {
-              if (typeof part === "string") contentParts.push({ type: "input_text", text: part });
-              else if (part.type === "text") contentParts.push({ type: "input_text", text: part.text });
+              if (typeof part === "string") contentParts.push({ type: textType, text: part });
+              else if (part.type === "text") contentParts.push({ type: textType, text: part.text });
               else if (part.type === "image_url") contentParts.push({ type: "input_image", image_url: part.image_url.url, detail: part.image_url.detail ?? "auto" });
-              else contentParts.push({ type: "input_text", text: JSON.stringify(part) });
+              else contentParts.push({ type: textType, text: JSON.stringify(part) });
             }
           }
-          const role = message.role === "function" || message.role === "tool" ? "assistant" : message.role;
-          return { role, content: contentParts };
+          return [{ role: message.role, content: contentParts }];
         }),
       }
     : { messages: messages.map(normalizeMessage) };
