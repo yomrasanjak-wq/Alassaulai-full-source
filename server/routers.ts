@@ -1543,7 +1543,9 @@ ${newsContext}`);
             errorCode: classifyModelProviderFailure(primaryError),
             ...safeProviderDiagnostic(primaryError),
           });
-          if (!backupModel) {
+          // A timeout is unlikely to be fixed by immediately sending the same request to another Gemini model.
+          // Avoid doubling visitor wait time; keep the primary Gemini call bounded and return a useful fallback.
+          if (!backupModel || classifyModelProviderFailure(primaryError) === "timeout") {
             const contextualFallback = getContextualFallback(input.messages, input.language);
             return directTourismAnswer ? { text: directTourismAnswer } : contextualFallback ? { text: contextualFallback } : fail(primaryError);
           }
