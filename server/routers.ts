@@ -726,17 +726,89 @@ async function getEuropeanFootballScoreboardAnswer(
   }
 }
 
-/** Fetch recent indexed fixture/schedule reports when direct sports data is unavailable. */
+/** Read fixtures from the Saudi Pro League's public Fantasy SPL API.
+ * This is an official, read-only league data endpoint; ESPN remains the first
+ * live-score source, while this endpoint supplies the season fixture list. */
 async function getOfficialSaudiLeagueFixturesAnswer(language: "AR" | "TR" | "EN"): Promise<string | undefined> {
+  const apiBase = "https://en.fantasy.spl.com.sa/api";
+  try {
+    const headers = {
+      accept: "application/json",
+      "user-agent": "ALASSAUL-AI/1.0 (official Saudi Pro League fixtures)",
+    };
+    const [fixturesResponse, bootstrapResponse] = await Promise.all([
+      fetch(`${apiBase}/fixtures/`, { headers, signal: AbortSignal.timeout(6500) }),
+      fetch(`${apiBase}/bootstrap-static/`, { headers, signal: AbortSignal.timeout(6500) }),
+    ]);
+    if (!fixturesResponse.ok || !bootstrapResponse.ok) {
+      throw new Error(`Fantasy SPL API returned fixtures=${fixturesResponse.status}, bootstrap=${bootstrapResponse.status}`);
+    }
+    const [fixturesPayload, bootstrapPayload] = await Promise.all([
+      fixturesResponse.json(),
+      bootstrapResponse.json(),
+    ]) as [unknown, unknown];
+    const fixtures = Array.isArray(fixturesPayload)
+      ? fixturesPayload as Array<{
+          kickoff_time?: string | null;
+          event?: number | null;
+          team_h?: number;
+          team_a?: number;
+          team_h_score?: number | null;
+          team_a_score?: number | null;
+          finished?: boolean;
+          started?: boolean;
+        }>
+      : [];
+    const bootstrap = bootstrapPayload as { teams?: Array<{ id?: number; name?: string; short_name?: string }> };
+    const teams = new Map((bootstrap.teams ?? [])
+      .filter((team) => Number.isFinite(team.id) && team.name)
+      .map((team) => [team.id as number, team.name as string]));
+    const now = Date.now();
+    const upcoming = fixtures
+      .filter((fixture) => fixture.kickoff_time && Number.isFinite(Date.parse(fixture.kickoff_time)))
+      .filter((fixture) => Date.parse(fixture.kickoff_time as string) >= now - 2 * 60 * 60 * 1000)
+      .filter((fixture) => teams.has(fixture.team_h ?? -1) && teams.has(fixture.team_a ?? -1))
+      .sort((a, b) => Date.parse(a.kickoff_time as string) - Date.parse(b.kickoff_time as string))
+      .slice(0, 15);
+    if (!upcoming.length) throw new Error("Fantasy SPL API returned no upcoming fixtures with known teams");
+
+    const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
+    const rows = upcoming.map((fixture) => {
+      const kickoff = new Date(fixture.kickoff_time as string);
+      const dateText = new Intl.DateTimeFormat(locale, {
+        weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Riyadh",
+      }).format(kickoff);
+      const timeText = new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Riyadh",
+      }).format(kickoff);
+      const home = teams.get(fixture.team_h as number) as string;
+      const away = teams.get(fixture.team_a as number) as string;
+      const round = fixture.event ? (language === "AR" ? ` · الجولة ${fixture.event}` : ` · Matchweek ${fixture.event}`) : "";
+      return language === "AR"
+        ? `• ${home} × ${away} — ${dateText}، الساعة ${timeText} بتوقيت السعودية${round}`
+        : `• ${home} vs ${away} — ${dateText}, ${timeText} Riyadh time${round}`;
+    });
+    const heading = language === "AR"
+      ? "المباريات القادمة في دوري روشن السعودي"
+      : language === "TR" ? "Suudi Pro Lig'in yaklaşan maçları" : "Upcoming Saudi Pro League fixtures";
+    const note = language === "AR"
+      ? "المصدر: واجهة البيانات الرسمية لـ Fantasy SPL التابعة لرابطة الدوري السعودي. قد تتغير المواعيد؛ تحقق من الجدول الرسمي قبل المباراة."
+      : language === "TR"
+        ? "Kaynak: Suudi Pro Lig'in resmî Fantasy SPL veri arayüzü. Maç saatleri değişebilir."
+        : "Source: the Saudi Pro League's official Fantasy SPL data API. Kick-off times may change.";
+    return `${heading}\n${rows.join("\n")}\n\n${note}\nhttps://www.spl.com.sa/ar/fixtures-results`;
+  } catch (error) {
+    console.warn("[ALASSAUL sports] official Fantasy SPL API unavailable", safeProviderDiagnostic(error));
+  }
+
+  // Secondary official website fallback. This is intentionally attempted only
+  // after the structured JSON API, and incomplete cards are never fabricated.
   const sourceUrls = [
     "https://www.spl.com.sa/ar/fixtures-results",
     "https://www.spl.com.sa/en/fixtures-results",
-    "https://www.spl.com.sa/ar/teams/%D8%A7%D9%84%D8%A7%D9%87%D9%84%D9%8A/matches",
   ];
   try {
     const pageResults = await Promise.all(sourceUrls.map(async (sourceUrl) => {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 7000);
       try {
         const response = await fetch(sourceUrl, {
           headers: {
@@ -744,45 +816,41 @@ async function getOfficialSaudiLeagueFixturesAnswer(language: "AR" | "TR" | "EN"
             "accept-language": language === "AR" ? "ar-SA,ar;q=0.9,en;q=0.8" : "en-US,en;q=0.9",
             "user-agent": "Mozilla/5.0 (compatible; ALASSAUL-AI/1.0; +https://alassaul.com)",
           },
-          signal: controller.signal,
+          signal: AbortSignal.timeout(6500),
         });
         if (!response.ok) throw new Error("SPL page returned " + response.status);
-        const html = await response.text();
-        return { sourceUrl, fixtures: parseOfficialSaudiLeagueFixturesHtml(html) };
+        return parseOfficialSaudiLeagueFixturesHtml(await response.text());
       } catch (error) {
         console.warn("[ALASSAUL sports] SPL source page unavailable", sourceUrl, safeProviderDiagnostic(error));
-        return { sourceUrl, fixtures: [] as ReturnType<typeof parseOfficialSaudiLeagueFixturesHtml> };
-      } finally {
-        clearTimeout(timer);
+        return [];
       }
     }));
     const unique = new Map<string, ReturnType<typeof parseOfficialSaudiLeagueFixturesHtml>[number]>();
-    for (const result of pageResults) {
-      for (const fixture of result.fixtures) {
+    for (const fixtures of pageResults) {
+      for (const fixture of fixtures) {
         const key = [fixture.date, fixture.time, fixture.home, fixture.away].join("|").toLocaleLowerCase();
         if (!unique.has(key)) unique.set(key, fixture);
       }
     }
-    const matches = [...unique.values()].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
-    if (!matches.length) throw new Error("Official SPL pages returned no parsable fixture cards");
+    const matches = [...unique.values()]
+      .filter((match) => new Date(match.date + "T" + match.time + ":00+03:00").getTime() >= Date.now() - 2 * 60 * 60 * 1000)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+      .slice(0, 15);
+    if (!matches.length) throw new Error("Official SPL pages returned no parsable upcoming fixture cards");
     const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
-    const rows = matches.slice(0, 15).map((match) => {
+    const rows = matches.map((match) => {
       const localDate = new Date(match.date + "T" + match.time + ":00+03:00");
       const dateText = new Intl.DateTimeFormat(locale, {
         weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Riyadh",
       }).format(localDate);
       return language === "AR"
-        ? `• ${match.home} × ${match.away} — ${dateText}، الساعة ${match.time} (بتوقيت السعودية) · الجولة ${match.week}`
-        : `• ${match.home} vs ${match.away} — ${dateText}, ${match.time} (Riyadh time) · Matchweek ${match.week}`;
+        ? `• ${match.home} × ${match.away} — ${dateText}، الساعة ${match.time} بتوقيت السعودية · الجولة ${match.week}`
+        : `• ${match.home} vs ${match.away} — ${dateText}, ${match.time} Riyadh time · Matchweek ${match.week}`;
     });
-    const heading = language === "AR"
-      ? "المباريات القادمة المنشورة في جدول رابطة الدوري السعودي"
-      : language === "TR" ? "Suudi Pro Lig'in resmi fikstüründeki yaklaşan maçlar" : "Upcoming fixtures published by the Saudi Pro League";
-    const note = language === "AR"
-      ? "المصدر الرسمي: رابطة الدوري السعودي للمحترفين. قد تتغير المواعيد؛ راجع الجدول الرسمي قبل المباراة."
-      : language === "TR" ? "Resmî kaynak: Suudi Pro Lig. Maç saatleri değişebilir; karşılaşma öncesinde resmî programı kontrol edin."
-      : "Official source: Saudi Pro League. Kick-off times may change; check the official schedule before the match.";
-    return `${heading}\n${rows.join("\n")}\n\n${note}\nhttps://www.spl.com.sa/ar/fixtures-results`;
+    const heading = language === "AR" ? "المباريات القادمة المنشورة في جدول رابطة الدوري السعودي"
+      : language === "TR" ? "Suudi Pro Lig'in resmi fikstüründeki yaklaşan maçlar"
+      : "Upcoming fixtures published by the Saudi Pro League";
+    return `${heading}\n${rows.join("\n")}\n\nالمصدر الرسمي: رابطة الدوري السعودي للمحترفين. قد تتغير المواعيد.\nhttps://www.spl.com.sa/ar/fixtures-results`;
   } catch (error) {
     console.warn("[ALASSAUL sports] official SPL fixtures unavailable", safeProviderDiagnostic(error));
     return undefined;
