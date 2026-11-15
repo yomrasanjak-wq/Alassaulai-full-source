@@ -1,6 +1,6 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
+import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
@@ -1375,6 +1375,9 @@ export const appRouter = router({
         const updated = await updateAssistantMemory(ctx.user.openId, input);
         return { success: Boolean(updated) };
       }),
+    disableMemory: protectedProcedure.mutation(async ({ ctx }) => ({
+      success: await disableAssistantMemory(ctx.user.openId),
+    })),
     deleteMemory: protectedProcedure.mutation(async ({ ctx }) => ({
       success: await deleteAssistantMemory(ctx.user.openId),
     })),
