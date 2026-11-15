@@ -20,6 +20,7 @@ const explicitKey = first('ALASSAUL_LLM_API_KEY');
 const openAiKey = first('OPENAI_API_KEY', 'AI_API_KEY');
 const providerKey = first('FORGE_API_KEY', 'MANUS_API_KEY', 'GROQ_API_KEY', 'VITE_GROQ_API_KEY', 'BUILT_IN_FORGE_API_KEY', 'VITE_FRONTEND_FORGE_API_KEY', 'VITE_FORGE_API_KEY');
 const geminiKey = first('GEMINI_API_KEY');
+const openRouterKey = first('OPENROUTER_API_KEY');
 const explicitEndpoint = first('ALASSAUL_LLM_API_URL', 'OPENAI_BASE_URL');
 const configuredEndpoint = first('FORGE_API_URL', 'MANUS_API_URL', 'GROQ_API_URL', 'BUILT_IN_FORGE_API_URL', 'VITE_FRONTEND_FORGE_API_URL');
 const endpoint = explicitEndpoint || (openAiKey
@@ -31,7 +32,7 @@ const normalizedEndpoint = endpoint.replace(/\/+$/, '');
 const netlifyGateway = /\/\.netlify\/ai(?:\/|$)/i.test(normalizedEndpoint);
 const responsesEndpoint = netlifyGateway || /\/v1\/responses$/i.test(normalizedEndpoint);
 const directOpenAi = /api\.openai\.com/i.test(normalizedEndpoint) && !netlifyGateway;
-const selectedKey = explicitKey || ((netlifyGateway || directOpenAi) ? openAiKey || providerKey : /generativelanguage\.googleapis\.com/i.test(normalizedEndpoint) ? geminiKey : providerKey || openAiKey);
+const selectedKey = explicitKey || (/generativelanguage\\.googleapis\\.com/i.test(normalizedEndpoint) ? geminiKey : /openrouter\\.ai\\/api\\/v1/i.test(normalizedEndpoint) ? openRouterKey : netlifyGateway ? openAiKey || providerKey : directOpenAi ? openAiKey : providerKey || openAiKey);
 const primaryModel = first('ALASSAUL_PRIMARY_MODEL') || (netlifyGateway ? 'gpt-5.6-luna' : directOpenAi ? 'gpt-6.1-sol' : /generativelanguage\.googleapis\.com/i.test(normalizedEndpoint) ? 'gemini-3.8-flash' : 'qwen/qwen3.8-27b');
 const backupModel = first('ALASSAUL_BACKUP_MODEL') || (netlifyGateway ? 'gpt-5-mini' : directOpenAi ? 'gpt-6.1-terra' : /generativelanguage\.googleapis\.com/i.test(normalizedEndpoint) ? 'gemini-3.7-flash' : 'openai/gpt-oss-20b');
 
