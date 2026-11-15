@@ -12,6 +12,7 @@ import { adminProcedure, controlStaffProcedure, ownerProcedure, protectedProcedu
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
+import { parseOfficialSaudiLeagueFixturesHtml } from "./liveFixtures";
 
 const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -712,27 +713,17 @@ async function getOfficialSaudiLeagueFixturesAnswer(language: "AR" | "TR" | "EN"
     });
     if (!response.ok) throw new Error("SPL fixtures page returned " + response.status);
     const html = await response.text();
-    const visibleText = html
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;|&#160;/gi, " ")
-      .replace(/&amp;/gi, "&")
-      .replace(/&#x27;|&#39;/gi, "'")
-      .replace(/&quot;/gi, '"')
-      .replace(/\s+/g, " ");
-    const matches = [...visibleText.matchAll(/MATCHWEEK\s*(\d+)\s*(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})\s*Home team:\s*([A-Za-z0-9&' -]+?)\.?\s*Away team:\s*([A-Za-z0-9&' -]+?)\.?\s*Upcoming match/gi)];
-    if (!matches.length) throw new Error("SPL fixtures page did not expose parsable upcoming match rows");
+    const matches = parseOfficialSaudiLeagueFixturesHtml(html);
+    if (!matches.length) throw new Error("SPL fixtures page did not expose parsable upcoming match rows or embedded fixture data");
     const locale = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
     const rows = matches.slice(0, 12).map((match) => {
-      const [, week, datePart, timePart, home, away] = match;
-      const localDate = new Date(datePart + "T" + timePart + ":00+03:00");
+      const localDate = new Date(match.date + "T" + match.time + ":00+03:00");
       const dateText = new Intl.DateTimeFormat(locale, {
         weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Riyadh",
       }).format(localDate);
       return language === "AR"
-        ? `• ${home.trim()} × ${away.trim()} — ${dateText}، الساعة ${timePart} (بتوقيت السعودية) · الجولة ${week}`
-        : `• ${home.trim()} vs ${away.trim()} — ${dateText}, ${timePart} (Riyadh time) · Matchweek ${week}`;
+        ? `• ${match.home} × ${match.away} — ${dateText}، الساعة ${match.time} (بتوقيت السعودية) · الجولة ${match.week}`
+        : `• ${match.home} vs ${match.away} — ${dateText}, ${match.time} (Riyadh time) · Matchweek ${match.week}`;
     });
     const heading = language === "AR"
       ? "المباريات القادمة المنشورة في جدول رابطة الدوري السعودي"
