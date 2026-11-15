@@ -330,12 +330,16 @@ const isRetryableStatus = (status: number) => status === 408 || status === 409 |
 // makes an invalid model, route, or credential look like a frozen chat.
 const fetchWithBackoff = async (
   url: string,
-  init: FetchInit
+  init: FetchInit,
+  options: { maxRetries?: number; requestTimeoutMs?: number; requestBudgetMs?: number } = {},
 ): Promise<Response> => {
   let lastError: unknown;
-  const deadline = Date.now() + REQUEST_BUDGET_MS;
+  const maxRetries = options.maxRetries ?? RETRY_MAX_RETRIES;
+  const requestTimeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
+  const requestBudgetMs = options.requestBudgetMs ?? REQUEST_BUDGET_MS;
+  const deadline = Date.now() + requestBudgetMs;
 
-  for (let attempt = 0; attempt <= RETRY_MAX_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
       throw lastError instanceof Error
@@ -347,7 +351,7 @@ const fetchWithBackoff = async (
       const controller = new AbortController();
       const timeout = setTimeout(
         () => controller.abort(),
-        Math.min(REQUEST_TIMEOUT_MS, remaining)
+        Math.min(requestTimeoutMs, remaining)
       );
       let response: Response;
       try {
@@ -359,7 +363,7 @@ const fetchWithBackoff = async (
       } finally {
         clearTimeout(timeout);
       }
-      if (response.ok || !isRetryableStatus(response.status) || attempt === RETRY_MAX_RETRIES) {
+      if (response.ok || !isRetryableStatus(response.status) || attempt === maxRetries) {
         return response;
       }
 
@@ -378,7 +382,7 @@ const fetchWithBackoff = async (
       await sleep(delay);
     } catch (error) {
       lastError = error;
-      if (attempt === RETRY_MAX_RETRIES || Date.now() >= deadline) throw error;
+      if (attempt === maxRetries || Date.now() >= deadline) throw error;
       console.warn(`LLM request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after network error`);
       const delay = Math.min(
         computeBackoffDelay(attempt),
@@ -501,6 +505,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     }
   }
 
+  const isGeminiProvider = /generativelanguage\\.googleapis\\.com\\/v1beta\\/openai/i.test(ENV.llmApiUrl);
   const response = await fetchWithBackoff(useResponsesApi ? resolveResponsesEndpoint() : resolveApiUrl(), {
     method: "POST",
     headers: {
@@ -508,7 +513,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       authorization: `Bearer ${ENV.llmApiKey || ENV.forgeApiKey}`,
     },
     body: JSON.stringify(payload),
-  });
+  }, isGeminiProvider ? { maxRetries: 0, requestTimeoutMs: 7_000, requestBudgetMs: 8_000 } : undefined);
 
   if (!response.ok) {
     const errorText = await response.text();
