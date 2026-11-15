@@ -213,7 +213,9 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
     const geocodeQuery = isKnownTurkishDestination && !/(?:تركيا|turkey|türkiye)/i.test(destination)
       ? destination + ", Türkiye"
       : destination;
-    geocodeUrl.search = new URLSearchParams({ q: geocodeQuery, limit: "8", lang: language === "AR" ? "ar" : language === "TR" ? "tr" : "en" }).toString();
+    // Photon can reject unsupported language codes (notably Arabic) with HTTP 400.
+    // Keep geocoding language-neutral; OSM name:ar/name:tr tags are selected below.
+    geocodeUrl.search = new URLSearchParams({ q: geocodeQuery, limit: "8" }).toString();
     const geocodeResponse = await fetch(geocodeUrl.toString(), {
       headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
       signal: AbortSignal.timeout(7000),
@@ -672,6 +674,13 @@ async function getSaudiLeagueScheduleAnswer(language: "AR" | "TR" | "EN", messag
           ? "Suudi Pro Lig için doğrulanmış skor alınamadı; sonuç tahmin etmeyeceğim. Daha sonra tekrar deneyin."
           : "A verified Saudi Pro League score is unavailable right now; I won't guess a result. Please try again shortly.";
     }
+  }
+  if (scheduleQuestion) {
+    return language === "AR"
+      ? "تعذر جلب جدول مباريات دوري روشن من لوحة المواعيد الآن؛ لن أستبدل الجدول بأخبار أو روابط بحثية، ولن أخمّن مواعيد المباريات. حاول بعد قليل.\\nالمصدر: https://www.espn.com/soccer/scoreboard/_/league/ksa.1"
+      : language === "TR"
+        ? "Suudi Pro Lig fikstürü şu anda doğrulanamadı; haber bağlantılarını maç programı gibi sunmayacağım. Lütfen daha sonra tekrar deneyin."
+        : "A verified Saudi Pro League fixture list is unavailable right now; I will not substitute news links for a schedule or guess match times. Please try again shortly.";
   }
   const query = language === "AR"
     ? scheduleQuestion ? "دوري روشن السعودي جدول مباريات الجولة القادمة مواعيد" : "أخبار دوري روشن السعودي اليوم"
