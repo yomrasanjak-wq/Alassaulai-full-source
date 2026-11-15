@@ -2098,9 +2098,23 @@ export default function Home() {
       {chatOpen && <aside className="chat-panel" aria-label="محادثة مساعد ALASSAUL">
         <div className="chat-header">
           <div><span className="chat-avatar official-robot"><img src={ASSETS.officialRobot} alt="روبوت ALASSAUL الرسمي" /></span><span><strong>المتحدث الرسمي · {t.chatTitle}</strong><small><span className="green-ping" /> {chatMutation.isPending ? "يكتب الآن…" : "متصل الآن"}</small></span></div>
-          <button onClick={() => { window.speechSynthesis?.cancel(); setChatOpen(false); }} aria-label="إغلاق المحادثة"><X size={18} /></button>
+          <div className="chat-header-actions">{auth.user && <button type="button" className={`chat-memory-toggle ${memoryPanelOpen ? "active" : ""}`} onClick={() => setMemoryPanelOpen((open) => !open)} aria-label="إعدادات ذاكرتي" title="ذاكرتي"><BrainCircuit size={17} /><span>ذاكرتي</span></button>}<button onClick={() => { window.speechSynthesis?.cancel(); setChatOpen(false); }} aria-label="إغلاق المحادثة"><X size={18} /></button></div>
         </div>
         <div className="chat-statusbar"><span><Sparkles size={13} /> {t.chatIntro}</span><span className="chat-status-live"><span className="green-ping" /> جاهز للرد</span></div>
+        {memoryPanelOpen && auth.user && <section className="assistant-memory-panel" aria-label="إعدادات ذاكرة المساعد">
+          <div className="assistant-memory-heading"><div><strong><BrainCircuit size={17} /> ذاكرتي مع ALASSAUL</strong><small>أنت تتحكم فيما يحتفظ به المساعد عنك.</small></div><button type="button" onClick={() => setMemoryPanelOpen(false)} aria-label="إغلاق إعدادات الذاكرة"><X size={16} /></button></div>
+          {assistantMemoryStatusQuery.isLoading ? <p className="assistant-memory-note">جارٍ تحميل حالة الذاكرة…</p>
+            : !assistantMemoryStatusQuery.data?.enabled ? <div className="assistant-memory-consent"><p>بموافقتك، يمكن للمساعد تذكّر الاسم الذي تختاره واهتماماتك والمواضيع التي تريد متابعتها في زياراتك القادمة. يمكنك تعديلها أو حذفها في أي وقت.</p><button type="button" className="button button-primary" disabled={assistantMemoryEnableMutation.isPending} onClick={() => assistantMemoryEnableMutation.mutate({ consent: true })}>{assistantMemoryEnableMutation.isPending ? "جارٍ التفعيل…" : "أوافق على تفعيل ذاكرتي"}</button><small>لن تُفعّل الذاكرة دون موافقتك.</small></div>
+            : <div className="assistant-memory-editor">
+              {assistantMemoryQuery.isLoading ? <p className="assistant-memory-note">جارٍ تحميل ذكرياتك…</p> : <>
+                <label>الاسم الذي تحب أن يناديك به المساعد<input value={memoryDisplayName} maxLength={80} onChange={(event) => setMemoryDisplayName(event.target.value)} placeholder="اسمك (اختياري)" /></label>
+                <label>اهتماماتك وتفضيلاتك <small>كل نقطة في سطر</small><textarea rows={2} value={memoryPreferences} onChange={(event) => setMemoryPreferences(event.target.value)} placeholder={"مثال: أحب الطبيعة والرحلات الهادئة\\nأفضل الإجابات المختصرة"} /></label>
+                <label>مواضيع تريد متابعة الحديث عنها <small>كل موضوع في سطر</small><textarea rows={2} value={memoryTopics} onChange={(event) => setMemoryTopics(event.target.value)} placeholder={"مثال: خطة رحلتي إلى طرابزون\\nمشروع أعمل عليه"} /></label>
+                <label>ملخص اختياري لمحادثاتك<textarea rows={2} maxLength={1200} value={memorySummary} onChange={(event) => setMemorySummary(event.target.value)} placeholder="أضف ما تريد من المساعد أن يتذكره…" /></label>
+                <div className="assistant-memory-actions"><button type="button" className="button button-primary" disabled={assistantMemoryUpdateMutation.isPending} onClick={() => assistantMemoryUpdateMutation.mutate({ displayName: memoryDisplayName.trim() || null, preferences: memoryPreferences.split("\\n").map((item) => item.trim()).filter(Boolean), activeTopics: memoryTopics.split("\\n").map((item) => item.trim()).filter(Boolean), recentSummary: memorySummary.trim() || null })}>{assistantMemoryUpdateMutation.isPending ? "جارٍ الحفظ…" : "حفظ التعديلات"}</button><button type="button" className="assistant-memory-delete" disabled={assistantMemoryDeleteMutation.isPending} onClick={() => { if (window.confirm("هل تريد حذف كل المعلومات التي حفظتها الذاكرة لهذا الحساب؟")) assistantMemoryDeleteMutation.mutate(); }}>{assistantMemoryDeleteMutation.isPending ? "جارٍ الحذف…" : "حذف ذاكرتي"}</button></div>
+              </>}
+            </div>}
+        </section>
         <div className="chat-layout">
           <section className="chat-conversation">
             <div className="chat-body">
