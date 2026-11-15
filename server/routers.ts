@@ -1692,6 +1692,66 @@ ${newsContext}`);
           const contextualFallback = getContextualFallback(input.messages, input.language);
           return directTourismAnswer ? { text: directTourismAnswer } : contextualFallback ? { text: contextualFallback } : fail(failure);
         }
+        // Save a compact, structured memory only after the visitor explicitly enabled it.
+        // Never store full transcripts, images, or sensitive personal information.
+        if (ctx.user?.openId && latestMessage?.role === "user" && latestText.trim()) {
+          try {
+            const currentMemory = await getAssistantMemory(ctx.user.openId);
+            if (currentMemory?.enabled && currentMemory.consentedAt) {
+              const extractionResponse = await invokeLLM({
+                model: ENV.primaryModel,
+                max_completion_tokens: 280,
+                reasoning: { effort: "minimal" },
+                webSearch: false,
+                messages: [
+                  {
+                    role: "system",
+                    content: "استخرج ذاكرة شخصية موجزة وآمنة من رسائل المستخدم فقط. أعد JSON صالحاً فقط بالمفاتيح displayName وpreferences وactiveTopics وrecentSummary. الاسم لا يُسجل إلا إذا صرّح به المستخدم بوضوح. preferences تقتصر على تفضيلات مستمرة صرّح بها، وactiveTopics على اهتمامات أو مواضيع مستمرة مفيدة للمتابعة، وrecentSummary على موضوع جارٍ غير حساس. لا تستنتج ولا تخمّن. تجاهل تماماً البيانات الصحية والطبية والمالية والدينية والسياسية والحميمة وأرقام الهوية والعناوين وبيانات الاتصال وأي معلومات حساسة. إذا لا توجد معلومة واضحة جديدة فأعد {\"displayName\":null,\"preferences\":[],\"activeTopics\":[],\"recentSummary\":null}. لا تكتب أي شرح خارج JSON.",
+                  },
+                  {
+                    role: "user",
+                    content: JSON.stringify(input.messages.slice(-8).filter((message) => message.role === "user").map((message) => message.content.slice(0, 900))),
+                  },
+                ],
+              });
+              const extractedText = extractChatText(extractionResponse.choices?.[0]?.message?.content)
+                .replace(/^\s*```(?:json)?\s*/i, "")
+                .replace(/\s*```\s*$/, "");
+              const extracted = JSON.parse(extractedText) as {
+                displayName?: unknown;
+                preferences?: unknown;
+                activeTopics?: unknown;
+                recentSummary?: unknown;
+              };
+              const cleanList = (value: unknown, limit: number, maxLength: number): string[] =>
+                Array.isArray(value)
+                  ? [...new Set(value.filter((item): item is string => typeof item === "string")
+                    .map((item) => item.trim().slice(0, maxLength)).filter(Boolean))].slice(0, limit)
+                  : [];
+              const preferences = cleanList(extracted.preferences, 20, 120);
+              const activeTopics = cleanList(extracted.activeTopics, 20, 160);
+              const displayName = typeof extracted.displayName === "string"
+                ? extracted.displayName.trim().slice(0, 80) || null
+                : null;
+              const recentSummary = typeof extracted.recentSummary === "string"
+                ? extracted.recentSummary.trim().slice(0, 1200) || null
+                : null;
+              const mergedPreferences = [...new Set([...currentMemory.preferences, ...preferences])].slice(-20);
+              const mergedTopics = [...new Set([...currentMemory.activeTopics, ...activeTopics])].slice(-20);
+              if (displayName || preferences.length || activeTopics.length || recentSummary) {
+                await updateAssistantMemory(ctx.user.openId, {
+                  ...(displayName ? { displayName } : {}),
+                  preferences: mergedPreferences,
+                  activeTopics: mergedTopics,
+                  ...(recentSummary ? { recentSummary } : {}),
+                });
+              }
+            }
+          } catch (memoryUpdateError) {
+            // Memory extraction is best-effort and must never affect the chat reply.
+            console.warn("[ALASSAUL memory] update skipped", safeProviderDiagnostic(memoryUpdateError));
+          }
+        }
         return { text };
       }),
   }),
