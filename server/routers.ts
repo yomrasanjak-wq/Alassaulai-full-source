@@ -280,8 +280,7 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
       ? [configuredOverpass]
       : ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
     let placesData: { elements?: TourismOverpassElement[] } | undefined;
-    const overpassFailures: string[] = [];
-    for (const endpoint of overpassEndpoints) {
+    const attempts = await Promise.all(overpassEndpoints.map(async (endpoint) => {
       try {
         const placesResponse = await fetch(endpoint, {
           method: "POST",
@@ -292,14 +291,19 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
         if (!placesResponse.ok) throw new Error("HTTP " + placesResponse.status);
         const candidate = await placesResponse.json() as { elements?: TourismOverpassElement[] };
         if (!Array.isArray(candidate.elements)) throw new Error("Invalid Overpass response");
-        placesData = candidate;
-        break;
+        return { endpoint, data: candidate };
       } catch (endpointError) {
         const diagnostic = safeProviderDiagnostic(endpointError);
-        overpassFailures.push(endpoint + ": " + diagnostic);
-        console.warn("[ALASSAUL tourism] Overpass endpoint failed; trying fallback", endpoint, diagnostic);
+        console.warn("[ALASSAUL tourism] Overpass endpoint failed", endpoint, diagnostic);
+        return { endpoint, error: diagnostic };
       }
-    }
+    }));
+    const successfulAttempt = attempts.find((attempt): attempt is { endpoint: string; data: { elements?: TourismOverpassElement[] } } => "data" in attempt);
+    placesData = successfulAttempt?.data;
+    const overpassFailures = attempts.filter((attempt) => "error" in attempt).map((attempt) => {
+      const failure = attempt as { endpoint: string; error: { diagnostic?: string } };
+      return failure.endpoint + ": " + (failure.error.diagnostic ?? "unknown error");
+    });
     if (!placesData) {
       if (overpassFailures.some((failure) => /429|406/.test(failure))) tourismCooldownUntil = Date.now() + 15_000;
       throw new Error("All Overpass endpoints failed: " + overpassFailures.join(" | "));
