@@ -2,6 +2,7 @@
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import stylesheet from "../index.css?raw";
 
 const { mutateAsyncMock, auxiliaryMutationMock } = vi.hoisted(() => ({ mutateAsyncMock: vi.fn(), auxiliaryMutationMock: vi.fn() }));
 vi.mock("@/lib/trpc", () => ({
@@ -587,12 +588,15 @@ describe("TikTok profile page", () => {
 });
 
 describe("Official live channel actions", () => {
-  it("opens the official Makkah channel source without inventing an embedded live stream", () => {
-    render(<Home />);
-    fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
-    const sourceLink = screen.getByRole("link", { name: /فتح قناة مكة المكرمة/ }) as HTMLAnchorElement;
-    expect(sourceLink.href).toBe("https://www.youtube.com/channel/UCos52azQNBgW63_9uDJoPDA");
-    expect(screen.getByText("المشاهدة من المصدر الرسمي")).toBeTruthy();
+  it("opens the official Makkah channel page directly when no verified embed is configured", () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    try {
+      render(<Home />);
+      fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
+      expect(openSpy).toHaveBeenCalledWith("https://www.youtube.com/channel/UCos52azQNBgW63_9uDJoPDA", "_blank", "noopener,noreferrer");
+    } finally {
+      openSpy.mockRestore();
+    }
   });
 
   it("keeps all four broadcast channel cards actionable", () => {
@@ -684,9 +688,9 @@ it("keeps the assistant panel physically centered in RTL layouts", () => {
   fireEvent.click(screen.getByRole("button", { name: "chat" }));
   const panel = document.querySelector(".chat-panel");
   expect(panel).toBeTruthy();
-  expect(getComputedStyle(panel as HTMLElement).left).toBe("50%");
-  expect(getComputedStyle(panel as HTMLElement).right).toBe("auto");
-  expect(getComputedStyle(panel as HTMLElement).transform).toBe("translateX(-50%)");
+  // jsdom does not apply the app stylesheet to getComputedStyle; verify the shipped CSS contract instead.
+  expect(stylesheet).toContain(".chat-panel { left: 12px !important; right: 12px !important; transform: none !important; margin-inline: auto !important; }");
+  expect(stylesheet).toContain("width: calc(100vw - 24px) !important");
 });
 
 describe("Global search guidance", () => {
