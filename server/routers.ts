@@ -195,14 +195,14 @@ export function getLocalTourismCatalogContext(message: string, language: "AR" | 
     const map = new URL("https://www.google.com/maps/search/");
     map.searchParams.set("api", "1");
     map.searchParams.set("query", place.query);
-    return (index + 1) + ". **" + place.name + "** — " + place.region + "\\n   [" + (language === "AR" ? "الموقع على الخريطة" : language === "TR" ? "Haritada gör" : "View on map") + "](" + map.toString() + ")";
+    return (index + 1) + ". **" + place.name + "** — " + place.region + "\n   [" + (language === "AR" ? "الموقع على الخريطة" : language === "TR" ? "Haritada gör" : "View on map") + "](" + map.toString() + ")";
   });
   const note = language === "AR"
     ? "هذه أسماء وجهات من الدليل التحريري للمنصة. لا تعني أن المكان مفتوح الآن أو أن الأسعار والطرق مؤكدة؛ تحقق من البيانات الحية قبل الزيارة."
     : language === "TR"
       ? "Bunlar platformun rehberinde listelenen yerlerdir; açık olma durumu, fiyatlar ve yol koşulları canlı olarak doğrulanmalıdır."
       : "These are places listed in the platform guide; opening status, prices, and road conditions still require live verification.";
-  return heading + " (" + matches.length + "):\\n\\n" + rows.join("\\n\\n") + "\\n\\n" + note;
+  return heading + " (" + matches.length + "):\n\n" + rows.join("\n\n") + "\n\n" + note;
 }
 
 async function waitForTourismRequestSlot(): Promise<void> {
@@ -1549,7 +1549,7 @@ ${weatherContext}`);
               if (!lookupUnavailable) {
                 liveContext.push((isItineraryPlanningQuestion(latestText)
                   ? "معالم مرشحة من OpenStreetMap لتكملة دليل ALASSAUL:"
-                  : "نتائج المعالم السياحية من OpenStreetMap:") + "\\n" + directTourismAnswer);
+                  : "نتائج المعالم السياحية من OpenStreetMap:") + "\n" + directTourismAnswer);
               } else if (!localTourismContext) {
                 liveContext.push("تعذر التحقق من المعالم الحية حالياً؛ لا تخمّن ساعات العمل أو حالة الافتتاح.");
               }
