@@ -2047,8 +2047,8 @@ export default function Home() {
                     <span className="family-business-kicker">المدينة المنورة · توريد بالجملة</span>
                     <h3>بانسي فلاور – فرع المدينة المنورة</h3>
                     <p>بيع وتوزيع الورد بالجملة لتجار ومحلات الورد ومجهزي المناسبات في المدينة المنورة ومختلف مناطق المملكة، مع استقبال استفسارات التوريد والتوزيع.</p>
-                    <small><MapPin size={14} /> المدينة المنورة · طريق الملك سعود · حي السكة الحديد (الموقع المنشور يحتاج تأكيد الإدارة)</small>
-                    <div className="family-business-actions"><a href="https://www.google.com/maps/search/?api=1&query=Pansy+Flowers+King+Saud+Road+Madinah" target="_blank" rel="noreferrer">عرض موقع المدينة <ExternalLink size={14} /></a><span className="family-business-pending">ننتظر تأكيد أن هذا هو عنوان فرعكم ورقم التواصل</span></div>
+                    <small><MapPin size={14} /> فرع بانسي فلاور في المدينة المنورة · طريق الملك سعود · حي السكة الحديد</small>
+                    <div className="family-business-actions"><a href="https://www.google.com/maps/search/?api=1&query=Pansy+Flowers+King+Saud+Road+Madinah" target="_blank" rel="noreferrer">عرض موقع المدينة <ExternalLink size={14} /></a><span>فرع معتمد ضمن شبكة بانسي فلاور</span></div>
                   </div>
                 </article>
                 <article className="family-business-card family-business-optical">
