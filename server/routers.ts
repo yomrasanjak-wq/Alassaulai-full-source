@@ -491,14 +491,53 @@ export function getContextualWeatherQuestion(messages: Array<{ role: "user" | "a
 
 export async function getLiveWeatherAnswer(content: string): Promise<string | undefined> {
   if (!/(?:طقس|أجواء|الجو|درجة الحرارة|الحرارة|weather|temperature)/i.test(content)) return undefined;
+  const asksWeeklyForecast = /(?:الأسبوع القادم|الاسبوع القادم|الأسبوع الجاي|الاسبوع الجاي|الأيام القادمة|الايام القادمة|السبعة أيام|سبعة أيام|7 أيام|7 ايام|next week|next 7 days|weekly forecast)/i.test(content);
   const city = WEATHER_CITIES.find((candidate) => candidate.names.test(content));
-  if (!city) return undefined;
+  if (!city) {
+    return asksWeeklyForecast
+      ? "أكيد، لأي مدينة تريد توقعات الأسبوع القادم؟ اذكر اسم المدينة وسأعرض لك درجات الحرارة واحتمالات الأمطار يوماً بيوم."
+      : undefined;
+  }
   try {
     const url = new URL("https://api.open-meteo.com/v1/forecast");
-    url.search = new URLSearchParams({ latitude: String(city.latitude), longitude: String(city.longitude), current: "temperature_2m,apparent_temperature,weather_code,wind_speed_10m", timezone: city.timezone }).toString();
-    const response = await fetch(url.toString(), { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(5000) });
+    const params: Record<string, string> = {
+      latitude: String(city.latitude),
+      longitude: String(city.longitude),
+      timezone: city.timezone,
+    };
+    if (asksWeeklyForecast) {
+      params.forecast_days = "7";
+      params.daily = "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max";
+    } else {
+      params.current = "temperature_2m,apparent_temperature,weather_code,wind_speed_10m";
+    }
+    url.search = new URLSearchParams(params).toString();
+    const response = await fetch(url.toString(), { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000) });
     if (!response.ok) throw new Error(`weather-http-${response.status}`);
-    const data = await response.json() as { current?: { time?: string; temperature_2m?: number; apparent_temperature?: number; weather_code?: number; wind_speed_10m?: number } };
+    const data = await response.json() as {
+      current?: { time?: string; temperature_2m?: number; apparent_temperature?: number; weather_code?: number; wind_speed_10m?: number };
+      daily?: { time?: string[]; weather_code?: number[]; temperature_2m_max?: number[]; temperature_2m_min?: number[]; precipitation_probability_max?: number[]; wind_speed_10m_max?: number[] };
+    };
+    if (asksWeeklyForecast) {
+      const daily = data.daily;
+      if (!daily?.time?.length || !daily.weather_code || !daily.temperature_2m_max || !daily.temperature_2m_min) {
+        throw new Error("weekly-weather-data-invalid");
+      }
+      const rows = daily.time.slice(0, 7).map((date, index) => {
+        const day = new Intl.DateTimeFormat("ar", { weekday: "long", day: "numeric", month: "short", timeZone: city.timezone }).format(new Date(date + "T12:00:00"));
+        const high = daily.temperature_2m_max?.[index];
+        const low = daily.temperature_2m_min?.[index];
+        const code = daily.weather_code?.[index];
+        if (!Number.isFinite(high) || !Number.isFinite(low) || !Number.isFinite(code)) return null;
+        const rain = daily.precipitation_probability_max?.[index];
+        const wind = daily.wind_speed_10m_max?.[index];
+        const rainText = Number.isFinite(rain) ? ` | احتمال المطر ${Math.round(rain as number)}٪` : "";
+        const windText = Number.isFinite(wind) ? ` | الرياح ${Math.round(wind as number)} كم/س` : "";
+        return `• ${day}: ${weatherDescription(code as number)}، العظمى ${Math.round(high as number)}° والصغرى ${Math.round(low as number)}°${rainText}${windText}`;
+      }).filter((row): row is string => Boolean(row));
+      if (!rows.length) throw new Error("weekly-weather-rows-empty");
+      return `توقعات الطقس للأيام السبعة القادمة في ${city.name}:\n\n${rows.join("\n")}\n\nالمصدر: Open-Meteo. التوقعات قابلة للتغير، خصوصاً احتمالات الأمطار.`;
+    }
     const current = data.current;
     if (!current || !Number.isFinite(current.temperature_2m) || !Number.isFinite(current.weather_code)) throw new Error("weather-data-invalid");
     const feels = Number.isFinite(current.apparent_temperature) ? `، والمحسوسة ${Math.round(current.apparent_temperature as number)}°` : "";
@@ -507,7 +546,7 @@ export async function getLiveWeatherAnswer(content: string): Promise<string | un
     return `الطقس الآن في ${city.name}: ${Math.round(current.temperature_2m as number)}° مئوية${feels}. ${weatherDescription(current.weather_code as number)}${wind}.${readAt} المصدر: Open-Meteo. هذه قراءة حالية وقد تتغير خلال اليوم.`;
   } catch (error) {
     console.warn("[ALASSAUL weather] live source unavailable", error);
-    return `تعذر التحقق من الطقس الحي في ${city.name} الآن؛ لن أخمّن درجة الحرارة أو حالة الجو. جرّب بعد قليل أو افتح مصدر الطقس مباشرة: https://open-meteo.com/`;
+    return `تعذر التحقق من ${asksWeeklyForecast ? "توقعات الأسبوع القادم" : "الطقس الحي"} في ${city.name} الآن؛ لن أخمّن درجات الحرارة أو الأمطار. جرّب بعد قليل.`;
   }
 }
 
