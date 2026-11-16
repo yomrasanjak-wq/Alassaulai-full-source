@@ -945,11 +945,12 @@ function getContextualFallback(
         /طرابزون|trabzon/i.test(place.region) || /طرابزون|trabzon/i.test(place.category),
       ).slice(0, 8);
       if (places.length) {
-        const days = Math.max(1, Math.min(requestedDays ?? 3, 7));
-        const perDay = Math.ceil(places.length / days);
+        const days = Math.max(1, Math.min(requestedDays ?? 3, 7, places.length));
+        const selectedPlaces = places.slice(0, Math.min(8, days * 2));
+        const perDay = Math.ceil(selectedPlaces.length / days);
         const dayLabel = language === "AR" ? "اليوم" : language === "TR" ? "Gün" : "Day";
         const rows = Array.from({ length: days }, (_, dayIndex) => {
-          const dayPlaces = places.slice(dayIndex * perDay, (dayIndex + 1) * perDay);
+          const dayPlaces = selectedPlaces.slice(dayIndex * perDay, (dayIndex + 1) * perDay);
           if (!dayPlaces.length) return "";
           const stops = dayPlaces.map((place) => {
             const map = new URL("https://www.google.com/maps/search/");
