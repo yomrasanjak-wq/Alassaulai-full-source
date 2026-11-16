@@ -74,8 +74,8 @@ test('Groq endpoint recognizes the Groq credential', () => {
 test('OpenRouter endpoint recognizes its dedicated credential', () => {
   const result = runChecker({ OPENROUTER_API_KEY: 'openrouter-test-secret' });
   assert.equal(result.status, 0);
-  assert.match(result.stdout, /A key is configured \\(value hidden\\)/);
-  assert.match(result.stdout, /openai\\/gpt-4\\.1-mini/);
+  assert.match(result.stdout, /A key is configured \(value hidden\)/);
+  assert.match(result.stdout, /openai\/gpt-4\.1-mini/);
   assert.doesNotMatch(result.stdout, /openrouter-test-secret/);
 });
 
