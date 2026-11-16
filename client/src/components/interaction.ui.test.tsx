@@ -587,13 +587,12 @@ describe("TikTok profile page", () => {
 });
 
 describe("Official live channel actions", () => {
-  it("opens the Makkah channel inside the broadcast box", () => {
+  it("opens the official Makkah channel source without inventing an embedded live stream", () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
-    const iframe = screen.getByTitle("مكة المكرمة") as HTMLIFrameElement;
-    expect(iframe).toBeTruthy();
-    expect(iframe.src).toContain("youtube-nocookie.com/embed/eC4LfEVxvKg");
-    expect(document.querySelector(".video-shell")).toBeNull();
+    const sourceLink = screen.getByRole("link", { name: /فتح قناة مكة المكرمة/ }) as HTMLAnchorElement;
+    expect(sourceLink.href).toBe("https://www.youtube.com/channel/UCos52azQNBgW63_9uDJoPDA");
+    expect(screen.getByText("المشاهدة من المصدر الرسمي")).toBeTruthy();
   });
 
   it("keeps all four broadcast channel cards actionable", () => {
@@ -685,9 +684,9 @@ it("keeps the assistant panel physically centered in RTL layouts", () => {
   fireEvent.click(screen.getByRole("button", { name: "chat" }));
   const panel = document.querySelector(".chat-panel");
   expect(panel).toBeTruthy();
-  expect(getComputedStyle(panel as HTMLElement).left).toBe("12px");
-  expect(getComputedStyle(panel as HTMLElement).right).toBe("12px");
-  expect(getComputedStyle(panel as HTMLElement).transform).toBe("none");
+  expect(getComputedStyle(panel as HTMLElement).left).toBe("50%");
+  expect(getComputedStyle(panel as HTMLElement).right).toBe("auto");
+  expect(getComputedStyle(panel as HTMLElement).transform).toBe("translateX(-50%)");
 });
 
 describe("Global search guidance", () => {
