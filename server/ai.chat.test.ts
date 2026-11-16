@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isTourismPlacesQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
@@ -289,6 +289,38 @@ describe("adaptive brain response strategy", () => {
 
 
 describe("live worldwide tourism place lookup", () => {
+  it("recognizes itinerary requests and extracts their destination without classifying them as generic attraction questions", () => {
+    const question = "رتب لي برنامج اربعه ايام في طرابزون";
+    expect(isItineraryPlanningQuestion(question)).toBe(true);
+    expect(isTourismPlacesQuestion(question)).toBe(false);
+    expect(extractTourismDestination(question)).toBe("طرابزون");
+    expect(isItineraryPlanningQuestion("اذكر لي أماكن سياحية في طرابزون")).toBe(false);
+  });
+
+  it("requires Turkish geocoding results to resolve inside Türkiye for known Turkish destinations", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.startsWith("https://photon.komoot.io/api/")) {
+        expect(decodeURIComponent(url)).toContain("طرابزون, Türkiye");
+        expect(new URL(url).searchParams.has("lang")).toBe(false);
+        return new Response(JSON.stringify({
+          features: [
+            { properties: { name: "Wrong Trabzon", city: "Other", country: "Georgia", countrycode: "ge" }, geometry: { coordinates: [41, 41] } },
+            { properties: { name: "Trabzon", city: "Trabzon", state: "Trabzon", country: "Türkiye", countrycode: "tr" }, geometry: { coordinates: [39.7167, 41.0027] } },
+          ],
+        }), { status: 200, headers: { "content-type": "application/geo+json" } });
+      }
+      return new Response(JSON.stringify({ elements: [{ type: "node", id: 9876, lat: 41.0028, lon: 39.7168, tags: { name: "Trabzon Museum", tourism: "museum" } }] }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    try {
+      const result = await getLiveTourismPlacesAnswer("رتب لي برنامج أربعة أيام في طرابزون", "AR");
+      expect(result).toContain("Trabzon Museum");
+      expect(result).toContain("Türkiye");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
   it("recognizes a country or region tourism request and extracts its destination", () => {
     const question = "اذكر لي أماكن سياحية في كيوتو اليابان";
     expect(isTourismPlacesQuestion(question)).toBe(true);
@@ -776,6 +808,28 @@ describe("ai.chat", () => {
       expect(result.text).not.toContain("النتائج وحالة المباريات");
       expect(invokeLLM).not.toHaveBeenCalled();
       expect(fetchSpy).toHaveBeenCalledOnce();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not replace an unavailable Saudi Pro League fixture list with news articles", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      expect(url.hostname).toBe("site.api.espn.com");
+      expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      return new Response("temporarily unavailable", { status: 503 });
+    });
+    try {
+      const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "جدول مباريات دوري روشن" }],
+      });
+      expect(result.text).toContain("تعذر جلب جدول مباريات دوري روشن");
+      expect(result.text).not.toContain("أحدث أخبار دوري روشن");
+      expect(result.text).not.toContain("روابط تقارير حديثة");
+      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
     }

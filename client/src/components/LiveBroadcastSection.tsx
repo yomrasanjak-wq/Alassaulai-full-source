@@ -6,6 +6,7 @@ interface Channel {
   name: string;
   subtitle: string;
   embedUrl?: string;
+  watchUrl?: string;
   kind: "video" | "news";
   newsTitle?: string;
   newsUrl?: string;
@@ -19,14 +20,16 @@ const CHANNELS: Channel[] = [
     kind: "video",
     // Current live video published by the official Saudi Quran TV channel.
     // The previous fixed video ID had ended, which caused YouTube to show unavailable.
-    embedUrl: "https://www.youtube-nocookie.com/embed/eC4LfEVxvKg?autoplay=1&mute=0&controls=1&rel=0",
+    embedUrl: "https://www.youtube-nocookie.com/embed/kYqGbBqmp8g?autoplay=1&mute=1&controls=1&rel=0",
+    watchUrl: "https://www.youtube.com/watch?v=kYqGbBqmp8g",
   },
   {
     id: "madinah",
     name: "المدينة المنورة",
     subtitle: "بث مباشر من النبوي",
     kind: "video",
-    embedUrl: "https://www.youtube-nocookie.com/embed/live_stream?channel=UCROKYPep-UuODNwyipe6JMw&autoplay=1&mute=0&controls=1&rel=0",
+    embedUrl: "https://www.youtube-nocookie.com/embed/9A1S0xAPVIs?autoplay=1&mute=1&controls=1&rel=0",
+    watchUrl: "https://www.youtube.com/watch?v=9A1S0xAPVIs",
   },
   {
     id: "hadath",
@@ -73,13 +76,16 @@ export default function LiveBroadcastSection() {
                   <a href={active.newsUrl} target="_blank" rel="noreferrer">قراءة الخبر من المصدر الرسمي ↗</a>
                 </div>
               ) : (
-                <iframe
-                  src={active.embedUrl}
-                  title={active.name}
-                  className="live-broadcast-iframe"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                />
+                <>
+                  <iframe
+                    src={active.embedUrl}
+                    title={active.name}
+                    className="live-broadcast-iframe"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                  />
+                  {active.watchUrl && <a className="live-broadcast-watch-link" href={active.watchUrl} target="_blank" rel="noreferrer">إذا لم يعمل البث هنا، افتحه مباشرة في YouTube ↗</a>}
+                </>
               )}
               <div className="live-broadcast-player-bar">
                 <div className="live-broadcast-player-label">

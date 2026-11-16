@@ -12,6 +12,7 @@ const migrationFiles = [
   "drizzle/neon/0001_application_schema.sql",
   "drizzle/neon/0002_control_room_roles.sql",
   "drizzle/neon/0003_control_room_audit.sql",
+  "drizzle/neon/0004_assistant_memories.sql",
 ];
 
 const sql = neon(connectionString);

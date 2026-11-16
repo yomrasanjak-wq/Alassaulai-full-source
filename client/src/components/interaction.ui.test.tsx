@@ -11,10 +11,17 @@ vi.mock("@/lib/trpc", () => ({
       visitorCount: { useQuery: () => ({ data: 0, isLoading: false, refetch: vi.fn() }) },
       logout: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock }) },
     },
+    partners: { activeAds: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) } },
     ai: {
       chat: {
         useMutation: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),
       },
+      memoryStatus: { useQuery: () => ({ data: { enabled: false }, isLoading: false, refetch: vi.fn() }) },
+      getMemory: { useQuery: () => ({ data: { memory: null }, isLoading: false, refetch: vi.fn() }) },
+      enableMemory: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
+      updateMemory: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
+      disableMemory: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
+      deleteMemory: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },
     },
     control: {
       submit: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) },

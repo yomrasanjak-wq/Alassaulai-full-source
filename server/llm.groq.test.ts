@@ -36,6 +36,22 @@ describe("Groq-compatible LLM transport", () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe("https://api.groq.com/openai/v1/chat/completions");
   });
 
+  it("omits unsupported reasoning options for Groq chat completions", async () => {
+    process.env.FORGE_API_URL = "https://api.groq.com/openai/v1";
+    process.env.GROQ_API_KEY = "test-key";
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { invokeLLM } = await import("./_core/llm");
+
+    await invokeLLM({
+      messages: [{ role: "user", content: "hello" }],
+      reasoning: { effort: "minimal" },
+    });
+
+    const payload = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(payload).not.toHaveProperty("reasoning");
+  });
+
   it("does not retry a non-transient client error", async () => {
     process.env.FORGE_API_URL = "https://api.groq.com/openai/v1";
     process.env.GROQ_API_KEY = "test-key";

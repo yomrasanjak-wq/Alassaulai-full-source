@@ -12,6 +12,7 @@ import { AssistantReply, type VoiceGender } from "@/components/AssistantReply";
 import { RouteMapCard } from "@/components/RouteMapCard";
 import { parseRouteRequest, type RouteRequest } from "@shared/routeRequest";
 import { getSeason } from "@shared/season";
+import { DESTINATION_GALLERY } from "@shared/tourismCatalog";
 import { VoiceSelector } from "@/components/VoiceSelector";
 import { NotificationCenter, type AppNotification, type NotificationTone } from "@/components/NotificationCenter";
 import { startLogin } from "@/const";
@@ -28,6 +29,7 @@ import {
   Bell,
   BookOpen,
   Bot,
+  BrainCircuit,
   BriefcaseBusiness,
   Camera,
   CarFront,
@@ -59,6 +61,7 @@ import {
   Phone,
   Play,
   Search,
+  Scale,
   Send,
   Settings2,
   ShieldCheck,
@@ -120,69 +123,6 @@ function formatControlAuditDetails(raw: string | null | undefined): string {
     return raw.slice(0, 180);
   }
 }
-
-type DestinationGalleryItem = {
-  name: string;
-  region: string;
-  category: string;
-  image: string | null;
-  alt: string;
-  query: string;
-  credit?: string;
-  sourceUrl?: string;
-  licenseLabel?: string;
-  licenseUrl?: string;
-};
-
-const DESTINATION_GALLERY: DestinationGalleryItem[] = [
-  { name: "شاطئ قانيتا", region: "طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "الواجهة الساحلية والممشى في طرابزون", query: "Ganita Sahili Trabzon" },
-  { name: "الحديقة النباتية", region: "طرابزون", category: "طرابزون", image: "https://www.trabzon.bel.tr/img/SehriKesfet/SosyalTesis/botanik.jpg", alt: "الحديقة النباتية في طرابزون، أشجار ومسارات خضراء داخل الحديقة", credit: "Trabzon Büyükşehir Belediyesi", sourceUrl: "https://www.trabzon.bel.tr/Web/SehriKesfet", query: "Trabzon Botanik Parkı" },
-  { name: "أكواريوم طرابزون", region: "طرابزون", category: "طرابزون", image: "https://www.trabzonortahisar.bel.tr/uploads/PROJELER/6/dsc-8328-ok.jpg", alt: "المدخل الحجري الرسمي لأكواريوم طرابزون في وادي زاغنوس", credit: "Ortahisar Belediyesi", sourceUrl: "https://www.trabzonortahisar.bel.tr/projeler/trabzon-tunel-akvaryum/6", query: "Trabzon Tunnel Aquarium" },
-  { name: "الميدان", region: "طرابزون", category: "طرابزون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Trabzon_Meydan.jpg/960px-Trabzon_Meydan.jpg", alt: "ميدان طرابزون وحديقته ومقاهيه في وسط المدينة", credit: "David Bacon", sourceUrl: "https://commons.wikimedia.org/wiki/File:Trabzon_Meydan.jpg", licenseLabel: "CC BY 2.0", licenseUrl: "https://creativecommons.org/licenses/by/2.0/", query: "Trabzon Meydan Parkı" },
-  { name: "مطل بوزتبه", region: "طرابزون", category: "طرابزون", image: "https://www.trabzonortahisar.bel.tr/uploads/PROJELER/22/dsc-0342.jpg", alt: "المطل الزجاجي في بوزتبه بإطلالة بانورامية على مدينة طرابزون والبحر الأسود", credit: "بلدية أورتاحصار – طرابزون", sourceUrl: "https://www.trabzonortahisar.bel.tr/projeler/boztepe-volkan-konak-seyir-terasi/22", query: "Boztepe Trabzon seyir terası" },
-  { name: "قصر أتاتورك", region: "طرابزون", category: "طرابزون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Atat%C3%BCrk_K%C3%B6%C5%9Fk%C3%BC-Trabzon-01.jpg/960px-Atat%C3%BCrk_K%C3%B6%C5%9Fk%C3%BC-Trabzon-01.jpg", alt: "قصر أتاتورك التاريخي في طرابزون", credit: "Kadıoğlu Muhsin", sourceUrl: "https://commons.wikimedia.org/wiki/File:Atat%C3%BCrk_K%C3%B6%C5%9Fk%C3%BC-Trabzon-01.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Atatürk Köşkü Trabzon" },
-  { name: "بحيرة سيرا (سيراغول)", region: "أكشابات", category: "طرابزون", image: "https://www.akcaabat.bel.tr/uploads/TurizmRehberi/8/dji-0050.jpg", alt: "بحيرة سيرا وسط التلال الخضراء في أكشابات بطرابزون", credit: "بلدية أكشابات", sourceUrl: "https://www.akcaabat.bel.tr/turizm-rehberi-detay.aspx?id=8", query: "Sera Gölü Trabzon" },
-  { name: "الممشى الجديد بجوار حديقة الجمهورية", region: "كاش أوستو، يومرا", category: "يومرا وكاشوستو", image: "https://www.yomra.bel.tr/upload/Foto/FC5061621D52588789A8103779FE408F_130031764507293_cn7k7c5yto56l4jzojqe.jpg", alt: "ممشى المشاة والمسارات الزرقاء للدراجات بجوار حديقة الجمهورية في كاش أوستو، يومرا؛ صورة من بلدية يومرا", credit: "Yomra Belediyesi", sourceUrl: "https://www.yomra.bel.tr/Proje/2973/cumhuriyet-parkimiz-gorkemli-bir-torenle-hizmete-acildi", query: "Kaşüstü Cumhuriyet Parkı Ongun Caddesi Yomra Trabzon" },
-  { name: "ممشى يومرا الساحلي والقوارب", region: "يومرا", category: "يومرا وكاشوستو", image: "https://s2.wklcdn.com/image_722/21665961/265606049/154801553.700x525.jpg", alt: "ممشى يومرا الساحلي بجانب البحر، مع لوحة منطقة الرياضة والتنزه والاستراحة التابعة لبلدية يومرا", credit: "صورة مسار Yomra Sahil Yürüyüş Yolu – Wikiloc", sourceUrl: "https://tr.wikiloc.com/yuruyus-rotalari/yomra-sahil-yuruyus-yolu-265606039", query: "Yomra Sahil Yürüyüş Yolu balıkçı barınakları" },
-  { name: "مطعم الطائرة", region: "طريق يومرا", category: "يومرا وكاشوستو", image: "https://ekovitrincom.teimg.com/ekovitrin-com/uploads/2023/06/aw919022-08.jpg", alt: "مطعم Terminal Pide داخل طائرة ركاب محوّلة إلى مطعم في يومرا؛ صورة خارجية للطائرة ومدخلها", credit: "Ekovitrin", sourceUrl: "https://www.ekovitrin.com/pistten-cikan-ucagi-pide-salonu-yaptilar-turistler-akin-ediyor", query: "Terminal Pide Uçak Cafe Restaurant Yomra" },
-  { name: "منشأة Cazılar Deresi في أوزديل", region: "أوزديل، يومرا", category: "يومرا وكاشوستو", image: "https://www.yomra.bel.tr/upload/Foto/7C3B3139A4ECAD41403C0E3BFF9CE55D_159420192241668_d5yshowlekpwgpjum9rs.jpg", alt: "مبنى ومنطقة استقبال منشأة Cazılar Deresi في أوزديل، يومرا", credit: "Yomra Belediyesi", sourceUrl: "https://yomra.bel.tr/Sosyal-Faaliyet/2452/cazilar-deresi-alabalik-tesisi-ziyareti", query: "Cazılar Deresi Alabalık Tesisi Özdil Yomra" },
-  { name: "مرتفعات يومرا", region: "يومرا", category: "يومرا وكاشوستو", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5f/Maden%2C_%C3%96zdil_-_Yomra%2C_Trabzon.jpg/960px-Maden%2C_%C3%96zdil_-_Yomra%2C_Trabzon.jpg", alt: "طريق ومنازل معدن في أوزديل التابعة ليومرا، طرابزون", credit: "Sezer357", sourceUrl: "https://commons.wikimedia.org/wiki/File:Maden,_%C3%96zdil_-_Yomra,_Trabzon.jpg", licenseLabel: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/", query: "Yomra Yaylası Trabzon" },
-  { name: "أوزنجول", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/modern-uzungol.webp", alt: "بحيرة أوزنجول والجبال المحيطة", query: "Uzungöl Trabzon" },
-  { name: "مرتفعات ديمركابي", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Demirkap%C4%B1_Yaylas%C4%B1%2C_Trabzon_2014.jpg/960px-Demirkap%C4%B1_Yaylas%C4%B1%2C_Trabzon_2014.jpg", alt: "مشهد مرتفعات ديمركابي في تشايكارا وقرية الجبل بين المنحدرات الخضراء", credit: "Hamdigumus", sourceUrl: "https://commons.wikimedia.org/wiki/File:Demirkap%C4%B1_Yaylas%C4%B1,_Trabzon_2014.jpg", licenseLabel: "CC0 1.0", licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/", query: "Demirkapı Yaylası Çaykara" },
-  { name: "السلطان مراد", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Trabzon_Sultan_Murat_Yaylas%C4%B1_Yolu.jpg/960px-Trabzon_Sultan_Murat_Yaylas%C4%B1_Yolu.jpg", alt: "طريق ومرتفعات السلطان مراد في طرابزون", credit: "Muhammet Dilmaç", sourceUrl: "https://commons.wikimedia.org/wiki/File:Trabzon_Sultan_Murat_Yaylas%C4%B1_Yolu.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Sultan Murat Yaylası Trabzon" },
-  { name: "حيدر نبي", region: "أكشابات", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/c/cf/Hidirnebi.jpg", alt: "هضبة حيدر نبي في طرابزون", credit: "3512495a", sourceUrl: "https://commons.wikimedia.org/wiki/File:Hidirnebi.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Hıdırnebi Yaylası Trabzon" },
-  { name: "مغارة تشال", region: "دوزكوي", category: "أوزنجول والمرتفعات", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/%C3%87al_Magaras%C4%B1.jpg/960px-%C3%87al_Magaras%C4%B1.jpg", alt: "مدخل ومشهد من مغارة تشال في دوزكوي", credit: "Yazar Haber (إذن إعادة استخدام موثق لدى Wikimedia Commons)", sourceUrl: "https://commons.wikimedia.org/wiki/File:%C3%87al_Magaras%C4%B1.jpg", licenseLabel: "إذن إعادة استخدام موثق", query: "Çal Mağarası Trabzon" },
-  { name: "دير صوميلا", region: "ماتشكا", category: "طرابزون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/S%C3%BCmela_Manast%C4%B1r%C4%B1.jpg/1280px-S%C3%BCmela_Manast%C4%B1r%C4%B1.jpg", alt: "دير صوميلا التاريخي على سفح الجبل في ماتشكا", credit: "Selçuk Bağrışen", sourceUrl: "https://commons.wikimedia.org/wiki/File:S%C3%BCmela_Manast%C4%B1r%C4%B1.jpg", licenseLabel: "GNU Free Documentation License", licenseUrl: "https://www.gnu.org/licenses/old-licenses/fdl-1.2.html", query: "Sümela Manastırı Trabzon" },
-  { name: "هامسي كوي وزيقانا", region: "ماتشكا", category: "أوزنجول والمرتفعات", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Hamsik%C3%B6y_trabzon_-_panoramio.jpg/500px-Hamsik%C3%B6y_trabzon_-_panoramio.jpg", alt: "مشهد طبيعي من منطقة هامسي كوي في ماتشكا، طرابزون", credit: "bynyalcin", sourceUrl: "https://commons.wikimedia.org/wiki/File:Hamsik%C3%B6y_trabzon_-_panoramio.jpg", licenseLabel: "CC BY 3.0", licenseUrl: "https://creativecommons.org/licenses/by/3.0/", query: "Hamsiköy Zigana Trabzon" },
-  { name: "بحيرة مافي غول", region: "قيرسون", category: "أوردو وقيرسون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Giresun_Mavi_G%C3%B6l.jpg/960px-Giresun_Mavi_G%C3%B6l.jpg", alt: "المياه الفيروزية والشلالات في بحيرة مافي غول بقيرسون", credit: "Thrdynr", sourceUrl: "https://commons.wikimedia.org/wiki/File:Giresun_Mavi_G%C3%B6l.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Mavi Göl Kuzalan Giresun" },
-  { name: "واجهة أوردو البحرية", region: "أوردو", category: "أوردو وقيرسون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Ordu_sahil_-_panoramio.jpg/800px-Ordu_sahil_-_panoramio.jpg", alt: "واجهة أوردو البحرية على ساحل البحر الأسود", credit: "Öner Akgün", sourceUrl: "https://commons.wikimedia.org/wiki/File:Ordu_sahil_-_panoramio.jpg", licenseLabel: "CC BY-SA 3.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/", query: "Ordu sahil" },
-{ name: "بيرشمبه وياسون بورنو", region: "أوردو", category: "أوردو وقيرسون", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Cape_Jason_-_Yason_Burnu%2C_Per%C5%9Fembe_-_Ordu_01.jpg/1024px-Cape_Jason_-_Yason_Burnu%2C_Per%C5%9Fembe_-_Ordu_01.jpg", alt: "رأس ياسون وكنيسة جيسون على ساحل بيرشمبه في أوردو", credit: "Zeynel Cebeci", sourceUrl: "https://commons.wikimedia.org/wiki/File:Cape_Jason_-_Yason_Burnu,_Per%C5%9Fembe_-_Ordu_01.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Yason Burnu Perşembe Ordu" },
-  { name: "ساحل غيرسون", region: "قيرسون", category: "أوردو وقيرسون", image: "/images/modern-giresun.webp", alt: "مشهد ساحلي من غيرسون", query: "Giresun Sahil" },
-  { name: "قلعة ريزا وحدائق الشاي", region: "ريزا", category: "ريزا وآيدر", image: "/images/modern-rize.webp", alt: "الطبيعة ومزارع الشاي في ريزا", query: "Rize Kalesi çay bahçeleri" },
-  { name: "حديقة زراعات النباتية للشاي", region: "ريزا – مركز المدينة", category: "ريزا وآيدر", image: "https://www.kulturportali.gov.tr/repoKulturPortali/large/26022013/8bd0fad5-1e76-4733-bedc-d87774d7ecfc.JPG?format=jpg&quality=50", alt: "درجات وممرات وسط الأشجار والنباتات في حديقة زراعات النباتية للشاي بمدينة ريزا؛ صورة من أرشيف مديرية الثقافة والسياحة", credit: "وزارة الثقافة والسياحة التركية – أرشيف ريزا", sourceUrl: "https://www.kulturportali.gov.tr/turkiye/rize/gezilecekyer/botanik-ziraat-cay-bahcesi", query: "Botanik Ziraat Çay Bahçesi Rize" },
-  { name: "برج كأس الشاي العملاق", region: "ريزا – سوق الشاي", category: "ريزا وآيدر", image: "https://www.rizetakip.com/Arsiv/Haber/2024/08/12/Fotograf_1723462497.webp", alt: "برج كأس الشاي العملاق في مجمع Çay Çarşısı بمدينة ريزا بإضاءته الليلية", credit: "Rize Takip", sourceUrl: "https://www.rizetakip.com/Haber/rize-cay-carsisi-bolge-turizmine-katki-sagliyor", query: "Rize Çay Çarşısı Bardak Kule" },
-  { name: "وادي فيرتينا وزيل قلعة", region: "ريزا", category: "ريزا وآيدر", image: "/images/firtina-river.webp", alt: "نهر فيرتينا بين الجبال الخضراء", query: "Fırtına Vadisi Zilkale Rize" },
-  { name: "مرتفعات آيدر", region: "ريزا", category: "ريزا وآيدر", image: "/images/ayder.webp", alt: "مرتفعات آيدر الخضراء", query: "Ayder Yaylası Rize" },
-  { name: "شلالات الشمال التركي", region: "وجهات متعددة", category: "ريزا وآيدر", image: "/images/modern-waterfall.webp", alt: "شلال بين الغابات الخضراء", query: "Ağaran Şelalesi Rize" },
-  { name: "سامسون", region: "ساحل البحر الأسود", category: "أوردو وقيرسون", image: "/images/modern-samsun.webp", alt: "سامسون على البحر الأسود", query: "Samsun sahil" },
-  { name: "إسطنبول", region: "إسطنبول", category: "إسطنبول", image: "/images/modern-istanbul.webp", alt: "مشهد من إسطنبول", query: "Istanbul Turkey" },
-  { name: "تلفريك ومرتفعات بوزتبه", region: "أوردو", category: "أوردو وقيرسون", image: "/images/modern-ordu.webp", alt: "تلفريك بوزتبه وإطلالة مدينة أوردو", query: "Ordu Boztepe Teleferik" },
-  { name: "شاطئ فاتسا وممشى البحر", region: "فاتسا، أوردو", category: "أوردو وقيرسون", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Fatsa_Sahil.jpg/960px-Fatsa_Sahil.jpg", alt: "طريق الواجهة البحرية في فاتسا مع الممشى والبحر والمباني الساحلية", credit: "Eğitmen Mahmut", sourceUrl: "https://commons.wikimedia.org/wiki/File:Fatsa_Sahil.jpg", licenseLabel: "CC BY-SA 3.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/", query: "Fatsa sahil Ordu" },
-  { name: "شلال كوزالان", region: "قيرسون", category: "أوردو وقيرسون", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8b/Kuzalan_%C5%9Felalesi.jpg/960px-Kuzalan_%C5%9Felalesi.jpg", alt: "شلال كوزالان الطبيعي في ولاية قيرسون", credit: "Ruveydakursun", sourceUrl: "https://commons.wikimedia.org/wiki/File:Kuzalan_%C5%9Felalesi.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Kuzalan Şelalesi Giresun" },
-  { name: "ساحل يشيل يالي – أرسين", region: "أرسين، طرابزون", category: "الساحل الشرقي", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/Ye%C5%9Filyal%C4%B1_Arsin.jpg/960px-Ye%C5%9Filyal%C4%B1_Arsin.jpg", alt: "الواجهة الساحلية في يشيل يالي بمنطقة أرسين مع الطريق والبحر الأسود", credit: "Tarih", sourceUrl: "https://commons.wikimedia.org/wiki/File:Ye%C5%9Filyal%C4%B1_Arsin.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Yeşilyalı Arsin sahil Trabzon" },
-  { name: "سورميني وسوق السكاكين", region: "سورميني", category: "الساحل الشرقي", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/S%C3%BCrmene_knife.jpg/1280px-S%C3%BCrmene_knife.jpg", alt: "سكاكين سورميني التركية التقليدية وصناعتها اليدوية", credit: "Macukali", sourceUrl: "https://commons.wikimedia.org/wiki/File:S%C3%BCrmene_knife.jpg", licenseLabel: "CC BY-SA 3.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/", query: "Sürmene bıçakçılar çarşısı" },
-  { name: "مصانع الشاي في سورميني", region: "سورميني", category: "الساحل الشرقي", image: "https://okuldisiogrenme-cdn-small.eba.gov.tr/uploads/places/69124c4b89498.jpg", alt: "خطوط معالجة أوراق الشاي داخل مصنع شاي سورميني؛ صورة منشأة Çaykur في سورميني", credit: "EBA – Okul Dışı Öğrenme", sourceUrl: "https://okuldisiogrenme.eba.gov.tr/place-detail/surmene-caykur-fabrikasi-5461", query: "Sürmene çay fabrikası" },
-  { name: "شلال أراكلي الكبير", region: "أراكلي، طرابزون", category: "الساحل الشرقي", image: "https://commons.wikimedia.org/wiki/Special:FilePath/Asmasu_%C5%9Felalesi.jpg?width=960", alt: "شلال أسماسو في قضاء أراكلي بطرابزون", credit: "Erkut Meral", sourceUrl: "https://commons.wikimedia.org/wiki/File:Asmasu_%C5%9Felalesi.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Araklı Asmasu Şelalesi Trabzon" },
-  { name: "مركز أوف", region: "أوف، طرابزون", category: "الساحل الشرقي", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d8/Of_merkez.jpg/960px-Of_merkez.jpg", alt: "مشهد من مركز قضاء أوف في ولاية طرابزون؛ الصورة للمدينة وليست للشاطئ", credit: "Tarih", sourceUrl: "https://commons.wikimedia.org/wiki/File:Of_merkez.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "Of merkez Trabzon" },
-  { name: "ممشى وحديقة إيوف", region: "قرب فوروم طرابزون", category: "طرابزون", image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7e/Olimpiyat_Park_Torii%2C_Trabzon.jpg/960px-Olimpiyat_Park_Torii%2C_Trabzon.jpg", alt: "المدخل الرئيسي لحديقة إيوف الأولمبية في طرابزون", credit: "Robot8A", sourceUrl: "https://commons.wikimedia.org/wiki/File:Olimpiyat_Park_Torii,_Trabzon.jpg", licenseLabel: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", query: "EYOF Park Trabzon" },
-  { name: "فوروم طرابزون مول", region: "قرب فوروم طرابزون", category: "طرابزون", image: "https://www.artasholding.com/Images/Photos/5b2bbdef-4609-4793-a22b-44e3d71e6010.jpg", alt: "الواجهة الخارجية لمول فوروم طرابزون", credit: "Artas Holding", sourceUrl: "https://www.artasholding.com/Images/Photos/5b2bbdef-4609-4793-a22b-44e3d71e6010.jpg", query: "Forum Trabzon Shopping Mall Turkey" },
-  { name: "مطعم إيوف المجدد", region: "قرب فوروم طرابزون", category: "طرابزون", image: "https://kurumsal.trabzon.bel.tr/Upload/WebAdmin/Icerik/20260110013852uZc0o.jpeg", alt: "القاعة الداخلية لمطعم إيوف بعد تجديد مرافقه وافتتاحه في يناير 2026", credit: "Trabzon Büyükşehir Belediyesi", sourceUrl: "https://www.trabzon.bel.tr/Web/Icerik/eyof-sosyal-tesisleri-yeni-yuzuyle-hizmete-acildi", query: "EYOF Park Trabzon" },
-  { name: "مقهى إيوف والجلسات الخارجية", region: "قرب فوروم طرابزون", category: "طرابزون", image: "https://kurumsal.trabzon.bel.tr/Upload/WebAdmin/Icerik/20240827011620HGHbK.jpeg", alt: "جلسات المقهى الخارجية في مرافق إيوف بحديقة الأولمبياد؛ صورة أرشيفية رسمية للموقع", credit: "Trabzon Büyükşehir Belediyesi", sourceUrl: "https://trabzon.bel.tr/Icerik?id=eyof-binlerce-emekliyi-agirladi", query: "EYOF Park Trabzon" },
-  { name: "حديقة إيوف العائلية", region: "قرب فوروم طرابزون", category: "طرابزون", image: "https://www.trabzon.bel.tr/img/SehriKesfet/SosyalTesis/eyofparki.jpg", alt: "صورة تعريفية لحديقة إيوف الأولمبية ومرافقها العائلية من الموقع الرسمي لبلدية طرابزون؛ يضم الموقع مساحات للمشي والاستراحة ومرافق اجتماعية", credit: "بلدية طرابزون الكبرى", sourceUrl: "https://www.trabzon.bel.tr/Web/SehriKesfet", query: "EYOF Park Trabzon" },
-  { name: "زلاجة فورابارك الجبلية في كاش أوستو", region: "يومرا، كاش أوستو", category: "يومرا وكاشوستو", image: "https://61saatcom.teimg.com/61saat-com/uploads/2026/08/a-w763199-01.jpg", alt: "زائر يستخدم مسار الزلاجة الجبلية في فورابارك، على مسار معدني مرتفع وسط مرتفعات كاش أوستو", credit: "61saat / صور İHA", sourceUrl: "https://haber-trabzon.com/trabzonda-dag-kizagi-yogun-ilgi-uzun-kuyruklar-olusuyor/", query: "Forapark Dağ Kızağı Merkezi Kaşüstü Yomra Trabzon" },
-  { name: "شلال آغاران", region: "تشايلي، ريزا", category: "ريزا وآيدر", image: "https://upload.wikimedia.org/wikipedia/commons/0/09/A%C4%9Faran_%C5%9Eelalesi.JPG", alt: "شلال آغاران في ولاية ريزا", credit: "Karduelis", sourceUrl: "https://commons.wikimedia.org/wiki/File:A%C4%9Faran_%C5%9Eelalesi.JPG", licenseLabel: "ملكية عامة", query: "Ağaran Şelalesi Çayeli Rize" },
-
-] as const;
 
 const GALLERY_FILTERS = ["الكل", "طرابزون", "يومرا وكاشوستو", "أوزنجول والمرتفعات", "ريزا وآيدر", "أوردو وقيرسون", "الساحل الشرقي", "إسطنبول"] as const;
 
@@ -780,6 +720,8 @@ export default function Home() {
     };
   }, [photoBookOpen]);
   const [residentServicesOpen, setResidentServicesOpen] = useState(false);
+  const [saudiServicesOpen, setSaudiServicesOpen] = useState(false);
+  const [familyBusinessesOpen, setFamilyBusinessesOpen] = useState(false);
   const [residentGroupOpen, setResidentGroupOpen] = useState<Record<string, boolean>>({});
   const [residentPhrasebookOpen, setResidentPhrasebookOpen] = useState(false);
   const [residentHealthOpen, setResidentHealthOpen] = useState(false);
@@ -796,6 +738,11 @@ export default function Home() {
   const [selectedPlace, setSelectedPlace] = useState<CityDestination | null>(null);
   const [liveStatus, setLiveStatus] = useState<LiveStatus>("loading");
   const [chatOpen, setChatOpen] = useState(false);
+  const [memoryPanelOpen, setMemoryPanelOpen] = useState(false);
+  const [memoryDisplayName, setMemoryDisplayName] = useState("");
+  const [memoryPreferences, setMemoryPreferences] = useState("");
+  const [memoryTopics, setMemoryTopics] = useState("");
+  const [memorySummary, setMemorySummary] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [chatImageDataUrl, setChatImageDataUrl] = useState<string | undefined>();
   const [chatImageBusy, setChatImageBusy] = useState(false);
@@ -828,6 +775,7 @@ export default function Home() {
   };
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const welcomeAddedRef = useRef(false);
   const [isListening, setIsListening] = useState(false);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const speechIdleTimerRef = useRef<number | null>(null);
@@ -878,6 +826,13 @@ export default function Home() {
   const [editingDiscoveryId, setEditingDiscoveryId] = useState<number | null>(null);
   const [editingDiscoveryName, setEditingDiscoveryName] = useState("");
   const [controlCommand, setControlCommand] = useState("");
+  const [adTitle, setAdTitle] = useState("");
+  const [adDescription, setAdDescription] = useState("");
+  const [adCountry, setAdCountry] = useState<"SA" | "TR">("SA");
+  const [adImageUrl, setAdImageUrl] = useState("");
+  const [adTargetUrl, setAdTargetUrl] = useState("");
+  const [visiblePartnerAd, setVisiblePartnerAd] = useState<{ id: number; title: string; description: string; country: string; imageUrl: string | null; targetUrl: string } | null>(null);
+
   const [controlTitle, setControlTitle] = useState("طلب يحتاج متابعة");
   const [controlCategory, setControlCategory] = useState<"general" | "bug" | "content" | "partner" | "security">("general");
   const [controlPriority, setControlPriority] = useState<"low" | "normal" | "high" | "urgent">("normal");
@@ -907,10 +862,74 @@ export default function Home() {
   const dir = language === "AR" ? "rtl" : "ltr";
   const season = getSeason();
   const chatMutation = trpc.ai.chat.useMutation();
+  const assistantMemoryStatusQuery = trpc.ai.memoryStatus.useQuery(undefined, {
+    enabled: Boolean(auth.user), staleTime: 15_000,
+  });
+  const assistantMemoryQuery = trpc.ai.getMemory.useQuery(undefined, {
+    enabled: Boolean(auth.user) && memoryPanelOpen, staleTime: 10_000,
+  });
+  useEffect(() => {
+    const memory = assistantMemoryQuery.data?.memory;
+    if (!memory) return;
+    setMemoryDisplayName(memory.displayName ?? "");
+    setMemoryPreferences(memory.preferences.join("\n"));
+    setMemoryTopics(memory.activeTopics.join("\n"));
+    setMemorySummary(memory.recentSummary ?? "");
+  }, [assistantMemoryQuery.data]);
+  const assistantMemoryEnableMutation = trpc.ai.enableMemory.useMutation({
+    onSuccess: () => { void assistantMemoryStatusQuery.refetch(); void assistantMemoryQuery.refetch(); },
+  });
+  const assistantMemoryUpdateMutation = trpc.ai.updateMemory.useMutation({
+    onSuccess: () => { void assistantMemoryQuery.refetch(); void assistantMemoryStatusQuery.refetch(); notify("تم حفظ ذاكرتك", "سيستخدم المساعد هذه المعلومات في محادثاتك القادمة.", "success"); },
+    onError: (error) => notify("تعذر حفظ الذاكرة", error.message, "error"),
+  });
+  const assistantMemoryDisableMutation = trpc.ai.disableMemory.useMutation({
+    onSuccess: () => { void assistantMemoryStatusQuery.refetch(); void assistantMemoryQuery.refetch(); notify("تم إيقاف الذاكرة", "لن يستخدم المساعد ذكرياتك حتى تعيد تفعيلها.", "success"); },
+    onError: (error) => notify("تعذر إيقاف الذاكرة", error.message, "error"),
+  });
+  const assistantMemoryDeleteMutation = trpc.ai.deleteMemory.useMutation({
+    onSuccess: () => { void assistantMemoryStatusQuery.refetch(); void assistantMemoryQuery.refetch(); setMemoryDisplayName(""); setMemoryPreferences(""); setMemoryTopics(""); setMemorySummary(""); notify("تم حذف الذاكرة", "حُذفت المعلومات المحفوظة لهذا الحساب.", "success"); },
+    onError: (error) => notify("تعذر حذف الذاكرة", error.message, "error"),
+  });
   const controlMutation = trpc.control.submit.useMutation();
   const controlCreateTaskMutation = trpc.control.createTask.useMutation();
+  const partnerAdsQuery = trpc.partners.activeAds.useQuery(undefined, { staleTime: 60_000, refetchInterval: 120_000 });
+
   const controlRequestsQuery = trpc.control.list.useQuery(undefined, { staleTime: 10_000, enabled: modal === "control" && Boolean(auth.user) });
   const controlUpdateMutation = trpc.control.update.useMutation({ onSuccess: () => void controlRequestsQuery.refetch() });
+  useEffect(() => {
+    if (typeof window === "undefined" || !partnerAdsQuery.data?.length || visiblePartnerAd) return;
+    if (window.sessionStorage.getItem("alassaul-partner-ad-dismissed") === "1") return;
+    setVisiblePartnerAd(partnerAdsQuery.data[0]);
+  }, [partnerAdsQuery.data, visiblePartnerAd]);
+  const submitPartnerAd = async () => {
+    const title = adTitle.trim(), description = adDescription.trim(), targetUrl = adTargetUrl.trim();
+    if (!title || !description || !targetUrl) { notify("أكمل بيانات الإعلان", "العنوان والوصف والرابط مطلوبة.", "error"); return; }
+    try {
+      const parsedTarget = new URL(targetUrl);
+      if (!["https:", "http:"].includes(parsedTarget.protocol)) throw new Error("رابط الإعلان غير صالح.");
+      let imageUrl = "";
+      if (adImageUrl.trim()) {
+        const parsedImage = new URL(adImageUrl.trim());
+        if (parsedImage.protocol !== "https:") throw new Error("رابط الصورة يجب أن يبدأ بـ HTTPS.");
+        imageUrl = parsedImage.toString();
+      }
+      const payload = { title: title.slice(0, 90), description: description.slice(0, 240), country: adCountry, imageUrl, targetUrl: parsedTarget.toString() };
+      await controlCreateTaskMutation.mutateAsync({
+        title: "إعلان شريك: " + payload.title,
+        command: "ALASSAUL_AD_V1\\n" + JSON.stringify(payload),
+        category: "partner",
+        priority: "normal",
+        assignee: "CEO",
+      });
+      setAdTitle(""); setAdDescription(""); setAdImageUrl(""); setAdTargetUrl("");
+      notify("تم حفظ الإعلان للمراجعة", "لن يظهر للزوار حتى تعتمد نشره من قائمة المهام.", "success");
+      void controlRequestsQuery.refetch();
+    } catch (error) {
+      notify("تعذر حفظ الإعلان", error instanceof Error ? error.message : "تحقق من الرابط وحاول مجدداً.", "error");
+    }
+  };
+
   const [incidentTitle, setIncidentTitle] = useState("بلاغ أمني أو تقني");
   const [incidentDescription, setIncidentDescription] = useState("");
   const incidentMutation = trpc.control.reportIncident.useMutation();
@@ -1058,6 +1077,17 @@ export default function Home() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, chatOpen]);
+
+  useEffect(() => {
+    if (!chatOpen || welcomeAddedRef.current || chatMessages.length > 0) return;
+    welcomeAddedRef.current = true;
+    const welcomeText = language === "AR"
+      ? "أهلاً بك في ALASSAUL-AI، مساعدك الذكي."
+      : language === "TR"
+        ? "ALASSAUL-AI'ye hoş geldiniz. Ben akıllı asistanınızım; Karadeniz destinasyonları, haritalar, geziler, haberler ve daha fazlası hakkında bana soru sorabilirsiniz."
+        : "Welcome to ALASSAUL-AI, your gateway to Türkiye's Black Sea region. I'm your AI assistant. Ask me about destinations, maps, trips, news, and much more.";
+    setChatMessages([{ from: "assistant", text: welcomeText }]);
+  }, [chatOpen, chatMessages.length, language]);
 
   useEffect(() => {
     if (!modal) return;
@@ -1859,7 +1889,7 @@ export default function Home() {
         <div className="container">
           <button type="button" className="resident-services-launcher" onClick={() => setResidentServicesOpen((open) => !open)} aria-expanded={residentServicesOpen} aria-controls="resident-services-content">
             <span className="resident-services-launcher-icon"><UsersRound size={26} /></span>
-            <span className="resident-services-launcher-copy"><strong>خدمات المقيمين</strong><small>الإقامة والمعاملات والخدمات اليومية في يومرا وطرابزون</small><em>{residentServicesOpen ? "إخفاء قائمة الخدمات" : "اضغط لفتح قائمة الخدمات"}</em></span>
+            <span className="resident-services-launcher-copy"><strong>خدمات السعوديين والمقيمين</strong><small>الخدمات الحكومية السعودية، والمعاملات اليومية، ودليل الخدمات في الشمال التركي</small><em>{residentServicesOpen ? "إخفاء قائمة الخدمات" : "اضغط لفتح قائمة الخدمات"}</em></span>
             <span className={`resident-services-launcher-chevron ${residentServicesOpen ? "is-open" : ""}`}><ChevronDown size={22} /></span>
           </button>
           {residentServicesOpen && <div id="resident-services-content" className="resident-services-content">
@@ -1993,6 +2023,93 @@ export default function Home() {
               <a className="resident-service-card resident-service-health" href="https://www.mhrs.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Clock3 size={22} /></span><span className="resident-service-copy"><strong>حجز مواعيد المستشفيات الحكومية</strong><small>بوابة MHRS الرسمية للمواعيد؛ ليست قائمة مناوبات الطوارئ</small></span><ExternalLink size={16} /></a>
             </div>}
           </div>
+
+          <div className="resident-accordion-group resident-saudi-accordion">
+            <button type="button" className="resident-accordion-trigger" aria-expanded={saudiServicesOpen} onClick={() => setSaudiServicesOpen((open) => !open)}>
+              <span><Landmark size={19} /> خدمات السعوديين الحكومية والعدلية</span><ChevronDown size={20} className={saudiServicesOpen ? "is-open" : ""} />
+            </button>
+            {saudiServicesOpen && <div className="resident-local-focus resident-saudi-content">
+              <div className="resident-local-focus-heading">
+                <span className="resident-local-focus-icon"><ShieldCheck size={19} /></span>
+                <div><strong>بوابتك للخدمات اليومية في المملكة</strong><small>روابط مباشرة للمنصات الرسمية. سجّل الدخول بنفسك عبر الموقع أو التطبيق الرسمي، ولا تشارك رمز التحقق أو كلمة المرور.</small></div>
+              </div>
+              <div className="resident-services-grid">
+                <a className="resident-service-card resident-service-saudi" href="https://www.absher.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ShieldCheck size={22} /></span><span className="resident-service-copy"><strong>أبشر</strong><small>خدمات وزارة الداخلية للمواطنين والمقيمين</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://ta.sdaia.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>توكلنا</strong><small>الخدمات الرقمية والوثائق والخدمات المرتبطة</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://najiz.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Landmark size={22} /></span><span className="resident-service-copy"><strong>ناجز</strong><small>المحاكم والوكالات والتنفيذ والخدمات العدلية</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://www.moj.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><BriefcaseBusiness size={22} /></span><span className="resident-service-copy"><strong>وزارة العدل</strong><small>الأنظمة والخدمات العدلية ومعلومات المحاكم</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://my.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ClipboardCheck size={22} /></span><span className="resident-service-copy"><strong>المنصة الوطنية الموحدة</strong><small>دليل الخدمات الحكومية السعودية</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://www.sba.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Scale size={22} /></span><span className="resident-service-copy"><strong>الهيئة السعودية للمحامين</strong><small>دليل المنشآت القانونية والمعلومات المهنية</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://mc.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><BriefcaseBusiness size={22} /></span><span className="resident-service-copy"><strong>وزارة التجارة</strong><small>الخدمات التجارية والسجلات وحماية المستهلك</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://www.hrsd.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>الموارد البشرية</strong><small>خدمات العمل والتنمية الاجتماعية</small></span><ExternalLink size={16} /></a>
+              </div>
+            </div>}
+          </div>
+
+          <div className="resident-accordion-group resident-family-businesses">
+            <button type="button" className="resident-accordion-trigger" aria-expanded={familyBusinessesOpen} onClick={() => setFamilyBusinessesOpen((open) => !open)}>
+              <span><BriefcaseBusiness size={19} /> الشركات والخدمات التجارية</span><ChevronDown size={20} className={familyBusinessesOpen ? "is-open" : ""} />
+            </button>
+            {familyBusinessesOpen && <div className="resident-local-focus family-businesses-content">
+              <div className="resident-local-focus-heading">
+                <span className="resident-local-focus-icon"><Sparkles size={19} /></span>
+                <div><strong>خدمات موثوقة من شركائنا</strong><small>تعرف على الخدمات وتواصل مباشرة مع الجهة المناسبة. نضيف بيانات الفروع وروابطها بعد مطابقتها.</small></div>
+              </div>
+              <div className="family-business-grid">
+                <article className="family-business-card family-business-law">
+                  <div className="family-business-art"><Scale size={30} /><span>LEGAL SERVICES · SAUDI ARABIA</span></div>
+                  <div className="family-business-body">
+                    <span className="family-business-kicker">جدة · خدمات قانونية في جميع مناطق المملكة</span>
+                    <h3>شركة سرادق الحكمة للمحاماة والاستشارات القانونية</h3>
+                    <p>استشارات قانونية، تمثيل وترافع، قضايا تجارية وعمالية وجنائية وأحوال شخصية، عقود، تركات، عقار وتحكيم للأفراد والمنشآت.</p>
+                    <small><MapPin size={14} /> أبحر الشمالية · حي الياقوت · جدة</small>
+                    <div className="family-business-actions">
+                      <a href="https://saradiqalhikmah.com/" target="_blank" rel="noreferrer">الموقع الرسمي <ExternalLink size={14} /></a>
+                      <a href="https://wa.me/966550058638" target="_blank" rel="noreferrer">واتساب المكتب <Phone size={14} /></a>
+                      <a href="tel:+966550058638">اتصال <Phone size={14} /></a>
+                    </div>
+                  </div>
+                </article>
+                <article className="family-business-card family-business-flowers">
+                  <div className="family-business-art"><Heart size={30} /><span>FLOWERS · EVENTS · BRIDAL</span></div>
+                  <div className="family-business-body">
+                    <span className="family-business-kicker">ينبع الصناعية · حي الصبح</span>
+                    <h3>بانسي فلاور – Pansy Flower</h3>
+                    <p>ورد وباقات وتنسيق حفلات، مع خدمة نقل دبش العروس بسيارة خاصة مجهزة إلى مناطق المملكة، بحسب تفاصيل الخدمة التي زودتمونا بها.</p>
+                    <small><MapPin size={14} /> ينبع الصناعية · حي الصبح</small>
+                    <div className="family-business-actions">
+                      <a href="https://maps.yango.com/ar-sa/org/128374059647/" target="_blank" rel="noreferrer">الموقع على الخريطة <ExternalLink size={14} /></a>
+                      <a href="tel:+966542276625">اتصال 054 227 6625 <Phone size={14} /></a>
+                    </div>
+                  </div>
+                </article>
+                <article className="family-business-card family-business-wholesale">
+                  <div className="family-business-art"><Heart size={30} /><span>WHOLESALE FLOWERS</span></div>
+                  <div className="family-business-body">
+                    <span className="family-business-kicker">المدينة المنورة · توريد بالجملة</span>
+                    <h3>بانسي فلاور – فرع المدينة المنورة</h3>
+                    <p>بيع وتوزيع الورد بالجملة لتجار ومحلات الورد ومجهزي المناسبات في المدينة المنورة ومختلف مناطق المملكة، مع استقبال استفسارات التوريد والتوزيع.</p>
+                    <small><MapPin size={14} /> فرع بانسي فلاور في المدينة المنورة · طريق الملك سعود · حي السكة الحديد</small>
+                    <div className="family-business-actions"><a href="https://www.google.com/maps/search/?api=1&query=Pansy+Flowers+King+Saud+Road+Madinah" target="_blank" rel="noreferrer">عرض موقع المدينة <ExternalLink size={14} /></a><span>فرع معتمد ضمن شبكة بانسي فلاور</span></div>
+                  </div>
+                </article>
+                <article className="family-business-card family-business-optical">
+                  <div className="family-business-art"><Sparkles size={30} /><span>OPTICAL · WHOLESALE</span></div>
+                  <div className="family-business-body">
+                    <span className="family-business-kicker">عالم روما للنظارات</span>
+                    <h3>روما للنظارات</h3>
+                    <p>النظارات الطبية والشمسية والعدسات، مع نشاط التوريد بالجملة وفق تعريفكم. يمكن للزائر التعرف على العلامة والتواصل عبر الموقع الرسمي.</p>
+                    <small><MapPin size={14} /> بيانات فرع الجملة تحتاج تأكيد المدينة والعنوان</small>
+                    <div className="family-business-actions">
+                      <a href="https://www.romaworld.com.sa/" target="_blank" rel="noreferrer">الموقع الرسمي <ExternalLink size={14} /></a>
+                      <a href="tel:+966532550333">اتصال 053 255 0333 <Phone size={14} /></a>
+                    </div>
+                  </div>
+                </article>
+              </div>
+              <p className="family-business-disclaimer">هذه مساحة تعريفية للشركات والخدمات التجارية. تم تحديث الاسم التجاري لبانسي فلاور وفق تأكيد المالك، وتُعرض بيانات التواصل والمواقع بعد التحقق، ويمكن تحديث الصور والعروض ومواعيد العمل من غرفة التحكم لاحقاً.</p>
+            </div>}
+          </div>
           <p className="resident-services-note"><ShieldCheck size={15} /> هذه روابط للبوابات الرسمية وليست استشارة قانونية أو ضمانًا لقبول الطلب. لا تشارك كلمة المرور أو رمز التحقق مع أي شخص، وتأكد من عنوان الموقع قبل إدخال بياناتك. رقم 112 للطوارئ فقط، وللاستفسارات العامة عن الإقامة وشؤون الأجانب استخدم YİMER 157.</p>
           </div>}
         </div>
@@ -2037,6 +2154,11 @@ export default function Home() {
 
       <footer className="site-footer"><div className="container footer-grid"><div className="footer-brand"><img src={ASSETS.mark} alt="" /><strong>ALASSAUL-AI</strong><p>{t.footer}</p></div><div className="footer-links"><span>المنصة</span><button onClick={() => scrollTo("map")}>المدن</button><button onClick={() => scrollTo("live")}>البث المباشر</button><button onClick={() => scrollTo("map")}>الخريطة</button><button onClick={() => scrollTo("tiktok")}>تيك توك</button></div><div className="footer-links"><span>تواصل</span><button onClick={() => setModal("login")}>السكرتير</button><button onClick={() => setModal("control")}>غرفة التحكم</button><button onClick={() => setChatOpen(true)}>المساعد الذكي</button></div><div className="footer-social"><span>تابع الطريق</span><div><a className="social-link" href="https://www.tiktok.com/@trabzon_yomra" target="_blank" rel="noreferrer" aria-label="تيك توك @trabzon_yomra"><Music2 size={17} /></a><button><Instagram size={17} /></button><button><Facebook size={17} /></button><button><Youtube size={17} /></button></div></div></div><div className="container footer-bottom"><span>© 2026 ALASSAUL-AI</span><span>صنع لرحلة أكثر هدوءاً ووضوحاً</span></div></footer>
 
+      {visiblePartnerAd && <aside className="partner-ad-popup" role="dialog" aria-label="إعلان شريك">
+        <button type="button" className="partner-ad-close" aria-label="إغلاق الإعلان" onClick={() => { window.sessionStorage.setItem("alassaul-partner-ad-dismissed", "1"); setVisiblePartnerAd(null); }}><X size={18} /></button>
+        {visiblePartnerAd.imageUrl && <img src={visiblePartnerAd.imageUrl} alt="" loading="lazy" />}
+        <div className="partner-ad-copy"><small>شريك ALASSAUL · {visiblePartnerAd.country}</small><strong>{visiblePartnerAd.title}</strong><p>{visiblePartnerAd.description}</p><a href={visiblePartnerAd.targetUrl} target="_blank" rel="noreferrer">اكتشف العرض <ExternalLink size={14} /></a></div>
+      </aside>}
       {!chatOpen && !photoBookOpen && <div className="mobile-discovery-dock" role="group" aria-label="التنقل السريع">
         <button type="button" onClick={() => scrollTo("map")} aria-label="استكشف المدن">
           <Compass size={19} /><span>استكشف</span>
@@ -2053,19 +2175,32 @@ export default function Home() {
       </div>}
 
       <button className="floating-chat" aria-label="chat" onClick={() => setChatOpen((open) => !open)}><span className="floating-chat-avatar"><img src={ASSETS.officialRobot} alt="" /></span><span>اسأل العسول</span></button>
-      {chatOpen && <aside className="chat-panel" style={{ left: "12px", right: "12px", insetInlineStart: "auto", insetInlineEnd: "auto", marginInline: "auto", transform: "none" }} aria-label="محادثة مساعد ALASSAUL">
+      {chatOpen && <aside className="chat-panel" aria-label="محادثة مساعد ALASSAUL">
         <div className="chat-header">
           <div><span className="chat-avatar official-robot"><img src={ASSETS.officialRobot} alt="روبوت ALASSAUL الرسمي" /></span><span><strong>المتحدث الرسمي · {t.chatTitle}</strong><small><span className="green-ping" /> {chatMutation.isPending ? "يكتب الآن…" : "متصل الآن"}</small></span></div>
-          <button onClick={() => { window.speechSynthesis?.cancel(); setChatOpen(false); }} aria-label="إغلاق المحادثة"><X size={18} /></button>
+          <div className="chat-header-actions">{auth.user && <button type="button" className={`chat-memory-toggle ${memoryPanelOpen ? "active" : ""}`} onClick={() => setMemoryPanelOpen((open) => !open)} aria-label="إعدادات ذاكرتي" title="ذاكرتي"><BrainCircuit size={17} /><span>ذاكرتي</span></button>}<button onClick={() => { window.speechSynthesis?.cancel(); setChatOpen(false); }} aria-label="إغلاق المحادثة"><X size={18} /></button></div>
         </div>
         <div className="chat-statusbar"><span><Sparkles size={13} /> {t.chatIntro}</span><span className="chat-status-live"><span className="green-ping" /> جاهز للرد</span></div>
+        {memoryPanelOpen && auth.user && <section className="assistant-memory-panel" aria-label="إعدادات ذاكرة المساعد">
+          <div className="assistant-memory-heading"><div><strong><BrainCircuit size={17} /> ذاكرتي مع ALASSAUL</strong><small>أنت تتحكم فيما يحتفظ به المساعد عنك.</small></div><button type="button" onClick={() => setMemoryPanelOpen(false)} aria-label="إغلاق إعدادات الذاكرة"><X size={16} /></button></div>
+          {assistantMemoryStatusQuery.isLoading ? <p className="assistant-memory-note">جارٍ تحميل حالة الذاكرة…</p>
+            : !assistantMemoryStatusQuery.data?.enabled ? <div className="assistant-memory-consent"><p>بموافقتك، يمكن للمساعد تذكّر الاسم الذي تختاره واهتماماتك والمواضيع التي تريد متابعتها في زياراتك القادمة. يمكنك تعديلها أو حذفها في أي وقت.</p><button type="button" className="button button-primary" disabled={assistantMemoryEnableMutation.isPending} onClick={() => assistantMemoryEnableMutation.mutate({ consent: true })}>{assistantMemoryEnableMutation.isPending ? "جارٍ التفعيل…" : "أوافق على تفعيل ذاكرتي"}</button><small>لن تُفعّل الذاكرة دون موافقتك.</small></div>
+            : <div className="assistant-memory-editor">
+              {assistantMemoryQuery.isLoading ? <p className="assistant-memory-note">جارٍ تحميل ذكرياتك…</p> : <>
+                <label>الاسم الذي تحب أن يناديك به المساعد<input value={memoryDisplayName} maxLength={80} onChange={(event) => setMemoryDisplayName(event.target.value)} placeholder="اسمك (اختياري)" /></label>
+                <label>اهتماماتك وتفضيلاتك <small>كل نقطة في سطر</small><textarea rows={2} value={memoryPreferences} onChange={(event) => setMemoryPreferences(event.target.value)} placeholder={"مثال: أحب الطبيعة والرحلات الهادئة\nأفضل الإجابات المختصرة"} /></label>
+                <label>مواضيع تريد متابعة الحديث عنها <small>كل موضوع في سطر</small><textarea rows={2} value={memoryTopics} onChange={(event) => setMemoryTopics(event.target.value)} placeholder={"مثال: خطة رحلتي إلى طرابزون\nمشروع أعمل عليه"} /></label>
+                <label>ملخص اختياري لمحادثاتك<textarea rows={2} maxLength={1200} value={memorySummary} onChange={(event) => setMemorySummary(event.target.value)} placeholder="أضف ما تريد من المساعد أن يتذكره…" /></label>
+                <div className="assistant-memory-actions"><button type="button" className="button button-primary" disabled={assistantMemoryUpdateMutation.isPending} onClick={() => assistantMemoryUpdateMutation.mutate({ displayName: memoryDisplayName.trim() || null, preferences: memoryPreferences.split("\n").map((item) => item.trim()).filter(Boolean), activeTopics: memoryTopics.split("\n").map((item) => item.trim()).filter(Boolean), recentSummary: memorySummary.trim() || null })}>{assistantMemoryUpdateMutation.isPending ? "جارٍ الحفظ…" : "حفظ التعديلات"}</button><button type="button" className="assistant-memory-pause" disabled={assistantMemoryDisableMutation.isPending} onClick={() => { if (window.confirm("سيتم إيقاف استخدام ذاكرتك مع الاحتفاظ بالمعلومات لتتمكن من تفعيلها لاحقاً. هل توافق؟")) assistantMemoryDisableMutation.mutate(); }}>{assistantMemoryDisableMutation.isPending ? "جارٍ الإيقاف…" : "إيقاف الذاكرة"}</button><button type="button" className="assistant-memory-delete" disabled={assistantMemoryDeleteMutation.isPending} onClick={() => { if (window.confirm("هل تريد حذف كل المعلومات التي حفظتها الذاكرة لهذا الحساب نهائياً؟")) assistantMemoryDeleteMutation.mutate(); }}>{assistantMemoryDeleteMutation.isPending ? "جارٍ الحذف…" : "حذف ذاكرتي"}</button></div>
+              </>}
+            </div>}
+        </section>}
         <div className="chat-layout">
           <section className="chat-conversation">
             <div className="chat-body">
-              <div className="chat-welcome"><Sparkles size={16} /> أهلاً بك، كيف أستطيع مساعدتك اليوم؟</div>
               <VoiceSelector value={voiceGender} onChange={setVoiceGender} />
               <div className="chat-quick-prompts">{quickPrompts.map((prompt) => <button key={prompt} onClick={() => void askAssistant(prompt)} disabled={chatMutation.isPending}>{prompt}</button>)}</div>
-              {chatMessages.map((message, index) => <div key={`${message.from}-${index}`} className={`chat-message chat-${message.from}`}><span>{renderChatText(message.text)}</span>{message.imageDataUrl && <img className="chat-message-image" src={message.imageDataUrl} alt="الصورة التي أرسلها المستخدم" />}{message.from === "assistant" && <AssistantReply text={message.text} language={language} voiceGender={voiceGender} />}</div>)}
+              {chatMessages.map((message, index) => <div key={`${message.from}-${index}`} className={`chat-message chat-${message.from}`}><span>{renderChatText(message.text)}</span>{message.imageDataUrl && <img className="chat-message-image" src={message.imageDataUrl} alt="الصورة التي أرسلها المستخدم" />}{message.from === "assistant" && <AssistantReply text={message.text} language={language} autoSpeak voiceGender={voiceGender} />}</div>)}
               {chatMutation.isPending && <div className="chat-message chat-assistant chat-thinking"><span className="thinking-dots">● ● ●</span><small>العسول يكتب بالفصحى…</small></div>}
               <div ref={chatEndRef} />
             </div>
@@ -2095,7 +2230,16 @@ export default function Home() {
         {modal === "entertainment" && <div className="modal-content entertainment-modal"><span className="section-eyebrow">PLAY / PAUSE / REPEAT</span><h2>استراحة على ذوقك.</h2><p className="entertainment-intro">اختر نوع الاستراحة؛ يظهر المحتوى المختار فقط حتى يبقى المعرض مرتباً وسهل الاستخدام.</p><div className="entertainment-tabs" role="tablist" aria-label="أقسام الاستراحة"><button type="button" className={entertainmentMode === "video" ? "active" : ""} onClick={() => setEntertainmentMode("video")} role="tab" aria-selected={entertainmentMode === "video"}><Play size={19} /><strong>الفيديو</strong><small>مقاطع الشمال</small></button><button type="button" className={entertainmentMode === "audio" ? "active" : ""} onClick={() => setEntertainmentMode("audio")} role="tab" aria-selected={entertainmentMode === "audio"}><Headphones size={19} /><strong>الموسيقى</strong><small>صوتيات الطريق</small></button><button type="button" className={entertainmentMode === "game" ? "active" : ""} onClick={() => setEntertainmentMode("game")} role="tab" aria-selected={entertainmentMode === "game"}><Ticket size={19} /><strong>الألعاب</strong><small>استراحة ذكية</small></button></div>{entertainmentMode !== "game" && <><input ref={entertainmentInputRef} className="visually-hidden" type="file" accept={entertainmentMode === "video" ? "video/*" : "audio/*"} multiple onChange={handleEntertainmentUpload} /><button type="button" className="media-add-button" onClick={() => entertainmentInputRef.current?.click()}><Upload size={17} /> إضافة {entertainmentMode === "video" ? "فيديو" : "موسيقى"}</button>{mediaUploadMessage && <p className="media-upload-status" role="status">{mediaUploadMessage}</p>}{mediaLibrary.filter((item) => item.kind === entertainmentMode).length ? <div className="media-library">{mediaLibrary.filter((item) => item.kind === entertainmentMode).map((item) => <article className="media-library-item" key={item.id}><div className="media-preview">{item.kind === "video" ? <video src={item.url} controls /> : <audio src={item.url} controls />}</div>{editingMediaId === item.id ? <div className="media-edit-row"><input value={editingMediaName} onChange={(event) => setEditingMediaName(event.target.value)} aria-label={`تعديل اسم ${item.name}`} /><div className="media-edit-actions"><button type="button" onClick={() => void renameMedia(item)}>حفظ</button><button type="button" onClick={() => { setEditingMediaId(null); setEditingMediaName(""); }}>إلغاء</button></div></div> : <div className="media-item-footer"><span title={item.name}>{item.name}</span><div className="media-item-actions"><button type="button" aria-label={`تعديل ${item.name}`} onClick={() => { setEditingMediaId(item.id); setEditingMediaName(item.name); }}>تعديل</button><button type="button" aria-label={`حذف ${item.name}`} onClick={() => void removeMedia(item)}>حذف</button></div></div>}</article>)}</div> : <p className="media-empty">لا توجد ملفات في قسم {entertainmentMode === "video" ? "الفيديو" : "الموسيقى"} بعد. اضغط إضافة ليظهر الملف هنا فقط.</p>}</>}{entertainmentMode === "game" && <div className="game-panel"><div className="game-panel-top"><div><div className="game-panel-icon"><Ticket size={28} /></div><h3>لعبة الذاكرة</h3><p>اقلب بطاقتين وابحث عن الصور المتشابهة. لعبة خفيفة تعمل مباشرة داخل المنصة.</p></div><div className="game-score"><strong data-testid="memory-moves">{memoryMoves}</strong><span>محاولة</span></div></div><div className="memory-grid" role="grid" aria-label="لعبة الذاكرة">{memoryCards.map((card) => <button key={card.id} type="button" className={`memory-card ${card.flipped || card.matched ? "is-open" : ""} ${card.matched ? "is-matched" : ""}`} onClick={() => handleMemoryCardClick(card.id)} aria-label={card.flipped || card.matched ? card.label : "بطاقة مخفية"} disabled={memoryLocked || card.flipped || card.matched}><span className="memory-card-back">?</span><span className="memory-card-front">{card.label}</span></button>)}</div><div className="game-panel-actions"><span>{memoryCards.every((card) => card.matched) ? "اكتملت اللعبة، أحسنت!" : "طابق البطاقات المتشابهة"}</span><button type="button" className="button button-primary" onClick={resetMemoryGame}>لعبة جديدة</button></div></div>}</div>}
         {modal === "visitors" && <div className="modal-content"><span className="section-eyebrow">MEMORY LENS / GUESTBOOK</span><h2>صورة، ثم كلمة.</h2><p>فعّل الكاميرا مباشرة، أو اختر صورة من الاستوديو، واكتب تعليقك ثم اضغط «حفظ الذكرى». لا يلزم تسجيل الدخول للمشاركة؛ حذف الذكريات متاح لمسؤول المنصة فقط.</p><div className="guestbook-count"><strong>{guestbookQuery.data?.length ?? 0}</strong><span>ذكرى محفوظة في دفتر الزوار</span></div><div className="camera-preview">{cameraOn ? <video ref={cameraVideoRef} className="camera-video" autoPlay muted playsInline aria-label="معاينة الكاميرا" /> : visitorImage ? <img className="visitor-image-preview" src={visitorImage} alt="الصورة المختارة للذكرى" /> : <div className="camera-empty"><Camera size={31} /><span>لا توجد صورة بعد</span></div>}</div><div className="visitor-modal-actions"><button className="button button-primary" onClick={startCamera}><Camera size={16} /> {cameraOn ? "الكاميرا تعمل" : "تشغيل الكاميرا"}</button>{cameraOn && <button type="button" className="button button-primary" onClick={captureVisitorPhoto}><Camera size={16} /> التقاط الصورة</button>}<button className="button button-quiet" onClick={() => visitorImageInputRef.current?.click()}><ImageIcon size={16} /> اختيار من الاستوديو</button></div><input ref={visitorImageInputRef} className="visually-hidden" type="file" accept="image/*" onChange={handleVisitorImage} />{cameraMessage && <p className="camera-message">{cameraMessage}</p>}<textarea value={visitorCaption} onChange={(event) => setVisitorCaption(event.target.value)} placeholder="اكتب رأيك عن الرحلة…" /><button className="button button-dark full-button" onClick={() => void saveGuestMemory()} disabled={guestbookMutation.isPending}><Send size={15} /> {guestbookMutation.isPending ? "جارٍ الحفظ…" : "حفظ الذكرى"}</button><div className="guestbook-memories">{guestbookQuery.isLoading ? <p className="media-empty">جارٍ تحميل الذكريات…</p> : guestbookQuery.data?.length ? guestbookQuery.data.map((memory, memoryIndex) => <article className="guestbook-memory" key={memory.id}>{memory.imageUrl && !guestbookQuery.data?.slice(0, memoryIndex).some((earlier) => earlier.imageUrl === memory.imageUrl) ? <button type="button" className="guestbook-memory-image" onClick={() => setSelectedGuestImage({ url: memory.imageUrl!, alt: memory.caption || "ذكرى زائر" })} aria-label={`تكبير صورة الذكرى ${memory.id}`}><img src={memory.imageUrl} alt="ذكرى زائر" loading="lazy" /></button> : <span className="guestbook-memory-placeholder" aria-label={memory.imageUrl ? "صورة مكررة سبق عرضها" : "لا توجد صورة لهذه الذكرى"}><ImageIcon size={18} /></span>}<div><p>{memory.caption || "ذكرى من طريق الشمال التركي."}</p><small>{new Date(memory.createdAt).toLocaleDateString("ar-SA")}</small></div>{auth.user ? <button type="button" className="guestbook-delete-button" aria-label={`حذف الذكرى ${memory.id}`} onClick={() => void removeGuestMemory(memory.id)} disabled={guestbookDeleteMutation.isPending}>حذف</button> : <button type="button" className="guestbook-login-delete" onClick={() => setModal("login")}>دخول المسؤول للحذف</button>}</article>) : <p className="media-empty">لا توجد ذكريات محفوظة بعد.</p>}</div>{selectedGuestImage ? <div className="guestbook-lightbox" role="dialog" aria-modal="true" aria-label="عرض صورة الذكرى" onClick={() => setSelectedGuestImage(null)}><button type="button" className="guestbook-lightbox-close" aria-label="إغلاق الصورة" onClick={() => setSelectedGuestImage(null)}><X size={24} /></button><img src={selectedGuestImage.url} alt={selectedGuestImage.alt} onClick={(event) => event.stopPropagation()} /></div> : null}</div>}
         {modal === "control" && <div className="modal-content control-modal">
-<span className="section-eyebrow">SECURE AREA / CONTROL ROOM</span><h2>غرفة التحكم التشغيلية.</h2><p>صندوق وارد لطلبات الزوار والشركاء، مع موافقة CEO وتعيين فريق التنفيذ ومراجعة النتيجة قبل الإغلاق.</p><div className="control-kpis"><span><strong>{controlRequestsQuery.data?.filter((item) => item.status === "pending").length ?? 0}</strong><small>بانتظار CEO</small></span><span><strong>{controlRequestsQuery.data?.filter((item) => item.status === "in_progress").length ?? 0}</strong><small>قيد التنفيذ</small></span><span><strong>{controlRequestsQuery.data?.filter((item) => item.status === "completed").length ?? 0}</strong><small>مكتملة</small></span></div>{isControlOwner && <div className="discovery-admin-panel"><div className="discovery-admin-heading"><div><span className="detail-label"><ShieldCheck size={14} /> صلاحيات الفريق</span><h3>إدارة أعضاء غرفة التحكم</h3><p>أدخل بريد حساب الموظف بعد تسجيل دخوله مرة واحدة، ثم حدّد صلاحية عمله.</p></div><span className="discovery-admin-count">{teamMembersQuery.data?.filter((member) => ["secretary", "assistant", "it"].includes(member.role)).length ?? 0} أعضاء</span></div><div className="control-select-row"><input className="control-title-input" type="email" value={teamEmail} onChange={(event) => setTeamEmail(event.target.value)} placeholder="البريد الإلكتروني للموظف" aria-label="البريد الإلكتروني للموظف" /><select value={teamRole} onChange={(event) => setTeamRole(event.target.value as typeof teamRole)} aria-label="دور الموظف"><option value="secretary">السكرتير</option><option value="assistant">المساعد</option><option value="it">تقنية المعلومات</option><option value="user">إلغاء صلاحية الفريق</option></select><button type="button" className="button button-primary" onClick={() => void assignTeamRole()} disabled={teamRoleMutation.isPending}>{teamRoleMutation.isPending ? "جارٍ الحفظ…" : "إسناد الصلاحية"}</button></div><div className="discovery-admin-list">{teamMembersQuery.isLoading ? <p className="media-empty">جارٍ تحميل أعضاء الفريق…</p> : teamMembersQuery.isError ? <p className="media-empty" role="alert">تعذر تهيئة غرفة التحكم. تحقق من اتصال قاعدة البيانات ثم أعد المحاولة.</p> : teamMembersQuery.data?.filter((member) => ["secretary", "assistant", "it"].includes(member.role)).map((member) => <article className="media-item-footer" key={member.id}><span>{member.name || member.email || member.id} · {member.role === "secretary" ? "السكرتير" : member.role === "assistant" ? "المساعد" : "تقنية المعلومات"}</span><small>{member.email || "بلا بريد مسجل"}</small></article>)}</div></div>}{(isControlOwner || auth.user?.role === "it") && <><div className="control-kpis"><span><strong>{controlHealthQuery.isLoading ? "…" : controlHealthQuery.isError ? "غير متاح" : controlHealthQuery.data?.application === "healthy" ? "سليم" : "غير متاح"}</strong><small>حالة التطبيق</small></span><span><strong>{controlHealthQuery.isLoading ? "…" : controlHealthQuery.isError ? "غير متاح" : controlHealthQuery.data?.database === "healthy" ? "سليم" : "متوقف"}</strong><small>قاعدة البيانات</small></span><span><strong>{controlHealthQuery.data?.checkedAt ? new Date(controlHealthQuery.data.checkedAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }) : "—"}</strong><small>آخر فحص</small></span></div></>}{isControlOwner && <div className="discovery-admin-panel"><div className="discovery-admin-heading"><div><span className="detail-label"><ClipboardCheck size={14} /> سجل التدقيق</span><h3>آخر العمليات الحساسة</h3><p>سجل للقرارات وتغييرات الصلاحيات وتحديثات المهام.</p></div></div><div className="discovery-admin-list">{auditLogsQuery.isLoading ? <p className="media-empty">جارٍ تحميل سجل العمليات…</p> : auditLogsQuery.isError ? <p className="media-empty">تعذر تحميل سجل التدقيق.</p> : auditLogsQuery.data?.length ? auditLogsQuery.data.slice(0, 10).map((entry) => <article className="media-item-footer control-audit-entry" key={entry.id}><span><strong>{getControlAuditActionLabel(entry.action)}</strong><small>{entry.targetType === "user" ? "عضو فريق" : "مهمة"} #{entry.targetId || "—"}</small><small>{formatControlAuditDetails(entry.details)}</small></span><small>{new Date(entry.createdAt).toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}</small></article>) : <p className="media-empty">لا توجد عمليات مسجلة بعد.</p>}</div></div>}{auth.user?.role === "it" && <div className="discovery-admin-panel"><div className="discovery-admin-heading"><div><span className="detail-label"><ShieldCheck size={14} /> مركز البلاغات التقنية</span><h3>تسجيل عطل أو نشاط مشبوه</h3><p>يُرسل البلاغ مباشرة إلى CEO للمراجعة والتوجيه.</p></div></div><input className="control-title-input" value={incidentTitle} onChange={(event) => setIncidentTitle(event.target.value)} aria-label="عنوان البلاغ" /><textarea className="control-command-input" value={incidentDescription} onChange={(event) => setIncidentDescription(event.target.value)} placeholder="اشرح العطل أو الهجوم أو الرسائل المزعجة، ومتى ظهر…" /><button type="button" className="button button-primary full-button" onClick={() => void reportControlIncident()} disabled={incidentMutation.isPending}>{incidentMutation.isPending ? "جارٍ إرسال البلاغ…" : "تصعيد البلاغ إلى CEO"}</button></div>}<div className="control-inbox">{!auth.user ? <p className="media-empty">سجّل الدخول بحساب مالك المنصة لعرض الطلبات وإدارتها.</p> : controlRequestsQuery.isLoading ? <p className="media-empty">جارٍ تحميل الطلبات…</p> : controlRequestsQuery.isError ? <p className="media-empty" role="alert">هذه الغرفة مخصصة لمالك المنصة فقط. لا يمكن عرض الطلبات أو إدارتها بهذا الحساب.</p> : controlRequestsQuery.data?.length ? controlRequestsQuery.data.map((request) => <article className={`control-task control-task-${request.priority}`} key={request.id}><div className="control-task-head"><strong>#{request.id} · {request.title}</strong><span className={`control-status control-status-${request.status}`}>{request.status === "pending" ? "بانتظار القرار" : request.status === "reviewed" ? "موافق عليه" : request.status === "in_progress" ? "قيد التنفيذ" : request.status === "ready_for_review" ? "بانتظار مراجعة CEO" : request.status === "completed" ? "مكتمل بعد الاعتماد" : "مرفوض"}</span></div><p>{request.command}</p><small>{request.category} · أولوية {request.priority} · المسؤول: {request.assignee ?? "غير معين"}</small>{request.status !== "completed" && request.status !== "rejected" && <div className="control-task-actions">{isControlOwner ? <><button className="button button-quiet" onClick={() => void updateControlStatus(request.id, "reviewed")}>موافقة CEO</button><button className="button button-primary" onClick={() => void updateControlStatus(request.id, "in_progress")}>إحالة للتنفيذ</button>{request.status === "ready_for_review" && <button className="button button-dark" onClick={() => void updateControlStatus(request.id, "completed")}>اعتماد الإكمال</button>}<button className="button button-quiet" onClick={() => void updateControlStatus(request.id, "rejected")}>رفض</button></> : <>{request.status !== "ready_for_review" && <button className="button button-primary" onClick={() => void updateControlStatus(request.id, "in_progress")}>بدء التنفيذ</button>}{request.status === "in_progress" && <button className="button button-dark" onClick={() => void updateControlStatus(request.id, "ready_for_review")}>رفع للمراجعة</button>}</>}</div>}</article>) : <p className="media-empty">لا توجد طلبات بعد. أضف أول طلب من نموذج المهمة أدناه.</p>}</div><div className="discovery-admin-panel">
+<span className="section-eyebrow">SECURE AREA / CONTROL ROOM</span><h2>غرفة التحكم التشغيلية.</h2><p>صندوق وارد لطلبات الزوار والشركاء، مع موافقة CEO وتعيين فريق التنفيذ ومراجعة النتيجة قبل الإغلاق.</p>
+{isControlOwner && <section className="partner-ad-admin"><span className="detail-label">إعلانات الشركاء · السعودية وتركيا</span><h3>إعداد إعلان جديد</h3><p>يُحفظ الإعلان كمسودة داخل غرفة التحكم، ولا يظهر للزوار إلا بعد اعتماد CEO للمهمة.</p>
+<input value={adTitle} onChange={(event) => setAdTitle(event.target.value)} maxLength={90} placeholder="اسم الشركة أو عنوان الإعلان" aria-label="عنوان الإعلان" />
+<textarea value={adDescription} onChange={(event) => setAdDescription(event.target.value)} maxLength={240} placeholder="وصف مختصر وواضح للعرض" aria-label="وصف الإعلان" />
+<select value={adCountry} onChange={(event) => setAdCountry(event.target.value as "SA" | "TR")} aria-label="بلد الشريك"><option value="SA">داخل السعودية</option><option value="TR">داخل تركيا</option></select>
+<input value={adImageUrl} onChange={(event) => setAdImageUrl(event.target.value)} placeholder="رابط صورة الإعلان (اختياري، HTTPS)" aria-label="رابط صورة الإعلان" />
+<input value={adTargetUrl} onChange={(event) => setAdTargetUrl(event.target.value)} placeholder="رابط موقع الشركة أو صفحة التواصل" aria-label="رابط وجهة الإعلان" />
+<button type="button" className="button button-primary full-button" onClick={() => void submitPartnerAd()} disabled={controlCreateTaskMutation.isPending}>{controlCreateTaskMutation.isPending ? "جارٍ الحفظ…" : "حفظ الإعلان للمراجعة"}</button>
+</section>}
+<div className="control-kpis"><span><strong>{controlRequestsQuery.data?.filter((item) => item.status === "pending").length ?? 0}</strong><small>بانتظار CEO</small></span><span><strong>{controlRequestsQuery.data?.filter((item) => item.status === "in_progress").length ?? 0}</strong><small>قيد التنفيذ</small></span><span><strong>{controlRequestsQuery.data?.filter((item) => item.status === "completed").length ?? 0}</strong><small>مكتملة</small></span></div>{isControlOwner && <div className="discovery-admin-panel"><div className="discovery-admin-heading"><div><span className="detail-label"><ShieldCheck size={14} /> صلاحيات الفريق</span><h3>إدارة أعضاء غرفة التحكم</h3><p>أدخل بريد حساب الموظف بعد تسجيل دخوله مرة واحدة، ثم حدّد صلاحية عمله.</p></div><span className="discovery-admin-count">{teamMembersQuery.data?.filter((member) => ["secretary", "assistant", "it"].includes(member.role)).length ?? 0} أعضاء</span></div><div className="control-select-row"><input className="control-title-input" type="email" value={teamEmail} onChange={(event) => setTeamEmail(event.target.value)} placeholder="البريد الإلكتروني للموظف" aria-label="البريد الإلكتروني للموظف" /><select value={teamRole} onChange={(event) => setTeamRole(event.target.value as typeof teamRole)} aria-label="دور الموظف"><option value="secretary">السكرتير</option><option value="assistant">المساعد</option><option value="it">تقنية المعلومات</option><option value="user">إلغاء صلاحية الفريق</option></select><button type="button" className="button button-primary" onClick={() => void assignTeamRole()} disabled={teamRoleMutation.isPending}>{teamRoleMutation.isPending ? "جارٍ الحفظ…" : "إسناد الصلاحية"}</button></div><div className="discovery-admin-list">{teamMembersQuery.isLoading ? <p className="media-empty">جارٍ تحميل أعضاء الفريق…</p> : teamMembersQuery.isError ? <p className="media-empty" role="alert">لم يتم اعتماد صلاحية مالك المنصة على الخادم بعد. تبقى غرفة التحكم محمية حتى يكتمل التحقق من هوية المالك.</p> : teamMembersQuery.data?.filter((member) => ["secretary", "assistant", "it"].includes(member.role)).map((member) => <article className="media-item-footer" key={member.id}><span>{member.name || member.email || member.id} · {member.role === "secretary" ? "السكرتير" : member.role === "assistant" ? "المساعد" : "تقنية المعلومات"}</span><small>{member.email || "بلا بريد مسجل"}</small></article>)}</div></div>}{(isControlOwner || auth.user?.role === "it") && <><div className="control-kpis"><span><strong>{controlHealthQuery.isLoading ? "…" : controlHealthQuery.isError ? "غير متاح" : controlHealthQuery.data?.application === "healthy" ? "سليم" : "غير متاح"}</strong><small>حالة التطبيق</small></span><span><strong>{controlHealthQuery.isLoading ? "…" : controlHealthQuery.isError ? "غير متاح" : controlHealthQuery.data?.database === "healthy" ? "سليم" : "متوقف"}</strong><small>قاعدة البيانات</small></span><span><strong>{controlHealthQuery.data?.checkedAt ? new Date(controlHealthQuery.data.checkedAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" }) : "—"}</strong><small>آخر فحص</small></span></div></>}{isControlOwner && <div className="discovery-admin-panel"><div className="discovery-admin-heading"><div><span className="detail-label"><ClipboardCheck size={14} /> سجل التدقيق</span><h3>آخر العمليات الحساسة</h3><p>سجل للقرارات وتغييرات الصلاحيات وتحديثات المهام.</p></div></div><div className="discovery-admin-list">{auditLogsQuery.isLoading ? <p className="media-empty">جارٍ تحميل سجل العمليات…</p> : auditLogsQuery.isError ? <p className="media-empty">تعذر تحميل سجل التدقيق.</p> : auditLogsQuery.data?.length ? auditLogsQuery.data.slice(0, 10).map((entry) => <article className="media-item-footer control-audit-entry" key={entry.id}><span><strong>{getControlAuditActionLabel(entry.action)}</strong><small>{entry.targetType === "user" ? "عضو فريق" : "مهمة"} #{entry.targetId || "—"}</small><small>{formatControlAuditDetails(entry.details)}</small></span><small>{new Date(entry.createdAt).toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}</small></article>) : <p className="media-empty">لا توجد عمليات مسجلة بعد.</p>}</div></div>}{auth.user?.role === "it" && <div className="discovery-admin-panel"><div className="discovery-admin-heading"><div><span className="detail-label"><ShieldCheck size={14} /> مركز البلاغات التقنية</span><h3>تسجيل عطل أو نشاط مشبوه</h3><p>يُرسل البلاغ مباشرة إلى CEO للمراجعة والتوجيه.</p></div></div><input className="control-title-input" value={incidentTitle} onChange={(event) => setIncidentTitle(event.target.value)} aria-label="عنوان البلاغ" /><textarea className="control-command-input" value={incidentDescription} onChange={(event) => setIncidentDescription(event.target.value)} placeholder="اشرح العطل أو الهجوم أو الرسائل المزعجة، ومتى ظهر…" /><button type="button" className="button button-primary full-button" onClick={() => void reportControlIncident()} disabled={incidentMutation.isPending}>{incidentMutation.isPending ? "جارٍ إرسال البلاغ…" : "تصعيد البلاغ إلى CEO"}</button></div>}<div className="control-inbox">{!auth.user ? <p className="media-empty">سجّل الدخول بحساب مالك المنصة لعرض الطلبات وإدارتها.</p> : controlRequestsQuery.isLoading ? <p className="media-empty">جارٍ تحميل الطلبات…</p> : controlRequestsQuery.isError ? <p className="media-empty" role="alert">تعذر التحقق من صلاحية هذا الحساب لفتح غرفة التحكم. يلزم استكمال إعداد هوية المالك على الخادم؛ لن نفتح صلاحيات الإدارة دون تحقق.</p> : controlRequestsQuery.data?.length ? controlRequestsQuery.data.map((request) => <article className={`control-task control-task-${request.priority}`} key={request.id}><div className="control-task-head"><strong>#{request.id} · {request.title}</strong><span className={`control-status control-status-${request.status}`}>{request.status === "pending" ? "بانتظار القرار" : request.status === "reviewed" ? "موافق عليه" : request.status === "in_progress" ? "قيد التنفيذ" : request.status === "ready_for_review" ? "بانتظار مراجعة CEO" : request.status === "completed" ? "مكتمل بعد الاعتماد" : "مرفوض"}</span></div><p>{request.command}</p><small>{request.category} · أولوية {request.priority} · المسؤول: {request.assignee ?? "غير معين"}</small>{request.status !== "completed" && request.status !== "rejected" && <div className="control-task-actions">{isControlOwner ? <><button className="button button-quiet" onClick={() => void updateControlStatus(request.id, "reviewed")}>موافقة CEO</button><button className="button button-primary" onClick={() => void updateControlStatus(request.id, "in_progress")}>إحالة للتنفيذ</button>{request.status === "ready_for_review" && <button className="button button-dark" onClick={() => void updateControlStatus(request.id, "completed")}>اعتماد الإكمال</button>}<button className="button button-quiet" onClick={() => void updateControlStatus(request.id, "rejected")}>رفض</button></> : <>{request.status !== "ready_for_review" && <button className="button button-primary" onClick={() => void updateControlStatus(request.id, "in_progress")}>بدء التنفيذ</button>}{request.status === "in_progress" && <button className="button button-dark" onClick={() => void updateControlStatus(request.id, "ready_for_review")}>رفع للمراجعة</button>}</>}</div>}</article>) : <p className="media-empty">لا توجد طلبات بعد. أضف أول طلب من نموذج المهمة أدناه.</p>}</div><div className="discovery-admin-panel">
   <div className="discovery-admin-heading"><div><span className="detail-label"><ImageIcon size={14} /> معرض اكتشف الشمال</span><h3>إدارة الصور والتبديل الأسبوعي</h3><p>ارفع صوراً جديدة أو عدّل أسماءها واحذف المتكرر. يبدأ المعرض كل أسبوع من صورة مختلفة تلقائياً.</p></div><span className="discovery-admin-count">{discoveryItemsQuery.isLoading ? "جارٍ التحميل…" : discoveryItemsQuery.isError ? "تعذر التحميل" : `${discoveryItemsQuery.data?.length ?? 0} صورة مضافة`}</span></div>
   <input ref={discoveryInputRef} className="visually-hidden" type="file" accept="image/*" multiple onChange={handleDiscoveryUpload} />
   <button type="button" className="media-add-button discovery-upload-button" onClick={() => discoveryInputRef.current?.click()} disabled={discoveryUploadMutation.isPending}><Upload size={17} /> {discoveryUploadMutation.isPending ? "جارٍ الرفع…" : "إضافة صور للمعرض"}</button>

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter } from "./routers";
+import { appRouter, extractTourismDestination, getLocalTourismCatalogContext } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -266,6 +266,48 @@ describe("real-brain regression scenarios", () => {
     expect(result.text).toContain("أفضل المطاعم في ينبع الصناعية");
     expect(result.text).toContain("https://www.google.com/maps/search/");
     expect(result.text).not.toContain("لم أتمكن من تجهيز إجابة الآن");
+  });
+
+  it.each([
+    "رتب لي برنامجاً سياحياً لمدة 5 أيام في طرابزون، وأعطني جميع الأماكن المناسبة",
+    "أبغى خطة خمسة أيام في ترابزون واعطني الأماكن المناسبة",
+    "برنامج سياحي في Trabzon, Turkey for 5 days",
+  ])("extracts Trabzon from a complete itinerary request: %s", (question) => {
+    expect(extractTourismDestination(question)).toBe("طرابزون");
+    expect(getLocalTourismCatalogContext(question, "AR")).toContain("قصر أتاتورك");
+  });
+
+  it("uses the shared ALASSAUL catalog for Trabzon trips without mixing in Rize", () => {
+    const context = getLocalTourismCatalogContext("رتب لي برنامجاً في طرابزون", "AR");
+    expect(context).toContain("قصر أتاتورك");
+    expect(context).toContain("أوزنجول");
+    expect(context).toContain("الموقع على الخريطة");
+    expect(context).toContain("فوروم طرابزون مول");
+    expect(context).toContain("ممشى وحديقة إيوف");
+    expect(context).toContain("زلاجة فورابارك الجبلية");
+    expect(context).not.toContain("مرتفعات آيدر");
+    expect(context).not.toContain("برج كأس الشاي العملاق");
+  });
+
+  it("builds a five-day Trabzon itinerary from the local catalog without waiting for external map services", async () => {
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "اليوم الأول: وسط طرابزون. اليوم الثاني: يومرا وكاشوستو. اليوم الثالث: أوزنجول. اليوم الرابع: ماتشكا. اليوم الخامس: أكشابات." } }],
+    } as never);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("External lookup should be skipped for curated itineraries"));
+    try {
+      const question = "رتب لي برنامجاً سياحياً لمدة 5 أيام في طرابزون، وأعطني جميع الأماكن المناسبة، مع تقسيم الزيارات حسب المناطق.";
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: question }] });
+      expect(result.text).toContain("اليوم الخامس");
+      expect(invokeLLM).toHaveBeenCalledOnce();
+      const systemMessage = vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content;
+      expect(systemMessage).toContain("وجهات مسجلة في دليل ALASSAUL");
+      expect(systemMessage).toContain("فوروم طرابزون مول");
+      expect(systemMessage).toContain("ممشى وحديقة إيوف");
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
 });

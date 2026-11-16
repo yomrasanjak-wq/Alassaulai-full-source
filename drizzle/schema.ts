@@ -5,6 +5,8 @@ import {
   text,
   timestamp,
   varchar,
+  jsonb,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["user", "admin", "secretary", "assistant", "it"]);
@@ -83,3 +85,26 @@ export const guestMemories = pgTable("guestMemories", {
 });
 
 export type GuestMemory = typeof guestMemories.$inferSelect;
+
+
+/**
+ * Private assistant memory. Exactly one owner identity is set per row:
+ * authenticated openId OR a server-issued anonymous subject hash.
+ * Raw anonymous identifiers are never stored.
+ */
+export const assistantMemories = pgTable("assistantMemories", {
+  id: serial("id").primaryKey(),
+  ownerOpenId: varchar("ownerOpenId", { length: 64 }),
+  visitorSubjectHash: varchar("visitorSubjectHash", { length: 64 }),
+  consentedAt: timestamp("consentedAt", { withTimezone: true, mode: "date" }),
+  enabled: boolean("enabled").notNull().default(false),
+  displayName: varchar("displayName", { length: 80 }),
+  preferences: jsonb("preferences").$type<string[]>().notNull().default([]),
+  activeTopics: jsonb("activeTopics").$type<string[]>().notNull().default([]),
+  recentSummary: text("recentSummary"),
+  lastInteractionAt: timestamp("lastInteractionAt", { withTimezone: true, mode: "date" }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+export type AssistantMemory = typeof assistantMemories.$inferSelect;
