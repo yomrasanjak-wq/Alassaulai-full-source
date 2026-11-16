@@ -162,9 +162,30 @@ export function isTourismPlacesQuestion(message: string): boolean {
 
 export function extractTourismDestination(message: string): string | undefined {
   if (!isTourismPlacesQuestion(message) && !isItineraryPlanningQuestion(message)) return undefined;
+
+  // Resolve well-known North Turkey destinations from anywhere in the utterance.
+  // Voice transcripts often append a second request after the city name.
+  const knownDestinations: Array<[RegExp, string]> = [
+    [/طرابزون|ترابزون|trabzon/i, "طرابزون"],
+    [/أوزنجول|اوزنجول|uzung[oö]l/i, "أوزنجول"],
+    [/أيدر|ايدر|ayder/i, "آيدر"],
+    [/ريزا|ريزه|ريزة|rize/i, "ريزا"],
+    [/سامسون|samsun/i, "سامسون"],
+    [/أوردو|اوردو|ordu/i, "أوردو"],
+    [/جيرسون|قيرسون|غيرسون|giresun/i, "جيرسون"],
+    [/إسطنبول|اسطنبول|istanbul/i, "إسطنبول"],
+  ];
+  for (const [pattern, canonical] of knownDestinations) {
+    if (pattern.test(message)) return canonical;
+  }
+
+  // Stop at a follow-up clause, duration, or list of requested extras instead
+  // of treating the entire remainder of a spoken sentence as the place name.
   const normalized = message.normalize("NFKC").replace(/[؟?!،,؛;]+/g, " ").trim();
   const match = normalized.match(/(?:في|داخل|بمدينة|بمدينه|in|at)\s+(.+)$/i);
-  const destination = match?.[1]?.trim().replace(/\s+/g, " ");
+  const rawDestination = match?.[1]?.trim();
+  const destination = rawDestination?.split(/\s+(?:وأعطني|واعطني|واذكر|وأذكر|مع|لمدة|خلال|and|with|for)\b/i)[0]?.trim()
+    .replace(/\s+/g, " ");
   if (!destination || destination.length < 2) return undefined;
   return destination.slice(0, 100);
 }
