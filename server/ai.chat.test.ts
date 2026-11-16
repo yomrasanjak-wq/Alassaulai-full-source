@@ -301,7 +301,7 @@ describe("live worldwide tourism place lookup", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
       if (url.startsWith("https://photon.komoot.io/api/")) {
-        expect(decodeURIComponent(url)).toContain("طرابزون, Türkiye");
+        expect(new URL(url).searchParams.get("q")).toBe("طرابزون, Türkiye");
         expect(new URL(url).searchParams.has("lang")).toBe(false);
         return new Response(JSON.stringify({
           features: [
@@ -339,7 +339,7 @@ describe("live worldwide tourism place lookup", () => {
           }],
         }), { status: 200, headers: { "content-type": "application/geo+json" } });
       }
-      expect(url).toBe("https://overpass-api.de/api/interpreter");
+      expect(["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]).toContain(url);
       return new Response(JSON.stringify({
         elements: [{
           type: "node", id: 12345, lat: 35.039, lon: 135.729,
@@ -823,8 +823,11 @@ describe("ai.chat", () => {
   it("does not replace an unavailable Saudi Pro League fixture list with news articles", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = new URL(String(input));
-      expect(url.hostname).toBe("site.api.espn.com");
-      expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      if (url.hostname === "site.api.espn.com") {
+        expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      } else {
+        expect(url.hostname).toBe("www.spl.com.sa");
+      }
       return new Response("temporarily unavailable", { status: 503 });
     });
     try {
