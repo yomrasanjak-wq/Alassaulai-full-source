@@ -1824,6 +1824,35 @@ ${newsContext}`);
         return { text };
       }),
   }),
+  partners: router({
+    // Only CEO-approved campaigns are visible to visitors. Drafts remain in the control inbox.
+    activeAds: publicProcedure.query(async () => {
+      const requests = await listControlRequests();
+      return requests
+        .filter((item) => item.category === "partner" && item.status === "reviewed" && item.command.startsWith("ALASSAUL_AD_V1\\n"))
+        .slice(0, 3)
+        .flatMap((item) => {
+          try {
+            const ad = JSON.parse(item.command.slice("ALASSAUL_AD_V1\\n".length)) as {
+              title?: string; description?: string; country?: string; imageUrl?: string; targetUrl?: string;
+            };
+            if (!ad.title || !ad.description || !ad.targetUrl) return [];
+            const target = new URL(ad.targetUrl);
+            if (target.protocol !== "https:" && target.protocol !== "http:") return [];
+            return [{
+              id: item.id,
+              title: ad.title.slice(0, 90),
+              description: ad.description.slice(0, 240),
+              country: ad.country === "SA" ? "السعودية" : "تركيا",
+              imageUrl: typeof ad.imageUrl === "string" && /^https:\/\//i.test(ad.imageUrl) ? ad.imageUrl : null,
+              targetUrl: target.toString(),
+            }];
+          } catch {
+            return [];
+          }
+        });
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
