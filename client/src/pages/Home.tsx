@@ -2032,7 +2032,7 @@ export default function Home() {
                   <div className="family-business-art"><Heart size={30} /><span>FLOWERS · EVENTS · BRIDAL</span></div>
                   <div className="family-business-body">
                     <span className="family-business-kicker">ينبع الصناعية · حي الصبح</span>
-                    <h3>وردة بانسيه – Pansy Flower</h3>
+                    <h3>بانسي فلاور – Pansy Flower</h3>
                     <p>ورد وباقات وتنسيق حفلات، مع خدمة نقل دبش العروس بسيارة خاصة مجهزة إلى مناطق المملكة، بحسب تفاصيل الخدمة التي زودتمونا بها.</p>
                     <small><MapPin size={14} /> ينبع الصناعية · حي الصبح</small>
                     <div className="family-business-actions">
@@ -2045,10 +2045,10 @@ export default function Home() {
                   <div className="family-business-art"><Heart size={30} /><span>WHOLESALE FLOWERS</span></div>
                   <div className="family-business-body">
                     <span className="family-business-kicker">المدينة المنورة · توريد بالجملة</span>
-                    <h3>فرع توزيع الورد بالجملة</h3>
-                    <p>بيع وتوزيع الورد بالجملة لتجار ومحلات الورد ومجهزي المناسبات في المدينة المنورة ومختلف مناطق المملكة.</p>
-                    <small><MapPin size={14} /> المدينة المنورة · تفاصيل الفرع قيد المطابقة</small>
-                    <div className="family-business-actions"><span className="family-business-pending">بيانات التواصل والموقع تُضاف بعد تأكيد الفرع</span></div>
+                    <h3>بانسي فلاور – فرع المدينة المنورة</h3>
+                    <p>بيع وتوزيع الورد بالجملة لتجار ومحلات الورد ومجهزي المناسبات في المدينة المنورة ومختلف مناطق المملكة، مع استقبال استفسارات التوريد والتوزيع.</p>
+                    <small><MapPin size={14} /> المدينة المنورة · طريق الملك سعود · حي السكة الحديد (الموقع المنشور يحتاج تأكيد الإدارة)</small>
+                    <div className="family-business-actions"><a href="https://www.google.com/maps/search/?api=1&query=Pansy+Flowers+King+Saud+Road+Madinah" target="_blank" rel="noreferrer">عرض موقع المدينة <ExternalLink size={14} /></a><span className="family-business-pending">ننتظر تأكيد أن هذا هو عنوان فرعكم ورقم التواصل</span></div>
                   </div>
                 </article>
                 <article className="family-business-card family-business-optical">
@@ -2065,7 +2065,7 @@ export default function Home() {
                   </div>
                 </article>
               </div>
-              <p className="family-business-disclaimer">هذه مساحة تعريفية لخدمات العائلة. تُعرض بيانات التواصل والمواقع بعد التحقق، ويمكن تحديث الصور والعروض ومواعيد العمل من غرفة التحكم لاحقاً.</p>
+              <p className="family-business-disclaimer">هذه مساحة تعريفية لخدمات العائلة. تم تحديث الاسم التجاري لبانسي فلاور وفق تأكيد المالك، وتُعرض بيانات التواصل والمواقع بعد التحقق، ويمكن تحديث الصور والعروض ومواعيد العمل من غرفة التحكم لاحقاً.</p>
             </div>}
           </div>
           <p className="resident-services-note"><ShieldCheck size={15} /> هذه روابط للبوابات الرسمية وليست استشارة قانونية أو ضمانًا لقبول الطلب. لا تشارك كلمة المرور أو رمز التحقق مع أي شخص، وتأكد من عنوان الموقع قبل إدخال بياناتك. رقم 112 للطوارئ فقط، وللاستفسارات العامة عن الإقامة وشؤون الأجانب استخدم YİMER 157.</p>
