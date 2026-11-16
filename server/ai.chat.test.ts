@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getRequestedImagesAnswer, getTribalGenealogyInstruction, getVisitorIdentityInstruction, isImageRequest, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
+import { isGenealogyResearchQuestion, isGoogleGroundingQuestion } from "./_core/googleGrounding";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -252,6 +253,19 @@ describe("model fallback selection", () => {
   });
 });
 
+describe("genealogy live research intent", () => {
+  it("routes Arabic and English genealogy questions to grounded web research", () => {
+    for (const question of ["ما نسب قبيلة حرب؟", "أصل عائلة العتيبي وفروعها", "genealogy of the Shammar tribe"]) {
+      expect(isGenealogyResearchQuestion(question)).toBe(true);
+      expect(isGoogleGroundingQuestion(question)).toBe(true);
+    }
+  });
+
+  it("does not classify unrelated questions as genealogy research", () => {
+    expect(isGenealogyResearchQuestion("كيف الطقس في طرابزون؟")).toBe(false);
+  });
+});
+
 describe("adaptive brain response strategy", () => {
   it("provides attributed Awlad Rashid genealogy and distinguishes alliance from lineage", () => {
     const instruction = getTribalGenealogyInstruction("من هم أولاد راشد؟");
@@ -260,6 +274,22 @@ describe("adaptive brain response strategy", () => {
     expect(instruction).toContain("زبد، أزيد، زيود، حميدة");
     expect(instruction).toContain("ذبيان دخلوا في جهينة حلفاً");
     expect(instruction).toContain("ميّز بين الحلف والنسب");
+  });
+
+  it("provides general genealogy research guidance for every tribe and family name", () => {
+    const instruction = getTribalGenealogyInstruction("ما أصل قبيلة شمر وما فروعها؟");
+    expect(instruction).toContain("متاح لكل القبائل والعائلات والألقاب");
+    expect(instruction).toContain("لا تفترض أن كل من يحمل اللقب نفسه يرجع إلى جد واحد");
+    expect(instruction).toContain("ميّز بوضوح بين النسب");
+    expect(instruction).toContain("اعتمد عند البحث على المصادر التاريخية والأكاديمية");
+    expect(instruction).not.toContain("ملف معرفة إضافي — أولاد راشد");
+  });
+
+  it("adds Awlad Rashid family notes only when that name is asked about", () => {
+    const instruction = getTribalGenealogyInstruction("ما نسب أولاد راشد؟");
+    expect(instruction).toContain("ملف معرفة إضافي — أولاد راشد");
+    expect(instruction).toContain("راشد بن شاكر بن جنيد");
+    expect(instruction).toContain("ذبيان دخلوا في جهينة حلفاً");
   });
 
   it("does not inject tribal genealogy context into unrelated questions", () => {
