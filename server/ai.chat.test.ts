@@ -632,9 +632,14 @@ describe("ai.chat", () => {
   });
 
   it("does not invent or return external links when the image source has no usable photographs", async () => {
-    const answer = await getRequestedImagesAnswer("أبغى منظر غير موجود", "AR");
-    expect(answer).toContain("ما حصلت الآن على صورة موثوقة");
-    expect(answer).not.toContain("https://");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ query: { pages: [] } }) }));
+    try {
+      const answer = await getRequestedImagesAnswer("أبغى منظر غير موجود", "AR");
+      expect(answer).toContain("ما حصلت الآن على صورة موثوقة");
+      expect(answer).not.toContain("https://");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
 
