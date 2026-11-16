@@ -200,6 +200,22 @@ describe("real-brain regression scenarios", () => {
     expect(result.text).toContain("ليس تحققاً من الطقس");
   });
 
+  it.each([
+    ["أبغى خطة يوم واحد في طرابزون", 1, "اليوم الأول", "اليوم الثاني"],
+    ["أبغى برنامج 7 أيام في طرابزون", 7, "اليوم السابع", "اليوم الثامن"],
+    ["أبغى خطة 10 أيام في طرابزون", 7, "اليوم السابع", "اليوم الثامن"],
+  ])("keeps fallback itinerary within the requested safe duration: %s", async (question, expectedDays, lastDay, forbiddenDay) => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: question }] });
+    const dayHeadings = result.text.match(/^اليوم (?:الأول|الثاني|الثالث|الرابع|الخامس|السادس|السابع):/gm) ?? [];
+    expect(dayHeadings).toHaveLength(expectedDays);
+    expect(result.text).toContain(lastDay);
+    expect(result.text).not.toContain(forbiddenDay);
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).toContain("ليس تحققاً من الطقس");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
+
   it("offers a real map search instead of inventing breakfast restaurants after provider failure", async () => {
     const result = await caller().ai.chat({
       language: "AR",
