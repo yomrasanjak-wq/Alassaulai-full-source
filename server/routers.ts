@@ -1560,7 +1560,12 @@ ${weatherContext}`);
           if (isTourismPlacesQuestion(latestText) || isItineraryPlanningQuestion(latestText)) {
             const localTourismContext = getLocalTourismCatalogContext(latestText, input.language);
             if (localTourismContext) liveContext.push(localTourismContext);
-            directTourismAnswer = await getLiveTourismPlacesAnswer(latestText, input.language);
+            // For itineraries, the curated ALASSAUL catalog is already a verified
+            // editorial source. Do not make visitors wait for geocoding/Overpass
+            // when that catalog can answer the request immediately.
+            if (!localTourismContext || !isItineraryPlanningQuestion(latestText)) {
+              directTourismAnswer = await getLiveTourismPlacesAnswer(latestText, input.language);
+            }
             if (directTourismAnswer) {
               const lookupUnavailable = /(?:تعذر جلب|لم أتمكن من تحديد|لم أتمكن من جلب|لم تُرجع معالم|لم أضع أسماء غير متحققة|مصدر الخرائط مزدحم|Verified attractions .* unavailable|couldn't reliably locate|returned no sufficiently named)/i.test(directTourismAnswer);
               if (lookupUnavailable && isItineraryPlanningQuestion(latestText) && !localTourismContext) {
