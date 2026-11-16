@@ -580,6 +580,37 @@ describe("live weather source", () => {
     }
   });
 
+  it("returns a seven-day city forecast with daily highs, lows, rain chance, and wind", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({
+      daily: {
+        time: ["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21", "2026-11-22"],
+        weather_code: [0, 1, 3, 61, 2, 80, 3],
+        temperature_2m_max: [24, 25, 23, 21, 22, 20, 22],
+        temperature_2m_min: [15, 16, 14, 13, 14, 12, 13],
+        precipitation_probability_max: [0, 5, 10, 65, 20, 55, 15],
+        wind_speed_10m_max: [8, 9, 11, 18, 12, 20, 10],
+      },
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    try {
+      const answer = await getLiveWeatherAnswer("توقعات الطقس الأسبوع القادم في طرابزون");
+      expect(answer).toContain("توقعات الطقس للأيام السبعة القادمة في طرابزون");
+      expect(answer).toContain("العظمى 24° والصغرى 15°");
+      expect(answer).toContain("احتمال المطر 65٪");
+      expect(answer).toContain("الرياح 20 كم/س");
+      expect(answer).toContain("Open-Meteo");
+      const requestUrl = new URL(String(fetchSpy.mock.calls[0]?.[0]));
+      expect(requestUrl.searchParams.get("forecast_days")).toBe("7");
+      expect(requestUrl.searchParams.get("daily")).toContain("temperature_2m_max");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("asks for a city instead of guessing when a weekly forecast has no location", async () => {
+    const answer = await getLiveWeatherAnswer("أبغى توقعات الطقس الأسبوع القادم");
+    expect(answer).toContain("لأي مدينة");
+  });
+
   it("reports live weather failure without inventing current conditions", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
     try {
