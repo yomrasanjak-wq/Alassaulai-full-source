@@ -200,6 +200,22 @@ describe("real-brain regression scenarios", () => {
     expect(result.text).toContain("ليس تحققاً من الطقس");
   });
 
+  it("keeps the Trabzon itinerary context when the user specifies its duration in a follow-up", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [
+        { role: "user", content: "أبغى خطة في طرابزون" },
+        { role: "assistant", content: "أكيد، كم يوماً تفضل؟" },
+        { role: "user", content: "خليها خمسة أيام" },
+      ],
+    });
+    expect(result.text).toContain("برنامجاً بديلاً من دليل ALASSAUL لطرابزون لمدة 5 أيام");
+    expect(result.text).toContain("اليوم الخامس");
+    expect(result.text).not.toContain("اليوم السادس");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
   it.each([
     ["أبغى خطة يوم واحد في طرابزون", 1, "اليوم الأول", "اليوم الثاني"],
     ["أبغى برنامج 7 أيام في طرابزون", 7, "اليوم السابع", "اليوم الثامن"],
