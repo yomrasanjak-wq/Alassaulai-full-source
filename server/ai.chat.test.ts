@@ -593,6 +593,13 @@ describe("live weather source", () => {
 });
 
 describe("ai.chat", () => {
+  it("answers a greeting naturally without calling the model", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "السلام عليكم" }] });
+    expect(result.text).toContain("وعليكم السلام");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(invokeLLM).mockRejectedValue(new Error("test provider unavailable"));
