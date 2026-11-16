@@ -956,7 +956,8 @@ function getContextualFallback(
             const map = new URL("https://www.google.com/maps/search/");
             map.searchParams.set("api", "1");
             map.searchParams.set("query", place.query);
-            return `• ${place.name} — ${place.region}\n  ${map.toString()}`;
+            const displayName = /قانيتا/.test(place.name) ? `غانيتا (${place.name})` : place.name;
+            return `• ${displayName} — ${place.region}\n  ${map.toString()}`;
           });
           return `${dayLabel} ${dayIndex + 1}:\n${stops.join("\n")}`;
         }).filter(Boolean);
@@ -966,7 +967,7 @@ function getContextualFallback(
             ? `Yapay zekâ sağlayıcısı geçici olarak kullanılamadığı için ALASSAUL Trabzon rehberinden ${days} günlük alternatif hazırladım:`
             : `The planning provider is temporarily unavailable, so here is a ${days}-day alternative using ALASSAUL's curated Trabzon guide:`;
         const note = language === "AR"
-          ? "ملاحظة: هذا ترتيب مبدئي للوجهات، وليس تحققاً من ساعات العمل أو حالة الطرق. راجع الطقس وأوقات الزيارة قبل الانطلاق."
+          ? "ملاحظة: هذا ترتيب مبدئي للوجهات، وليس تحققاً من الطقس أو ساعات العمل أو حالة الطرق. راجع الظروف وأوقات الزيارة قبل الانطلاق."
           : language === "TR"
             ? "Not: Bu ön plan açık saatlerini veya yol durumunu doğrulamaz. Yola çıkmadan önce kontrol edin."
             : "Note: This is a suggested grouping, not live verification of opening hours or road conditions.";
