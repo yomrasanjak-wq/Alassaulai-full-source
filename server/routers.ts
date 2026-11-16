@@ -937,16 +937,24 @@ function getContextualFallback(
     && /(?:طرابزون|ترابزون|trabzon|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i.test(latest);
   if (asksItinerary) {
     const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
-    const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
+    const wordDuration: Array<[RegExp, number]> = [
+      [/(?:يومين|يومان|two\s+days?)/i, 2],
+      [/(?:ثلاثة|ثلاث)\s*(?:أيام|ايام|يوم)/i, 3],
+      [/(?:أربعة|اربعة|أربع|اربع)\s*(?:أيام|ايام|يوم)/i, 4],
+      [/(?:خمسة|خمس)\s*(?:أيام|ايام|يوم)/i, 5],
+      [/(?:ستة|ست)\s*(?:أيام|ايام|يوم)/i, 6],
+      [/(?:سبعة|سبع)\s*(?:أيام|ايام|يوم)/i, 7],
+    ];
+    const requestedDays = durationMatch ? Number(durationMatch[1]) : wordDuration.find(([pattern]) => pattern.test(latest))?.[1];
     const asksTrabzon = /طرابزون|ترابزون|trabzon/i.test(latest);
     if (asksTrabzon) {
       // Provider-independent fallback: use only places in the published ALASSAUL guide.
       const places = DESTINATION_GALLERY.filter((place) =>
         /طرابزون|trabzon/i.test(place.region) || /طرابزون|trabzon/i.test(place.category),
-      ).slice(0, 8);
+      ).slice(0, 14);
       if (places.length) {
         const days = Math.max(1, Math.min(requestedDays ?? 3, 7, places.length));
-        const selectedPlaces = places.slice(0, Math.min(8, days * 2));
+        const selectedPlaces = places.slice(0, Math.min(14, days * 2));
         const perDay = Math.ceil(selectedPlaces.length / days);
         const dayLabel = language === "AR" ? "اليوم" : language === "TR" ? "Gün" : "Day";
         const rows = Array.from({ length: days }, (_, dayIndex) => {
