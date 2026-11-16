@@ -29,6 +29,7 @@ describe("provider failure communication", () => {
     const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "اشرح لي ظاهرة علمية" }] });
     expect(result.text).toContain(expected);
     expect(result.text).not.toContain(error.message);
-    expect(invokeLLM).toHaveBeenCalledTimes(2);
+    // No distinct backup model is configured in this test environment; avoid retrying the same model.
+    expect(invokeLLM).toHaveBeenCalledOnce();
   });
 });
