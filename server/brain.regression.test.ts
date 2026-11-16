@@ -282,6 +282,9 @@ describe("real-brain regression scenarios", () => {
     expect(context).toContain("قصر أتاتورك");
     expect(context).toContain("أوزنجول");
     expect(context).toContain("الموقع على الخريطة");
+    expect(context).toContain("فوروم طرابزون مول");
+    expect(context).toContain("ممشى وحديقة إيوف");
+    expect(context).toContain("زلاجة فورابارك الجبلية");
     expect(context).not.toContain("مرتفعات آيدر");
     expect(context).not.toContain("برج كأس الشاي العملاق");
   });
