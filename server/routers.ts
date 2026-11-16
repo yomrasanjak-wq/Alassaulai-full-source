@@ -952,8 +952,13 @@ function getContextualFallback(
       [/(?:سبعة|سبع)\s*(?:أيام|ايام|يوم)/i, 7],
     ];
     const requestedDays = durationMatch ? Number(durationMatch[1]) : wordDuration.find(([pattern]) => pattern.test(latest))?.[1];
-    const asksTrabzon = /طرابزون|ترابزون|trabzon/i.test(latest) || /طرابزون|ترابزون|trabzon/i.test(recentUserText);
-    const asksRize = /ريزه|ريزا|ريزة|rize/i.test(latest) || /ريزه|ريزا|ريزة|rize/i.test(recentUserText);
+    const latestMentionsTrabzon = /طرابزون|ترابزون|trabzon/i.test(latest);
+    const latestMentionsRize = /ريزه|ريزا|ريزة|rize/i.test(latest);
+    const previousCityMessage = [...messages].reverse().find((message) =>
+      message.role === "user" && /طرابزون|ترابزون|trabzon|ريزه|ريزا|ريزة|rize/i.test(message.content),
+    )?.content ?? recentUserText;
+    const asksTrabzon = latestMentionsTrabzon || (!latestMentionsRize && /طرابزون|ترابزون|trabzon/i.test(previousCityMessage));
+    const asksRize = latestMentionsRize || (!latestMentionsTrabzon && /ريزه|ريزا|ريزة|rize/i.test(previousCityMessage));
     const itineraryCityName = asksTrabzon ? "طرابزون" : asksRize ? "ريزا" : "";
     if (itineraryCityName) {
       // Provider-independent fallback: use only places in the published ALASSAUL guide.
