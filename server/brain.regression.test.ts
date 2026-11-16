@@ -268,6 +268,15 @@ describe("real-brain regression scenarios", () => {
     expect(result.text).not.toContain("لم أتمكن من تجهيز إجابة الآن");
   });
 
+  it.each([
+    "رتب لي برنامجاً سياحياً لمدة 5 أيام في طرابزون، وأعطني جميع الأماكن المناسبة",
+    "أبغى خطة خمسة أيام في ترابزون واعطني الأماكن المناسبة",
+    "برنامج سياحي في Trabzon, Turkey for 5 days",
+  ])("extracts Trabzon from a complete itinerary request: %s", (question) => {
+    expect(extractTourismDestination(question)).toBe("طرابزون");
+    expect(getLocalTourismCatalogContext(question, "AR")).toContain("قصر أتاتورك");
+  });
+
   it("uses the shared ALASSAUL catalog for Trabzon trips without mixing in Rize", () => {
     const context = getLocalTourismCatalogContext("رتب لي برنامجاً في طرابزون", "AR");
     expect(context).toContain("قصر أتاتورك");
