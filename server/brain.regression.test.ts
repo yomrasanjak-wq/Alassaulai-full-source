@@ -236,12 +236,15 @@ describe("real-brain regression scenarios", () => {
     expect(invokeLLM).toHaveBeenCalled();
   });
 
-  it("does not invent a Rize itinerary when the local fallback catalog has no verified Rize plan", async () => {
+  it("builds a four-day Rize itinerary from curated ALASSAUL destinations and fills every day", async () => {
     const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "أبغى خطة 4 أيام في ريزه" }] });
-    expect(result.text).toContain("تعذّر إعداد برنامج موثوق لهذه الوجهة");
-    expect(result.text).toContain("لن أخترع وجهات أو تفاصيل");
-    expect(result.text).toContain("4 أيام");
-    expect(result.text).not.toContain("https://www.google.com/maps/search/");
+    const dayHeadings = result.text.match(/^اليوم (?:الأول|الثاني|الثالث|الرابع):/gm) ?? [];
+    expect(dayHeadings).toHaveLength(4);
+    expect(result.text).toContain("برج كأس الشاي العملاق");
+    expect(result.text).toContain("حديقة زراعات النباتية للشاي");
+    expect(result.text).toContain("مرتفعات آيدر");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).toContain("ليس تحققاً من الطقس");
     expect(invokeLLM).toHaveBeenCalled();
   });
 
