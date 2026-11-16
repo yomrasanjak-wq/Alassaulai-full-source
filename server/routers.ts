@@ -938,14 +938,48 @@ function getContextualFallback(
   if (asksItinerary) {
     const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
     const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
+    const asksTrabzon = /طرابزون|ترابزون|trabzon/i.test(latest);
+    if (asksTrabzon) {
+      // Provider-independent fallback: use only places in the published ALASSAUL guide.
+      const places = DESTINATION_GALLERY.filter((place) =>
+        /طرابزون|trabzon/i.test(place.region) || /طرابزون|trabzon/i.test(place.category),
+      ).slice(0, 8);
+      if (places.length) {
+        const days = Math.max(1, Math.min(requestedDays ?? 3, 7));
+        const perDay = Math.ceil(places.length / days);
+        const dayLabel = language === "AR" ? "اليوم" : language === "TR" ? "Gün" : "Day";
+        const rows = Array.from({ length: days }, (_, dayIndex) => {
+          const dayPlaces = places.slice(dayIndex * perDay, (dayIndex + 1) * perDay);
+          if (!dayPlaces.length) return "";
+          const stops = dayPlaces.map((place) => {
+            const map = new URL("https://www.google.com/maps/search/");
+            map.searchParams.set("api", "1");
+            map.searchParams.set("query", place.query);
+            return \`• \${place.name} — \${place.region}\\n  \${map.toString()}\`;
+          });
+          return \`\${dayLabel} \${dayIndex + 1}:\\n\${stops.join("\\n")}\`;
+        }).filter(Boolean);
+        const intro = language === "AR"
+          ? \`أعددت لك برنامجاً بديلاً من دليل ALASSAUL لطرابزون لمدة \${days} أيام، لأن مزود التخطيط متوقف مؤقتاً. رتبت الوجهات في مجموعات، ويمكنك فتح كل موقع على الخريطة:\`
+          : language === "TR"
+            ? \`Yapay zekâ sağlayıcısı geçici olarak kullanılamadığı için ALASSAUL Trabzon rehberinden \${days} günlük alternatif hazırladım:\`
+            : \`The planning provider is temporarily unavailable, so here is a \${days}-day alternative using ALASSAUL's curated Trabzon guide:\`;
+        const note = language === "AR"
+          ? "ملاحظة: هذا ترتيب مبدئي للوجهات، وليس تحققاً من ساعات العمل أو حالة الطرق. راجع الطقس وأوقات الزيارة قبل الانطلاق."
+          : language === "TR"
+            ? "Not: Bu ön plan açık saatlerini veya yol durumunu doğrulamaz. Yola çıkmadan önce kontrol edin."
+            : "Note: This is a suggested grouping, not live verification of opening hours or road conditions.";
+        return intro + "\\n\\n" + rows.join("\\n\\n") + "\\n\\n" + note;
+      }
+    }
     const durationNote = requestedDays && requestedDays > 1
-      ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
+      ? (language === "AR" ? \` طلبت برنامجاً لمدة \${requestedDays} أيام.\` : \` You requested \${requestedDays} days.\`)
       : "";
     return language === "AR"
-      ? `تعذّر إكمال برنامج الرحلة بسبب انقطاع مؤقت في مزود الذكاء الاصطناعي.${durationNote} أعد المحاولة بعد قليل، وسأرتب البرنامج كاملاً يوماً بيوم بدلاً من تخمين تفاصيل ناقصة.`
+      ? \`تعذّر إعداد برنامج موثوق لهذه الوجهة أثناء انقطاع مزود الذكاء الاصطناعي.\${durationNote} لن أخترع وجهات أو تفاصيل؛ اذكر المدينة أو أعد المحاولة بعد قليل.\`
       : language === "TR"
-        ? "Gezi programı yapay zekâ sağlayıcısındaki geçici kesinti nedeniyle tamamlanamadı. Lütfen biraz sonra tekrar deneyin."
-        : "The itinerary could not be completed because the AI provider temporarily timed out. Please retry shortly; I won't replace a multi-day plan with an incomplete one-day answer.";
+        ? "Yapay zekâ sağlayıcısı geçici olarak kullanılamıyor. Doğrulanmamış yerler uydurmayacağım; lütfen şehri belirtin veya tekrar deneyin."
+        : "The AI provider is temporarily unavailable. I won't invent destinations or details; please specify the city or retry shortly.";
   }
 
   const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
