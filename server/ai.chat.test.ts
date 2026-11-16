@@ -398,7 +398,7 @@ describe("live worldwide tourism place lookup", () => {
     }));
     try {
       const result = await getLiveTourismPlacesAnswer("أماكن سياحية في مكان غير معروف", "AR");
-      expect(result).toContain("تعذر جلب قائمة موثوقة بالمعالم");
+      expect(result).toContain("لم أتمكن من تحديد «مكان غير معروف» جغرافياً بشكل موثوق");
       expect(fetchSpy).toHaveBeenCalledTimes(2); // Photon, then Nominatim fallback.
     } finally {
       fetchSpy.mockRestore();
