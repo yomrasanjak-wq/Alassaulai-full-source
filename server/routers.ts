@@ -14,6 +14,7 @@ import { z } from "zod";
 import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
 import { parseOfficialSaudiLeagueFixturesHtml } from "./liveFixtures";
 import { getWikimediaNearbyAttractions } from "./liveTourismFallback";
+import { DESTINATION_GALLERY } from "@shared/tourismCatalog";
 
 const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -166,6 +167,42 @@ export function extractTourismDestination(message: string): string | undefined {
   const destination = match?.[1]?.trim().replace(/\s+/g, " ");
   if (!destination || destination.length < 2) return undefined;
   return destination.slice(0, 100);
+}
+
+/** Build a grounded shortlist from the same curated gallery shown to visitors.
+ * The catalog establishes that ALASSAUL lists a place; it does not establish
+ * today's opening status, prices, road conditions, or availability.
+ */
+export function getLocalTourismCatalogContext(message: string, language: "AR" | "TR" | "EN"): string | undefined {
+  const destination = extractTourismDestination(message);
+  if (!destination) return undefined;
+  const query = destination.normalize("NFKC").toLocaleLowerCase();
+  const isTrabzon = /طرابزون|trabzon/i.test(query);
+  const isRize = /ريزا|ريزه|آيدر|ايدر|rize|ayder/i.test(query);
+  const isOrduGiresun = /أوردو|اوردو|ordu|قيرسون|غيرسون|giresun/i.test(query);
+  const isIstanbul = /إسطنبول|اسطنبول|istanbul/i.test(query);
+  const matches = DESTINATION_GALLERY.filter((place) => {
+    const searchable = [place.name, place.region, place.category, place.query].join(" ").normalize("NFKC").toLocaleLowerCase();
+    if (isTrabzon) return /طرابزون|trabzon|يومرا|كاشوستو|أرسين|أراكلي|سورميني|أوف|ماتشكا|تشايكارا|أكشابات|دوزكوي/i.test(searchable);
+    if (isRize) return /ريزا|rize|آيدر|ayder|فيرتينا|زيل/i.test(searchable);
+    if (isOrduGiresun) return /أوردو|ordu|قيرسون|غيرسون|giresun|فاتسا|بيرشمبه/i.test(searchable);
+    if (isIstanbul) return /إسطنبول|istanbul/i.test(searchable);
+    return searchable.includes(query);
+  }).slice(0, 24);
+  if (!matches.length) return undefined;
+  const heading = language === "AR" ? "وجهات مسجلة في دليل ALASSAUL" : language === "TR" ? "ALASSAUL rehberindeki destinasyonlar" : "Destinations listed in the ALASSAUL guide";
+  const rows = matches.map((place, index) => {
+    const map = new URL("https://www.google.com/maps/search/");
+    map.searchParams.set("api", "1");
+    map.searchParams.set("query", place.query);
+    return (index + 1) + ". **" + place.name + "** — " + place.region + "\\n   [" + (language === "AR" ? "الموقع على الخريطة" : language === "TR" ? "Haritada gör" : "View on map") + "](" + map.toString() + ")";
+  });
+  const note = language === "AR"
+    ? "هذه أسماء وجهات من الدليل التحريري للمنصة. لا تعني أن المكان مفتوح الآن أو أن الأسعار والطرق مؤكدة؛ تحقق من البيانات الحية قبل الزيارة."
+    : language === "TR"
+      ? "Bunlar platformun rehberinde listelenen yerlerdir; açık olma durumu, fiyatlar ve yol koşulları canlı olarak doğrulanmalıdır."
+      : "These are places listed in the platform guide; opening status, prices, and road conditions still require live verification.";
+  return heading + " (" + matches.length + "):\\n\\n" + rows.join("\\n\\n") + "\\n\\n" + note;
 }
 
 async function waitForTourismRequestSlot(): Promise<void> {
@@ -1500,16 +1537,22 @@ export const appRouter = router({
 ${weatherContext}`);
 
           if (isTourismPlacesQuestion(latestText) || isItineraryPlanningQuestion(latestText)) {
+            const localTourismContext = getLocalTourismCatalogContext(latestText, input.language);
+            if (localTourismContext) liveContext.push(localTourismContext);
             directTourismAnswer = await getLiveTourismPlacesAnswer(latestText, input.language);
             if (directTourismAnswer) {
               const lookupUnavailable = /(?:تعذر جلب|لم أتمكن من تحديد|لم أتمكن من جلب|لم تُرجع معالم|لم أضع أسماء غير متحققة|مصدر الخرائط مزدحم|Verified attractions .* unavailable|couldn't reliably locate|returned no sufficiently named)/i.test(directTourismAnswer);
-              if (isItineraryPlanningQuestion(latestText) && lookupUnavailable) {
+              if (lookupUnavailable && isItineraryPlanningQuestion(latestText) && !localTourismContext) {
                 const practicalFallback = getContextualFallback(input.messages, input.language);
                 return { text: practicalFallback ?? directTourismAnswer };
               }
-              liveContext.push((isItineraryPlanningQuestion(latestText)
-                ? "أماكن موثقة لتخطيط الرحلة من OpenStreetMap:"
-                : "نتائج المعالم السياحية من OpenStreetMap:") + "\n" + directTourismAnswer);
+              if (!lookupUnavailable) {
+                liveContext.push((isItineraryPlanningQuestion(latestText)
+                  ? "معالم مرشحة من OpenStreetMap لتكملة دليل ALASSAUL:"
+                  : "نتائج المعالم السياحية من OpenStreetMap:") + "\\n" + directTourismAnswer);
+              } else if (!localTourismContext) {
+                liveContext.push("تعذر التحقق من المعالم الحية حالياً؛ لا تخمّن ساعات العمل أو حالة الافتتاح.");
+              }
             }
           }
 
@@ -1576,7 +1619,7 @@ ${newsContext}`);
         const taskInstruction = latestMessage?.imageDataUrl
           ? "نمط تحليل صورة: صف العناصر الواضحة أولاً، ثم اشرح ما يمكن استنتاجه وما لا يمكن الجزم به. إذا طلب المستخدم التعرف على شيء، اذكر الاحتمالات وعلامات التمييز، ولا تخترع تفاصيل غير ظاهرة."
           : isItineraryPlanningQuestion(latestText)
-            ? getAdaptiveTaskInstruction(latestText) + " ضابط صارم للوجهات: استخدم أسماء الأماكن الواردة حصراً في قائمة OpenStreetMap المرفقة في السياق. لا تضف أي معلم أو قرية أو بحيرة أو شلال من الذاكرة، ولا تخلط بين المدن أو الأقاليم. إذا كانت القائمة لا تكفي لملء أربعة أيام، قل ذلك بوضوح واقترح تقليل عدد الأيام أو طلب منطقة إضافية؛ لا تملأ الفراغ بأسماء غير موثقة. لا تفترض أن المواقع متجاورة لمجرد أنها في المدينة نفسها؛ راعِ الإحداثيات ونطاق البحث."
+            ? getAdaptiveTaskInstruction(latestText) + " ضابط صارم للوجهات: استخدم أسماء الأماكن الواردة في دليل ALASSAUL المحلي ونتائج OpenStreetMap المرفقة في السياق فقط. ميّز بوضوح بين وجهات دليل المنصة والمعالم التي أضافها مصدر الخرائط الحي، ولا تضف أسماء من الذاكرة أو من التخمين. لا تخلط بين طرابزون وريزا وأوردو أو الأقاليم المجاورة؛ اذكر الولاية/القضاء بجانب كل وجهة. إذا لم تكفِ القائمة لعدد الأيام المطلوب، صرّح بذلك واقترح تقليل الأيام أو توسيع النطاق بدلاً من اختلاق أماكن. لا تفترض أن المواقع متجاورة؛ اجمع الوجهات المتقاربة جغرافياً في اليوم نفسه، واذكر أن ساعات العمل والأسعار وحالة الطريق تحتاج تحققاً حديثاً."
             : getAdaptiveTaskInstruction(latestText);
         const sourceInstruction = liveContext.length
           ? `\n\nبيانات داعمة من الأدوات الحية (ليست جواباً بديلاً عنك):\n${liveContext.join("\n\n")}\nاستخدم هذه البيانات عند صلتها بالسؤال، وانسب المصدر ووقت القراءة إن وُجدا، ولا تضف حقائق آنية غير موجودة فيها.`
