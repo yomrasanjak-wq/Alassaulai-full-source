@@ -53,7 +53,7 @@ export function parseOfficialSaudiLeagueFixturesHtml(html: string): SaudiLeagueF
   const add = (week: string, date: string | undefined, time: string, home: string, away: string) => {
     const cleanHome = home.trim().replace(/^["']|["']$/g, "");
     const cleanAway = away.trim().replace(/^["']|["']$/g, "");
-    if (!date || !/^\\d{2}:\\d{2}$/.test(time) || !cleanHome || !cleanAway) return;
+    if (!date || !/^\d{2}:\d{2}$/.test(time) || !cleanHome || !cleanAway) return;
     const key = [week, date, time, cleanHome, cleanAway].join("|").toLocaleLowerCase();
     if (seen.has(key)) return;
     seen.add(key);
