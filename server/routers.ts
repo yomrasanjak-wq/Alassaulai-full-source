@@ -1245,7 +1245,7 @@ function extractChatText(content: unknown): string {
  * Commons thumbnails are rendered inline by the chat UI; visitors are not sent
  * to a search-results page or given a bare image URL. */
 export function isImageRequest(message: string): boolean {
-  return /(?:صورة|صور|صوّر|صوره|منظر|مناظر|مشهد|لقطة|picture|photo|image|show me\s+(?:a\\s+)?(?:photo|picture|image|view|scenery))/i.test(message);
+  return /(?:صورة|صور|صوّر|صوره|منظر|مناظر|مشهد|لقطة|picture|photo|image|show me\s+(?:a\s+)?(?:photo|picture|image|view|scenery))/i.test(message);
 }
 
 export async function getRequestedImagesAnswer(message: string, language: "AR" | "TR" | "EN" = "AR"): Promise<string> {
