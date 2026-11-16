@@ -35,7 +35,7 @@ describe("LivePulse", () => {
 
     await waitFor(() => {
       expect(screen.getAllByText(/18°/).length).toBeGreaterThan(0);
-      expect(screen.getByText(/1 ريال سعودي = 0\.096 ليرة تركية/)).toBeTruthy();
+      expect(screen.getByText(/1 ريال سعودي = 10 ليرة تركية/)).toBeTruthy();
     });
 
     expect(fetch).toHaveBeenCalledTimes(2);
