@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, getLocalTourismCatalogContext } from "./routers";
+import { appRouter, extractTourismDestination, getLocalTourismCatalogContext } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
