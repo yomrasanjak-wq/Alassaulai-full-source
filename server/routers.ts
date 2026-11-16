@@ -1241,6 +1241,54 @@ function extractChatText(content: unknown): string {
   return "";
 }
 
+/** Retrieve real, embeddable photographs for explicit image/scene requests.
+ * Commons thumbnails are rendered inline by the chat UI; visitors are not sent
+ * to a search-results page or given a bare image URL. */
+export function isImageRequest(message: string): boolean {
+  return /(?:صورة|صور|صوّر|صوره|منظر|مناظر|مشهد|لقطة|ارني|أرني|ورني|ورّني|اعرض لي|أبغى أشوف|ابي اشوف|أريد أن أرى|picture|photo|image|show me)/i.test(message);
+}
+
+export async function getRequestedImagesAnswer(message: string, language: "AR" | "TR" | "EN" = "AR"): Promise<string> {
+  const query = message
+    .replace(/(?:من فضلك|لو سمحت|ممكن|أبغى|ابغى|أبي|ابي|أريد|اريد|ورني|ورّني|أرني|ارني|اعرض لي|صور(?:ة)? لي|صورة|صور|صوّر|صوره|منظر|مناظر|مشهد|لقطة|picture|photo|image|show me|please)/gi, " ")
+    .replace(/[؟?!،,.;:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || message.trim();
+  const params = new URLSearchParams({
+    action: "query", generator: "search", gsrsearch: "filetype:bitmap " + query,
+    gsrnamespace: "6", gsrlimit: "4", prop: "imageinfo", iiprop: "url",
+    iiurlwidth: "1100", format: "json", formatversion: "2",
+  });
+  try {
+    const response = await fetch("https://commons.wikimedia.org/w/api.php?" + params.toString(), {
+      headers: { accept: "application/json", "user-agent": "ALASSAUL-AI/1.0 (https://alassaul.com; inline image search)" },
+      signal: AbortSignal.timeout(5500),
+    });
+    if (!response.ok) throw new Error("Wikimedia Commons HTTP " + response.status);
+    const data = await response.json() as { query?: { pages?: Array<{ title?: string; imageinfo?: Array<{ thumburl?: string; url?: string }> }> } };
+    const images = (data.query?.pages ?? []).flatMap((page) => {
+      const image = page.imageinfo?.[0];
+      const url = image?.thumburl ?? image?.url;
+      if (!page.title || !url || !/^https:\/\/upload\.wikimedia\.org\//i.test(url)) return [];
+      const title = page.title.replace(/^File:/i, "").replace(/\.[^.]+$/, "").replace(/_/g, " ").slice(0, 100);
+      return [{ title, url }];
+    }).slice(0, 3);
+    if (!images.length) {
+      return language === "EN" ? "I couldn't find a reliable, displayable image for that request right now. Try a more specific place or scene."
+        : language === "TR" ? "Bu istek için şu anda güvenilir ve görüntülenebilir bir fotoğraf bulamadım. Daha belirli bir yer veya manzara deneyin."
+        : "ما حصلت الآن على صورة موثوقة قابلة للعرض لهذا الطلب. جرّب تحديد المكان أو وصف المنظر بشكل أدق.";
+    }
+    const intro = language === "EN" ? "Here are the images you asked for:" : language === "TR" ? "İstediğiniz fotoğraflar:" : "تفضل، هذه الصور التي طلبتها:";
+    const credits = language === "EN" ? "Images from Wikimedia Commons." : language === "TR" ? "Görseller Wikimedia Commons kaynaklıdır." : "الصور من أرشيف ويكيميديا كومنز.";
+    return intro + "\n\n" + images.map((image) => `![${image.title}](${image.url})`).join("\n\n") + "\n\n" + credits;
+  } catch (error) {
+    console.warn("[ALASSAUL images] image lookup unavailable", safeProviderDiagnostic(error));
+    return language === "EN" ? "Image search is temporarily unavailable, so I don't want to send you an unverified or broken link. Please try again shortly."
+      : language === "TR" ? "Fotoğraf araması geçici olarak kullanılamıyor. Doğrulanmamış veya bozuk bir bağlantı göndermek istemiyorum; lütfen biraz sonra tekrar deneyin."
+      : "البحث عن الصور متوقف مؤقتاً، وما أبغى أرسل لك رابطاً غير موثوق أو صورة لا تعمل. جرّب مرة ثانية بعد قليل.";
+  }
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -1527,6 +1575,10 @@ export const appRouter = router({
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
         const contextualWeatherText = getContextualWeatherQuestion(input.messages);
+        // Return actual inline photos for explicit image/scene requests.
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl && isImageRequest(latestText)) {
+          return { text: await getRequestedImagesAnswer(latestText, input.language) };
+        }
         const usesResponsesWebSearch = /\/v1\/responses$/i.test(ENV.llmApiUrl ?? "");
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
