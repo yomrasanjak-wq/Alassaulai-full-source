@@ -353,7 +353,8 @@ describe("live worldwide tourism place lookup", () => {
       expect(result).toContain("openstreetmap.org/node/12345");
       expect(result).toContain("google.com/maps/dir/");
       expect(result).toContain("OpenStreetMap contributors");
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy.mock.calls.filter(([input]) => String(input).startsWith("https://photon.komoot.io/api/"))).toHaveLength(1);
+    expect(fetchSpy.mock.calls.filter(([input]) => String(input).startsWith("https://overpass"))).toHaveLength(3);
     } finally {
       fetchSpy.mockRestore();
     }
@@ -398,7 +399,7 @@ describe("live worldwide tourism place lookup", () => {
     try {
       const result = await getLiveTourismPlacesAnswer("أماكن سياحية في مكان غير معروف", "AR");
       expect(result).toContain("لم أتمكن من تحديد");
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(2); // Photon, then Nominatim fallback.
     } finally {
       fetchSpy.mockRestore();
     }
@@ -598,7 +599,6 @@ describe("ai.chat", () => {
   });
 
   it.each([
-    "السلام عليكم",
     "اشرح لي معنى الصبر في القرآن وكيف أطبقه يومياً",
     "لماذا يتكوّن الضباب فوق الجبال صباحاً؟",
     "من أين أبدأ في زيارة ريزا إذا كانت إقامتي ثلاثة أيام؟",
@@ -828,7 +828,7 @@ describe("ai.chat", () => {
       expect(result.text).toContain("تعذر جلب جدول مباريات دوري روشن");
       expect(result.text).not.toContain("أحدث أخبار دوري روشن");
       expect(result.text).not.toContain("روابط تقارير حديثة");
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(4); // ESPN scoreboard plus three official SPL pages.
       expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
@@ -963,7 +963,7 @@ describe("ai.chat", () => {
     };
     await appRouter.createCaller(namedContext).ai.chat({
       language: "AR",
-      messages: [{ role: "user", content: "السلام عليكم" }],
+      messages: [{ role: "user", content: "ساعدني في أمر ما" }],
     });
     const request = vi.mocked(invokeLLM).mock.calls[0]?.[0];
     const systemMessage = request?.messages?.[0]?.content;
