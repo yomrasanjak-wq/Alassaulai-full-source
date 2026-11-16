@@ -2,7 +2,10 @@
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import stylesheet from "../index.css?raw";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const stylesheet = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
 
 const { mutateAsyncMock, auxiliaryMutationMock } = vi.hoisted(() => ({ mutateAsyncMock: vi.fn(), auxiliaryMutationMock: vi.fn() }));
 vi.mock("@/lib/trpc", () => ({
@@ -588,15 +591,12 @@ describe("TikTok profile page", () => {
 });
 
 describe("Official live channel actions", () => {
-  it("opens the official Makkah channel page directly when no verified embed is configured", () => {
-    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
-    try {
-      render(<Home />);
-      fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
-      expect(openSpy).toHaveBeenCalledWith("https://www.youtube.com/channel/UCos52azQNBgW63_9uDJoPDA", "_blank", "noopener,noreferrer");
-    } finally {
-      openSpy.mockRestore();
-    }
+  it("opens the current official Makkah live video inside the broadcast box", () => {
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
+    const iframe = screen.getByTitle("مكة المكرمة") as HTMLIFrameElement;
+    expect(iframe.src).toContain("youtube-nocookie.com/embed/kYqGbBqmp8g");
+    expect(document.querySelector(".video-shell")).toBeNull();
   });
 
   it("keeps all four broadcast channel cards actionable", () => {
