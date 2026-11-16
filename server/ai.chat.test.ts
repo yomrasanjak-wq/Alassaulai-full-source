@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getRequestedImagesAnswer, getVisitorIdentityInstruction, isImageRequest, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
@@ -604,6 +604,39 @@ describe("ai.chat", () => {
     vi.clearAllMocks();
     vi.mocked(invokeLLM).mockRejectedValue(new Error("test provider unavailable"));
   });
+  it("returns real inline photographs for an explicit image request instead of a bare link", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        query: { pages: [
+          { title: "File:Uzungol lake panorama.jpg", imageinfo: [{ thumburl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Uzungol.jpg/1100px-Uzungol.jpg" }] },
+          { title: "File:Uzungol village view.jpg", imageinfo: [{ thumburl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Uzungol-village.jpg/1100px-Uzungol-village.jpg" }] },
+        ] },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const caller = appRouter.createCaller(createPublicContext());
+      const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "أرني صورة بحيرة أوزنجول" }] });
+      expect(isImageRequest("أبغى منظر للشلال")).toBe(true);
+      expect(result.text).toContain("![Uzungol lake panorama]");
+      expect(result.text).toContain("https://upload.wikimedia.org/");
+      expect(result.text).not.toContain("افتح الرابط");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
+      expect(requestUrl.searchParams.get("gsrsearch")).toContain("بحيرة أوزنجول");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("does not invent or return external links when the image source has no usable photographs", async () => {
+    const answer = await getRequestedImagesAnswer("أبغى منظر غير موجود", "AR");
+    expect(answer).toContain("ما حصلت الآن على صورة موثوقة");
+    expect(answer).not.toContain("https://");
+  });
+
 
   it.each([
     "اشرح لي معنى الصبر في القرآن وكيف أطبقه يومياً",
