@@ -209,7 +209,7 @@ export function getLocalTourismCatalogContext(message: string, language: "AR" | 
     if (isOrduGiresun) return /أوردو|ordu|قيرسون|غيرسون|giresun|فاتسا|بيرشمبه/i.test(searchable);
     if (isIstanbul) return /إسطنبول|istanbul/i.test(searchable);
     return searchable.includes(query);
-  }).slice(0, 24);
+  }).slice(0, 40);
   if (!matches.length) return undefined;
   const heading = language === "AR" ? "وجهات مسجلة في دليل ALASSAUL" : language === "TR" ? "ALASSAUL rehberindeki destinasyonlar" : "Destinations listed in the ALASSAUL guide";
   const rows = matches.map((place, index) => {
