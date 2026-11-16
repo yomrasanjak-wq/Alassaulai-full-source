@@ -1632,7 +1632,7 @@ ${newsContext}`);
         }
 
         // Free keyless reference lookup adds background context, never breaking news or local live data.
-        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl && !isItineraryPlanningQuestion(latestText)) {
           const referenceContext = await getWikipediaSearchContext(latestText, input.language);
           if (referenceContext) liveContext.push(`نتيجة مرجعية من ويكيبيديا (للمعلومات الخلفية وليست مصدراً للأحداث اللحظية):\n${referenceContext}`);
         }
