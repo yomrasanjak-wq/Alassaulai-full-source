@@ -3,8 +3,12 @@
  */
 export type GroundingLanguage = "AR" | "TR" | "EN";
 
+export function isGenealogyResearchQuestion(message: string): boolean {
+  return /(?:نسب|الأنساب|الانساب|أصل القبيلة|اصل القبيله|أصل العائلة|اصل العائله|قبيلة|قبيله|عشيرة|عشيره|فخذ|أفخاذ|افخاذ|بطون|بطن|شجرة العائلة|شجرة نسب|من أي قبيلة|من اي قبيله|يرجعون إلى|يرجعون الى|يرجع إلى|يرجع الى|لقب العائلة|لقب|surname|genealogy|tribe|clan|family lineage)/i.test(message.normalize("NFKC"));
+}
+
 export function isGoogleGroundingQuestion(message: string): boolean {
-  return /(?:أخبار|اخبار|خبر عاجل|عاجل|آخر المستجدات|اخر المستجدات|اليوم|الآن|الان|حالي(?:اً|ا)?|نتيجة المباراة|نتائج المباريات|ترتيب الدوري|جدول المباريات|متى يلعب|من فاز|مباراة اليوم|الدوري|روشن|الطقس|الأجواء|الاجواء|مفتوح الآن|مفتوح الان|أقرب|اقرب|حول(?:ي|نا)?|near me|open now|latest|today|current|breaking news|world news|live score|standings|fixtures|weather|nearby)/i.test(message);
+  return isGenealogyResearchQuestion(message) || /(?:أخبار|اخبار|خبر عاجل|عاجل|آخر المستجدات|اخر المستجدات|اليوم|الآن|الان|حالي(?:اً|ا)?|نتيجة المباراة|نتائج المباريات|ترتيب الدوري|جدول المباريات|متى يلعب|من فاز|مباراة اليوم|الدوري|روشن|الطقس|الأجواء|الاجواء|مفتوح الآن|مفتوح الان|أقرب|اقرب|حول(?:ي|نا)?|near me|open now|latest|today|current|breaking news|world news|live score|standings|fixtures|weather|nearby)/i.test(message);
 }
 
 function safeText(value: unknown): string {
@@ -27,7 +31,7 @@ export async function getGoogleGroundedAnswer(message: string, language: Groundi
       headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
       signal: controller.signal,
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: `${message}\n\nأجب باللغة ${language === "AR" ? "العربية" : language === "TR" ? "التركية" : "الإنجليزية"}. استخدم بحث Google المدمج للتحقق من المعلومات المتغيرة. ميّز بين الخبر المؤكد والتحليل، واذكر التواريخ. لا تستنتج أن نتيجة البحث تعني تأكيداً مستقلاً، ولا تخترع تفاصيل أو مصادر.` }] }],
+        contents: [{ role: "user", parts: [{ text: `${message}\n\nأجب باللغة ${language === "AR" ? "العربية" : language === "TR" ? "التركية" : "الإنجليزية"}. ${isGenealogyResearchQuestion(message) ? "هذا بحث أنساب: استخدم Google Search للعثور على مراجع تاريخية وأكاديمية ووثائق ومصادر محلية معروفة. ابحث عن الاسم بصيغ كتابته المختلفة وعن البلد أو المنطقة المذكورة. أعطِ الأولوية للمصادر الأصلية والدراسات المتخصصة، واستشهد بالمصادر التي تدعم كل رواية. لا تعتبر تشابه الألقاب دليلاً على وحدة النسب، وافصل بين النسب والحلف والجوار والمصاهرة. إذا تعارضت المصادر فاعرض الاختلاف منسوباً لكل مصدر، ولا تركّب نسباً أو تخترع بطوناً. إذا لم تظهر مصادر كافية فصرّح بأن النسب غير محسوم واطلب تحديد البلد أو اسم الجد." : "استخدم بحث Google المدمج للتحقق من المعلومات المتغيرة. ميّز بين الخبر المؤكد والتحليل، واذكر التواريخ. لا تستنتج أن نتيجة البحث تعني تأكيداً مستقلاً."} لا تخترع تفاصيل أو مصادر.` }] }],
         tools: [{ google_search: {} }],
         generationConfig: { temperature: 0.2, maxOutputTokens: 700 },
       }),
