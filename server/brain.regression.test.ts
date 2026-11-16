@@ -248,6 +248,23 @@ describe("real-brain regression scenarios", () => {
     expect(invokeLLM).toHaveBeenCalled();
   });
 
+  it("keeps the Rize itinerary context when the user changes only its duration", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [
+        { role: "user", content: "أبغى خطة في ريزا" },
+        { role: "assistant", content: "أكيد، كم يوماً تفضل؟" },
+        { role: "user", content: "خليها خمسة أيام" },
+      ],
+    });
+    expect(result.text).toContain("لريزا لمدة 5 أيام");
+    expect(result.text).toContain("اليوم الخامس");
+    expect(result.text).not.toContain("قصر أتاتورك");
+    expect(result.text).toContain("برج كأس الشاي العملاق");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
   it("uses a newly named Rize destination instead of stale Trabzon itinerary context", async () => {
     const result = await caller().ai.chat({
       language: "AR",
