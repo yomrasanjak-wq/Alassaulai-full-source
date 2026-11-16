@@ -4,7 +4,7 @@ import { countRegisteredVisitors, createControlAuditLog, createControlRequest, c
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
-import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
+import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGenealogyResearchQuestion, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
 import { getWikipediaSearchContext } from "./_core/wikipediaSearch";
 import { synthesizeSpeech } from "./_core/textToSpeech";
 import { systemRouter } from "./_core/systemRouter";
@@ -61,17 +61,35 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - لا تجعل كل حديث يتحول إلى قائمة أو نصيحة؛ أحياناً يكون المطلوب دردشة قصيرة أو تفاعلاً طبيعياً. لا تفرض سؤالاً في نهاية كل إجابة، ولا تنه الحوار بطريقة تقطعه ما دام الزائر يريد المتابعة.
 `;
 
-/** Grounded genealogy guidance for the Awlad Rashid family-history topic. */
+/** General genealogy research guidance, with a separately attributed Awlad Rashid family note. */
 export function getTribalGenealogyInstruction(message: string): string {
-  if (!/(أولاد\s*راشد|اولاد\s*راشد|بني\s*راشد|بنو\s*راشد|الراشد|راشد بن|الجنيد|ذبيان)/i.test(message.normalize("NFKC"))) return "";
+  const normalized = message.normalize("NFKC");
+  const isGenealogyQuestion = /(?:نسب|الأنساب|الانساب|أصل القبيلة|اصل القبيله|أصل العائلة|اصل العائله|قبيلة|قبيله|عشيرة|عشيره|فخذ|أفخاذ|افخاذ|بطون|بطن|شجرة العائلة|شجرة نسب|من أي قبيلة|من اي قبيله|يرجعون إلى|يرجعون الى|يرجع إلى|يرجع الى|لقب العائلة|لقب|surname|genealogy|tribe|clan|family lineage)/i.test(normalized);
+  if (!isGenealogyQuestion) return "";
+
+  const generalGuidance = [
+    "نمط بحث الأنساب — متاح لكل القبائل والعائلات والألقاب، وليس لقبيلة واحدة:",
+    "ابدأ بتحديد الاسم كما كتبه المستخدم، ثم ابحث عن أصوله وفروعه وبطونه ومناطق وجوده تاريخياً وحديثاً. لا تفترض أن كل من يحمل اللقب نفسه يرجع إلى جد واحد؛ فقد تتشابه الأسماء بين أسر وقبائل لا يجمعها نسب.",
+    "إذا كان الاسم مشتركاً أو كانت المنطقة غير واضحة، اسأل سؤال توضيح واحداً عن البلد أو المنطقة أو اسم الجد الأقرب. لا تطلب تفاصيل شخصية حساسة، ولا تجعل المستخدم يشارك وثائق عائلية خاصة إلا إذا أراد ذلك.",
+    "ميّز بوضوح بين النسب المثبت بوثائق أو مصادر تاريخية معتبرة، والرواية الشفهية أو العائلية، والانتساب بالحلف أو الجوار أو المصاهرة. الحلف لا يثبت وحده وحدة النسب، ولا تحوّل الحليف إلى ابن عم نسباً.",
+    "اعتمد عند البحث على المصادر التاريخية والأكاديمية والوثائق المنشورة والمراجع المحلية المعروفة، واذكر اسم المصدر وما الذي يدعمه تحديداً. أعطِ الأولوية للمصدر الأصلي أو الدراسة المتخصصة، ولا تجعل صفحات الأنساب المجهولة أو منشورات المنتديات أو ويكيبيديا وحدها دليلاً قاطعاً.",
+    "إذا اختلفت الروايات، اعرض كل رواية مع نسبتها إلى مصدرها وبيّن موضع الاتفاق والاختلاف دون تركيب سلسلة نسب توفيقية. لا تخترع أسماء أجداد أو بطون أو هجرات أو تواريخ، ولا تصف نسباً بأنه مؤكد إذا كانت الأدلة لا تسمح بذلك.",
+    "في الأنساب التفصيلية استخدم البحث الحي متى كان متاحاً، وأرفق المصادر الفعلية التي تم الرجوع إليها. إذا لم تتوفر نتائج موثوقة، قل إن المعلومة غير محسومة واطلب تحديد البلد أو اسم الجد بدلاً من التخمين.",
+    "قدّم إجابة مفهومة ومختصرة أولاً، ثم اعرض الفروع والتفاصيل التي تدعمها المصادر فقط. هذه الخدمة مفتوحة للزائر أياً كانت قبيلته أو عائلته أو بلده."
+  ];
+
+  const isAwladRashid = /(أولاد\s*راشد|اولاد\s*راشد|بني\s*راشد|بنو\s*راشد|الراشد|راشد بن|الجنيد|ذبيان)/i.test(normalized);
+  if (!isAwladRashid) return generalGuidance.join("\n");
+
   return [
-    "ملف معرفة الأنساب — أولاد راشد:",
+    ...generalGuidance,
+    "",
+    "ملف معرفة إضافي — أولاد راشد (يُعرض فقط عند السؤال عن هذا الاسم):",
     "وفق الرواية العائلية التي قدمها أحد أبناء القبيلة للمنصة: راشد بن شاكر بن جنيد، وأن راشداً هاجر وذريته من الجزيرة العربية إلى السودان، ثم انتشرت فروع ذريته في السودان وتشاد ومناطق أخرى. تعامل مع هذا بوصفه رواية عائلية منسوبة إلى ناقلها، لا وثيقة تاريخية مثبتة.",
     "توجد رواية منشورة مختلفة في ترتيب الاسم، تذكر: راشد بن جنيد بن شاكر بن أحمد الأجذم بن شعوف الأشجع بن عيسى بن مطر بن ديان بن عبد الله بن الفضل. اذكر اختلاف ترتيب شاكر وجنيد صراحة، ولا توحّد الروايتين أو تخترع حلاً للتعارض.",
     "الفروع الأربعة المتداولة: زبد، أزيد، زيود، حميدة. ومن البطون المنشورة: أولاد زبد (مليك، مسعد، أولاد جيقان، أولاد عيد، أولاد المقيم)؛ أولاد أزيد (عيد، أولاد مهيا، أولاد جبران، عيص/العياصاد، دقيل)؛ أولاد زيود (دار سالم، مهدي، أولاد أحمد، أولاد سعيد، أولاد سعد، المهادي، رمضان)؛ أولاد حميدة (أولاد عيسى، عبوس بفروع بلال ورواف وسيار وعياد، وأولاد مالك بفروع شاكر ونافع وأولاد عواني وعبد الكريم وموسى وعبد العالي). قد تختلف التقسيمات محلياً؛ انسبها إلى الرواية المنشورة ولا تعرضها كقائمة نهائية.",
-    "تذكر كتابات تاريخية صلة وثيقة بين بني راشد والزيود في وداي وبرنو، وتصف الزيود بأنهم فرع قريب من بني راشد. لا تعمم ذلك على كل جماعة تحمل اسماً مشابهاً دون قرينة.",
-    "بحسب إفادة عائلية وصلت إلى المنصة، ذبيان دخلوا في جهينة حلفاً. ميّز بين الحلف والنسب، واذكر أن هذه إفادة شفوية تحتاج توثيقاً مستقلاً؛ لا تجعل ذبيان نسباً من جهينة لمجرد الحلف.",
-    "اعرض دائماً ما هو رواية عائلية وما هو منشور وما هو مختلف عليه. لا تستخدم ويكيبيديا وحدها لإثبات نسب قطعي، ولا تخلط بين الجماعات المتشابهة اسماً. إذا سئلت عن فرع غير موثق فاطلب اسم الجد أو المنطقة بدلاً من اختلاق بطون.",
+    "تذكر كتابات تاريخية صلة بين بني راشد والزيود في وداي وبرنو؛ انسب هذه المعلومة إلى الكتابات التي تذكرها ولا تعممها على كل جماعة تحمل اسماً مشابهاً.",
+    "بحسب إفادة عائلية وصلت إلى المنصة، ذبيان دخلوا في جهينة حلفاً. هذه إفادة شفوية تحتاج توثيقاً مستقلاً؛ لا تجعل ذبيان نسباً من جهينة لمجرد الحلف."
   ].join("\n");
 }
 
@@ -1794,7 +1812,7 @@ ${newsContext}`);
         }
 
         // Free keyless reference lookup adds background context, never breaking news or local live data.
-        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl && !isItineraryPlanningQuestion(latestText)) {
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl && !isItineraryPlanningQuestion(latestText) && !isGenealogyResearchQuestion(latestText)) {
           const referenceContext = await getWikipediaSearchContext(latestText, input.language);
           if (referenceContext) liveContext.push(`نتيجة مرجعية من ويكيبيديا (للمعلومات الخلفية وليست مصدراً للأحداث اللحظية):\n${referenceContext}`);
         }
@@ -1849,6 +1867,7 @@ ${newsContext}`);
           };
         }
         const needsLiveWebSearch = isWorldNewsQuestion(latestText)
+          || isGenealogyResearchQuestion(latestText)
           || isGoogleGroundingQuestion(latestText)
           || /(?:سعر|أسعار|اسعار|حراج|مستعمل|قيمة السوق|حارس|لاعب|تشكيلة|مدرب|كم.*(?:السوق|حراج)|current|latest|today)/i.test(latestText);
         const llmRequest = {
