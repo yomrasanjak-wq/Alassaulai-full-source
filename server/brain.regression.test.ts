@@ -248,6 +248,22 @@ describe("real-brain regression scenarios", () => {
     expect(invokeLLM).toHaveBeenCalled();
   });
 
+  it("uses a newly named Rize destination instead of stale Trabzon itinerary context", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [
+        { role: "user", content: "أبغى خطة في طرابزون" },
+        { role: "assistant", content: "أكيد، كم يوماً تفضل؟" },
+        { role: "user", content: "بل خليها في ريزا أربعة أيام" },
+      ],
+    });
+    expect(result.text).toContain("لريزا لمدة 4 أيام");
+    expect(result.text).toContain("برج كأس الشاي العملاق");
+    expect(result.text).not.toContain("قصر أتاتورك");
+    expect(result.text).toContain("اليوم الرابع");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
 
   it("offers a real map search instead of inventing breakfast restaurants after provider failure", async () => {
     const result = await caller().ai.chat({
