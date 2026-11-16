@@ -619,6 +619,7 @@ describe("ai.chat", () => {
       const caller = appRouter.createCaller(createPublicContext());
       const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "أرني صورة بحيرة أوزنجول" }] });
       expect(isImageRequest("أبغى منظر للشلال")).toBe(true);
+      expect(isImageRequest("أرني الطريق إلى المطار")).toBe(false);
       expect(result.text).toContain("![Uzungol lake panorama]");
       expect(result.text).toContain("https://upload.wikimedia.org/");
       expect(result.text).not.toContain("افتح الرابط");
