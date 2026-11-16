@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getRequestedImagesAnswer, getVisitorIdentityInstruction, isImageRequest, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getRequestedImagesAnswer, getTribalGenealogyInstruction, getVisitorIdentityInstruction, isImageRequest, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
@@ -253,6 +253,19 @@ describe("model fallback selection", () => {
 });
 
 describe("adaptive brain response strategy", () => {
+  it("provides attributed Awlad Rashid genealogy and distinguishes alliance from lineage", () => {
+    const instruction = getTribalGenealogyInstruction("من هم أولاد راشد؟");
+    expect(instruction).toContain("راشد بن شاكر بن جنيد");
+    expect(instruction).toContain("راشد بن جنيد بن شاكر");
+    expect(instruction).toContain("زبد، أزيد، زيود، حميدة");
+    expect(instruction).toContain("ذبيان دخلوا في جهينة حلفاً");
+    expect(instruction).toContain("ميّز بين الحلف والنسب");
+  });
+
+  it("does not inject tribal genealogy context into unrelated questions", () => {
+    expect(getTribalGenealogyInstruction("ما حالة الطقس في طرابزون؟")).toBe("");
+  });
+
   it("selects safe step-by-step guidance for troubleshooting requests", () => {
     expect(getAdaptiveTaskInstruction("السيارة متعطلة وما تشتغل")).toContain("خطوات تشخيص مرتبة");
   });
