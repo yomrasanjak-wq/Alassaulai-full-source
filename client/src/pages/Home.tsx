@@ -2006,7 +2006,7 @@ export default function Home() {
 
           <div className="resident-accordion-group resident-family-businesses">
             <button type="button" className="resident-accordion-trigger" aria-expanded={familyBusinessesOpen} onClick={() => setFamilyBusinessesOpen((open) => !open)}>
-              <span><BriefcaseBusiness size={19} /> خدمات وشركات العائلة</span><ChevronDown size={20} className={familyBusinessesOpen ? "is-open" : ""} />
+              <span><BriefcaseBusiness size={19} /> الشركات والخدمات التجارية</span><ChevronDown size={20} className={familyBusinessesOpen ? "is-open" : ""} />
             </button>
             {familyBusinessesOpen && <div className="resident-local-focus family-businesses-content">
               <div className="resident-local-focus-heading">
@@ -2065,7 +2065,7 @@ export default function Home() {
                   </div>
                 </article>
               </div>
-              <p className="family-business-disclaimer">هذه مساحة تعريفية لخدمات العائلة. تم تحديث الاسم التجاري لبانسي فلاور وفق تأكيد المالك، وتُعرض بيانات التواصل والمواقع بعد التحقق، ويمكن تحديث الصور والعروض ومواعيد العمل من غرفة التحكم لاحقاً.</p>
+              <p className="family-business-disclaimer">هذه مساحة تعريفية للشركات والخدمات التجارية. تم تحديث الاسم التجاري لبانسي فلاور وفق تأكيد المالك، وتُعرض بيانات التواصل والمواقع بعد التحقق، ويمكن تحديث الصور والعروض ومواعيد العمل من غرفة التحكم لاحقاً.</p>
             </div>}
           </div>
           <p className="resident-services-note"><ShieldCheck size={15} /> هذه روابط للبوابات الرسمية وليست استشارة قانونية أو ضمانًا لقبول الطلب. لا تشارك كلمة المرور أو رمز التحقق مع أي شخص، وتأكد من عنوان الموقع قبل إدخال بياناتك. رقم 112 للطوارئ فقط، وللاستفسارات العامة عن الإقامة وشؤون الأجانب استخدم YİMER 157.</p>
