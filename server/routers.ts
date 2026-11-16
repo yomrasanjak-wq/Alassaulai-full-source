@@ -61,6 +61,20 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - لا تجعل كل حديث يتحول إلى قائمة أو نصيحة؛ أحياناً يكون المطلوب دردشة قصيرة أو تفاعلاً طبيعياً. لا تفرض سؤالاً في نهاية كل إجابة، ولا تنه الحوار بطريقة تقطعه ما دام الزائر يريد المتابعة.
 `;
 
+/** Grounded genealogy guidance for the Awlad Rashid family-history topic. */
+export function getTribalGenealogyInstruction(message: string): string {
+  if (!/(أولاد\\s*راشد|اولاد\\s*راشد|بني\\s*راشد|بنو\\s*راشد|الراشد|راشد بن|الجنيد|ذبيان)/i.test(message.normalize("NFKC"))) return "";
+  return [
+    "ملف معرفة الأنساب — أولاد راشد:",
+    "وفق الرواية العائلية التي قدمها أحد أبناء القبيلة للمنصة: راشد بن شاكر بن جنيد، وأن راشداً هاجر وذريته من الجزيرة العربية إلى السودان، ثم انتشرت فروع ذريته في السودان وتشاد ومناطق أخرى. تعامل مع هذا بوصفه رواية عائلية منسوبة إلى ناقلها، لا وثيقة تاريخية مثبتة.",
+    "توجد رواية منشورة مختلفة في ترتيب الاسم، تذكر: راشد بن جنيد بن شاكر بن أحمد الأجذم بن شعوف الأشجع بن عيسى بن مطر بن ديان بن عبد الله بن الفضل. اذكر اختلاف ترتيب شاكر وجنيد صراحة، ولا توحّد الروايتين أو تخترع حلاً للتعارض.",
+    "الفروع الأربعة المتداولة: زبد، أزيد، زيود، حميدة. ومن البطون المنشورة: أولاد زبد (مليك، مسعد، أولاد جيقان، أولاد عيد، أولاد المقيم)؛ أولاد أزيد (عيد، أولاد مهيا، أولاد جبران، عيص/العياصاد، دقيل)؛ أولاد زيود (دار سالم، مهدي، أولاد أحمد، أولاد سعيد، أولاد سعد، المهادي، رمضان)؛ أولاد حميدة (أولاد عيسى، عبوس بفروع بلال ورواف وسيار وعياد، وأولاد مالك بفروع شاكر ونافع وأولاد عواني وعبد الكريم وموسى وعبد العالي). قد تختلف التقسيمات محلياً؛ انسبها إلى الرواية المنشورة ولا تعرضها كقائمة نهائية.",
+    "تذكر كتابات تاريخية صلة وثيقة بين بني راشد والزيود في وداي وبرنو، وتصف الزيود بأنهم فرع قريب من بني راشد. لا تعمم ذلك على كل جماعة تحمل اسماً مشابهاً دون قرينة.",
+    "بحسب إفادة عائلية وصلت إلى المنصة، ذبيان دخلوا في جهينة حلفاً. ميّز بين الحلف والنسب، واذكر أن هذه إفادة شفوية تحتاج توثيقاً مستقلاً؛ لا تجعل ذبيان نسباً من جهينة لمجرد الحلف.",
+    "اعرض دائماً ما هو رواية عائلية وما هو منشور وما هو مختلف عليه. لا تستخدم ويكيبيديا وحدها لإثبات نسب قطعي، ولا تخلط بين الجماعات المتشابهة اسماً. إذا سئلت عن فرع غير موثق فاطلب اسم الجد أو المنطقة بدلاً من اختلاق بطون.",
+  ].join("\\n");
+}
+
 const MAX_CHAT_HISTORY = 14;
 const MAX_CHAT_MESSAGE_CHARS = 1200;
 
@@ -1821,7 +1835,7 @@ ${newsContext}`);
           }
         }
         const llmMessages: Array<{ role: "system" | "user" | "assistant"; content: string | Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string; detail: "auto" } }> }> = [
-          { role: "system", content: `${assistantSystemPrompt}\n${getVisitorIdentityInstruction(ctx.user?.name)}${savedMemoryInstruction}\n${languageInstruction}\n\nتوجيه المهمة الحالية:\n${taskInstruction}${sourceInstruction}` },
+          { role: "system", content: `${assistantSystemPrompt}\n${getVisitorIdentityInstruction(ctx.user?.name)}${savedMemoryInstruction}\n${languageInstruction}\n\nتوجيه المهمة الحالية:\n${taskInstruction}\n${getTribalGenealogyInstruction(latestText)}${sourceInstruction}` },
           ...history.map((message) => ({ role: message.role, content: message.content })),
         ];
         if (latestMessage?.imageDataUrl && llmMessages.length > 1) {
