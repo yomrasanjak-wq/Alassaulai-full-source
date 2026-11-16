@@ -933,8 +933,13 @@ function getContextualFallback(
 ): string | undefined {
   const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
-  const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|خطة|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
-    && /(?:طرابزون|ترابزون|trabzon|ريزه|ريزا|ريزة|rize|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i.test(latest);
+  const itineraryIntent = /(?:رتب|رتّب|خطط|خطّط|خطة|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i;
+  const itineraryCity = /(?:طرابزون|ترابزون|trabzon|ريزه|ريزا|ريزة|rize|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i;
+  const hasPriorItineraryContext = itineraryIntent.test(recentUserText) && itineraryCity.test(recentUserText);
+  const isDurationFollowUp = /(?:خليها|خلها|اجعلها|اجعل البرنامج|لمدة|تكون|مدتها|make it|for)\s*/i.test(latest)
+    && /(?:\d{1,2}\s*(?:أيام|ايام|يوم|days?)|يوم واحد|يومين|يومان|ثلاث|ثلاثة|أربع|أربعة|اربع|اربعة|خمس|خمسة|ست|ستة|سبع|سبعة)/i.test(latest);
+  const asksItinerary = (itineraryIntent.test(latest) && itineraryCity.test(latest))
+    || (hasPriorItineraryContext && isDurationFollowUp);
   if (asksItinerary) {
     const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
     const wordDuration: Array<[RegExp, number]> = [
@@ -947,7 +952,7 @@ function getContextualFallback(
       [/(?:سبعة|سبع)\s*(?:أيام|ايام|يوم)/i, 7],
     ];
     const requestedDays = durationMatch ? Number(durationMatch[1]) : wordDuration.find(([pattern]) => pattern.test(latest))?.[1];
-    const asksTrabzon = /طرابزون|ترابزون|trabzon/i.test(latest);
+    const asksTrabzon = /طرابزون|ترابزون|trabzon/i.test(latest) || /طرابزون|ترابزون|trabzon/i.test(recentUserText);
     if (asksTrabzon) {
       // Provider-independent fallback: use only places in the published ALASSAUL guide.
       const places = DESTINATION_GALLERY.filter((place) =>
