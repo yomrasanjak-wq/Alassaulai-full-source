@@ -953,19 +953,27 @@ function getContextualFallback(
     ];
     const requestedDays = durationMatch ? Number(durationMatch[1]) : wordDuration.find(([pattern]) => pattern.test(latest))?.[1];
     const asksTrabzon = /طرابزون|ترابزون|trabzon/i.test(latest) || /طرابزون|ترابزون|trabzon/i.test(recentUserText);
-    if (asksTrabzon) {
+    const asksRize = /ريزه|ريزا|ريزة|rize/i.test(latest) || /ريزه|ريزا|ريزة|rize/i.test(recentUserText);
+    const itineraryCityName = asksTrabzon ? "طرابزون" : asksRize ? "ريزا" : "";
+    if (itineraryCityName) {
       // Provider-independent fallback: use only places in the published ALASSAUL guide.
-      const places = DESTINATION_GALLERY.filter((place) =>
-        /طرابزون|trabzon/i.test(place.region) || /طرابزون|trabzon/i.test(place.category),
-      ).slice(0, 14);
+      // Include Trabzon districts/highlands, not only entries whose region literally says "Trabzon".
+      const places = DESTINATION_GALLERY.filter((place) => {
+        if (asksRize) return /ريزا|ريزه|ريزة|rize|تشايلي/i.test(place.region);
+        return /طرابزون|trabzon|يومرا|كاش.?أوستو|أرسين|سورميني|أراكلي|أوف|تشايكارا|ماتشكا|أكشابات|دوزكوي/i.test(place.region)
+          || /طرابزون|trabzon/i.test(place.category)
+          || /أوزنجول والمرتفعات/i.test(place.category);
+      }).slice(0, 14);
       if (places.length) {
         const days = Math.max(1, Math.min(requestedDays ?? 3, 7, places.length));
         const selectedPlaces = places.slice(0, Math.min(14, days * 2));
-        const perDay = Math.ceil(selectedPlaces.length / days);
         const dayLabel = language === "AR" ? "اليوم" : language === "TR" ? "Gün" : "Day";
         const arabicDayOrdinals = ["الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس", "السابع"];
         const rows = Array.from({ length: days }, (_, dayIndex) => {
-          const dayPlaces = selectedPlaces.slice(dayIndex * perDay, (dayIndex + 1) * perDay);
+          // Distribute stops across every requested day, including uneven counts.
+          const start = Math.floor(dayIndex * selectedPlaces.length / days);
+          const end = Math.floor((dayIndex + 1) * selectedPlaces.length / days);
+          const dayPlaces = selectedPlaces.slice(start, end);
           if (!dayPlaces.length) return "";
           const heading = language === "AR" ? `${dayLabel} ${arabicDayOrdinals[dayIndex]}` : `${dayLabel} ${dayIndex + 1}`;
           const stops = dayPlaces.map((place) => {
@@ -978,10 +986,10 @@ function getContextualFallback(
           return `${heading}:\n${stops.join("\n")}`;
         }).filter(Boolean);
         const intro = language === "AR"
-          ? `أعددت لك برنامجاً بديلاً من دليل ALASSAUL لطرابزون لمدة ${days} أيام، لأن مزود التخطيط متوقف مؤقتاً. رتبت الوجهات في مجموعات، ويمكنك فتح كل موقع على الخريطة:`
+          ? `أعددت لك برنامجاً بديلاً من دليل ALASSAUL ل${itineraryCityName} لمدة ${days} أيام، لأن مزود التخطيط متوقف مؤقتاً. وزعت الوجهات المتاحة على الأيام، ويمكنك فتح كل موقع على الخريطة:`
           : language === "TR"
-            ? `Yapay zekâ sağlayıcısı geçici olarak kullanılamadığı için ALASSAUL Trabzon rehberinden ${days} günlük alternatif hazırladım:`
-            : `The planning provider is temporarily unavailable, so here is a ${days}-day alternative using ALASSAUL's curated Trabzon guide:`;
+            ? `Yapay zekâ sağlayıcısı geçici olarak kullanılamadığı için ALASSAUL ${itineraryCityName} rehberinden ${days} günlük alternatif hazırladım:`
+            : `The planning provider is temporarily unavailable, so here is a ${days}-day alternative using the curated ALASSAUL guide for ${itineraryCityName}:`;
         const note = language === "AR"
           ? "ملاحظة: هذا ترتيب مبدئي للوجهات، وليس تحققاً من الطقس أو ساعات العمل أو حالة الطرق. راجع الظروف وأوقات الزيارة قبل الانطلاق."
           : language === "TR"
@@ -990,15 +998,6 @@ function getContextualFallback(
         return intro + "\n\n" + rows.join("\n\n") + "\n\n" + note;
       }
     }
-    const durationNote = requestedDays && requestedDays > 1
-      ? (language === "AR" ? ` طلبت برنامجاً لمدة ${requestedDays} أيام.` : ` You requested ${requestedDays} days.`)
-      : "";
-    return language === "AR"
-      ? `تعذّر إعداد برنامج موثوق لهذه الوجهة أثناء انقطاع مزود الذكاء الاصطناعي.${durationNote} لن أخترع وجهات أو تفاصيل؛ اذكر المدينة أو أعد المحاولة بعد قليل.`
-      : language === "TR"
-        ? "Yapay zekâ sağlayıcısı geçici olarak kullanılamıyor. Doğrulanmamış yerler uydurmayacağım; lütfen şehri belirtin veya tekrar deneyin."
-        : "The AI provider is temporarily unavailable. I won't invent destinations or details; please specify the city or retry shortly.";
-  }
 
   const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
   if (asksSupermarket) {
