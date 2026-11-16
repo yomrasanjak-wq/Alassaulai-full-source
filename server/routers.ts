@@ -1872,7 +1872,7 @@ ${newsContext}`);
           || /(?:سعر|أسعار|اسعار|حراج|مستعمل|قيمة السوق|حارس|لاعب|تشكيلة|مدرب|كم.*(?:السوق|حراج)|current|latest|today)/i.test(latestText);
         const llmRequest = {
           model: ENV.primaryModel,
-          max_completion_tokens: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText)) ? 1200 : 512,
+          max_completion_tokens: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText) || isGenealogyResearchQuestion(latestText)) ? 1200 : 512,
           reasoning: { effort: "minimal" },
           webSearch: needsLiveWebSearch,
           messages: llmMessages,
