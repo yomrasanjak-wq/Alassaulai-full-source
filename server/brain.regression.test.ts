@@ -289,4 +289,25 @@ describe("real-brain regression scenarios", () => {
     expect(context).not.toContain("برج كأس الشاي العملاق");
   });
 
+  it("builds a five-day Trabzon itinerary from the local catalog without waiting for external map services", async () => {
+    vi.mocked(invokeLLM).mockResolvedValue({
+      model: ENV.primaryModel,
+      choices: [{ message: { content: "اليوم الأول: وسط طرابزون. اليوم الثاني: يومرا وكاشوستو. اليوم الثالث: أوزنجول. اليوم الرابع: ماتشكا. اليوم الخامس: أكشابات." } }],
+    } as never);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("External lookup should be skipped for curated itineraries"));
+    try {
+      const question = "رتب لي برنامجاً سياحياً لمدة 5 أيام في طرابزون، وأعطني جميع الأماكن المناسبة، مع تقسيم الزيارات حسب المناطق.";
+      const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: question }] });
+      expect(result.text).toContain("اليوم الخامس");
+      expect(invokeLLM).toHaveBeenCalledOnce();
+      const systemMessage = vi.mocked(invokeLLM).mock.calls[0]?.[0]?.messages?.[0]?.content;
+      expect(systemMessage).toContain("وجهات مسجلة في دليل ALASSAUL");
+      expect(systemMessage).toContain("فوروم طرابزون مول");
+      expect(systemMessage).toContain("ممشى وحديقة إيوف");
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
 });
