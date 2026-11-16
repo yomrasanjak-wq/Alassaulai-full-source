@@ -102,11 +102,15 @@ export function LivePulse({ language, onPlanRoute }: LivePulseProps) {
     const loadRate = async () => {
       setLoadingRate(true);
       try {
-        const response = await fetch("https://api.frankfurter.app/latest?from=SAR&to=TRY", { headers: { Accept: "application/json" } });
+        // Use the same source that supports SAR in the converter. Frankfurter's
+        // ECB-based currency list does not provide SAR, so that request fails.
+        const response = await fetch("https://open.er-api.com/v6/latest/USD", { headers: { Accept: "application/json" } });
         if (!response.ok) throw new Error("rate");
         const data = await response.json();
-        const tryPerSar = Number(data.rates?.TRY);
-        if (!Number.isFinite(tryPerSar)) throw new Error("rate");
+        const sarPerUsd = Number(data.rates?.SAR);
+        const tryPerUsd = Number(data.rates?.TRY);
+        const tryPerSar = tryPerUsd / sarPerUsd;
+        if (!Number.isFinite(tryPerSar) || tryPerSar <= 0) throw new Error("rate");
         if (!cancelled) setRate({ tryPerSar, updatedAt: new Date() });
       } catch { if (!cancelled) setRate(null); } finally { if (!cancelled) setLoadingRate(false); }
     };
