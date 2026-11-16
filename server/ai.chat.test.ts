@@ -306,7 +306,7 @@ describe("live worldwide tourism place lookup", () => {
         return new Response(JSON.stringify({
           features: [
             { properties: { name: "Wrong Trabzon", city: "Other", country: "Georgia", countrycode: "ge" }, geometry: { coordinates: [41, 41] } },
-            { properties: { name: "Trabzon", city: "Trabzon", state: "Trabzon", country: "Turkey", countrycode: "tr", country_code: "tr" }, geometry: { coordinates: [39.7167, 41.0027] } },
+            { properties: { name: "Trabzon", city: "Trabzon", state: "Trabzon", country: "Türkiye", countrycode: "tr", country_code: "tr" }, geometry: { coordinates: [39.7167, 41.0027] } },
           ],
         }), { status: 200, headers: { "content-type": "application/geo+json" } });
       }
