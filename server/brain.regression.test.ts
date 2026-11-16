@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter } from "./routers";
+import { appRouter, getLocalTourismCatalogContext } from "./routers";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -266,6 +266,15 @@ describe("real-brain regression scenarios", () => {
     expect(result.text).toContain("أفضل المطاعم في ينبع الصناعية");
     expect(result.text).toContain("https://www.google.com/maps/search/");
     expect(result.text).not.toContain("لم أتمكن من تجهيز إجابة الآن");
+  });
+
+  it("uses the shared ALASSAUL catalog for Trabzon trips without mixing in Rize", () => {
+    const context = getLocalTourismCatalogContext("رتب لي برنامجاً في طرابزون", "AR");
+    expect(context).toContain("قصر أتاتورك");
+    expect(context).toContain("أوزنجول");
+    expect(context).toContain("الموقع على الخريطة");
+    expect(context).not.toContain("مرتفعات آيدر");
+    expect(context).not.toContain("برج كأس الشاي العملاق");
   });
 
 });
