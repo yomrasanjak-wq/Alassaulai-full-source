@@ -957,9 +957,11 @@ function getContextualFallback(
         const selectedPlaces = places.slice(0, Math.min(14, days * 2));
         const perDay = Math.ceil(selectedPlaces.length / days);
         const dayLabel = language === "AR" ? "اليوم" : language === "TR" ? "Gün" : "Day";
+        const arabicDayOrdinals = ["الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس", "السابع"];
         const rows = Array.from({ length: days }, (_, dayIndex) => {
           const dayPlaces = selectedPlaces.slice(dayIndex * perDay, (dayIndex + 1) * perDay);
           if (!dayPlaces.length) return "";
+          const heading = language === "AR" ? `${dayLabel} ${arabicDayOrdinals[dayIndex]}` : `${dayLabel} ${dayIndex + 1}`;
           const stops = dayPlaces.map((place) => {
             const map = new URL("https://www.google.com/maps/search/");
             map.searchParams.set("api", "1");
