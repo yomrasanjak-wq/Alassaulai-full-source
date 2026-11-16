@@ -933,7 +933,7 @@ function getContextualFallback(
 ): string | undefined {
   const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
-  const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
+  const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|خطة|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
     && /(?:طرابزون|ترابزون|trabzon|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i.test(latest);
   if (asksItinerary) {
     const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
