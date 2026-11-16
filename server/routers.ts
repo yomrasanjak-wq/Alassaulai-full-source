@@ -63,7 +63,7 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 
 /** Grounded genealogy guidance for the Awlad Rashid family-history topic. */
 export function getTribalGenealogyInstruction(message: string): string {
-  if (!/(أولاد\\s*راشد|اولاد\\s*راشد|بني\\s*راشد|بنو\\s*راشد|الراشد|راشد بن|الجنيد|ذبيان)/i.test(message.normalize("NFKC"))) return "";
+  if (!/(أولاد\s*راشد|اولاد\s*راشد|بني\s*راشد|بنو\s*راشد|الراشد|راشد بن|الجنيد|ذبيان)/i.test(message.normalize("NFKC"))) return "";
   return [
     "ملف معرفة الأنساب — أولاد راشد:",
     "وفق الرواية العائلية التي قدمها أحد أبناء القبيلة للمنصة: راشد بن شاكر بن جنيد، وأن راشداً هاجر وذريته من الجزيرة العربية إلى السودان، ثم انتشرت فروع ذريته في السودان وتشاد ومناطق أخرى. تعامل مع هذا بوصفه رواية عائلية منسوبة إلى ناقلها، لا وثيقة تاريخية مثبتة.",
@@ -72,7 +72,7 @@ export function getTribalGenealogyInstruction(message: string): string {
     "تذكر كتابات تاريخية صلة وثيقة بين بني راشد والزيود في وداي وبرنو، وتصف الزيود بأنهم فرع قريب من بني راشد. لا تعمم ذلك على كل جماعة تحمل اسماً مشابهاً دون قرينة.",
     "بحسب إفادة عائلية وصلت إلى المنصة، ذبيان دخلوا في جهينة حلفاً. ميّز بين الحلف والنسب، واذكر أن هذه إفادة شفوية تحتاج توثيقاً مستقلاً؛ لا تجعل ذبيان نسباً من جهينة لمجرد الحلف.",
     "اعرض دائماً ما هو رواية عائلية وما هو منشور وما هو مختلف عليه. لا تستخدم ويكيبيديا وحدها لإثبات نسب قطعي، ولا تخلط بين الجماعات المتشابهة اسماً. إذا سئلت عن فرع غير موثق فاطلب اسم الجد أو المنطقة بدلاً من اختلاق بطون.",
-  ].join("\\n");
+  ].join("\n");
 }
 
 const MAX_CHAT_HISTORY = 14;
@@ -1652,7 +1652,7 @@ export const appRouter = router({
         // Keep simple identity and supported live-data questions available even
         // when the external language-model provider is temporarily unavailable.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
-          if (/^(?:السلام عليكم(?: ورحمة الله وبركاته)?|مرحبا|مرحباً|هلا|أهلاً وسهلاً|صباح الخير|مساء الخير)[\\s.!،؟]*$/i.test(latestText.trim())) {
+          if (/^(?:السلام عليكم(?: ورحمة الله وبركاته)?|مرحبا|مرحباً|هلا|أهلاً وسهلاً|صباح الخير|مساء الخير)[\s.!،؟]*$/i.test(latestText.trim())) {
             return { text: "وعليكم السلام ورحمة الله وبركاته، حيّاك الله! كيف أقدر أساعدك؟" };
           }
 
