@@ -61,6 +61,7 @@ import {
   Phone,
   Play,
   Search,
+  Scale,
   Send,
   Settings2,
   ShieldCheck,
@@ -719,6 +720,8 @@ export default function Home() {
     };
   }, [photoBookOpen]);
   const [residentServicesOpen, setResidentServicesOpen] = useState(false);
+  const [saudiServicesOpen, setSaudiServicesOpen] = useState(false);
+  const [familyBusinessesOpen, setFamilyBusinessesOpen] = useState(false);
   const [residentGroupOpen, setResidentGroupOpen] = useState<Record<string, boolean>>({});
   const [residentPhrasebookOpen, setResidentPhrasebookOpen] = useState(false);
   const [residentHealthOpen, setResidentHealthOpen] = useState(false);
@@ -1844,7 +1847,7 @@ export default function Home() {
         <div className="container">
           <button type="button" className="resident-services-launcher" onClick={() => setResidentServicesOpen((open) => !open)} aria-expanded={residentServicesOpen} aria-controls="resident-services-content">
             <span className="resident-services-launcher-icon"><UsersRound size={26} /></span>
-            <span className="resident-services-launcher-copy"><strong>خدمات المقيمين</strong><small>الإقامة والمعاملات والخدمات اليومية في يومرا وطرابزون</small><em>{residentServicesOpen ? "إخفاء قائمة الخدمات" : "اضغط لفتح قائمة الخدمات"}</em></span>
+            <span className="resident-services-launcher-copy"><strong>خدمات السعوديين والمقيمين</strong><small>الخدمات الحكومية السعودية، والمعاملات اليومية، ودليل الخدمات في الشمال التركي</small><em>{residentServicesOpen ? "إخفاء قائمة الخدمات" : "اضغط لفتح قائمة الخدمات"}</em></span>
             <span className={`resident-services-launcher-chevron ${residentServicesOpen ? "is-open" : ""}`}><ChevronDown size={22} /></span>
           </button>
           {residentServicesOpen && <div id="resident-services-content" className="resident-services-content">
@@ -1976,6 +1979,93 @@ export default function Home() {
               <a className="resident-service-card resident-service-health" href="https://www.google.com/maps/search/?api=1&query=Yomra+Trabzon+Nöbetçi+Eczane" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Clock3 size={22} /></span><span className="resident-service-copy"><strong>الصيدليات المناوبة — يومرا</strong><small>افتح نتائج الخريطة وتحقق من صيدلية المناوبة وتاريخ القائمة قبل الذهاب</small></span><ExternalLink size={16} /></a>
               <a className="resident-service-card resident-service-health" href="https://www.google.com/maps/search/?api=1&query=Trabzon+Nöbetçi+Eczane" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Clock3 size={22} /></span><span className="resident-service-copy"><strong>الصيدليات المناوبة — طرابزون</strong><small>تحقق من تاريخ المناوبة وساعات العمل في النتيجة الرسمية أو المحلية</small></span><ExternalLink size={16} /></a>
               <a className="resident-service-card resident-service-health" href="https://www.mhrs.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Clock3 size={22} /></span><span className="resident-service-copy"><strong>حجز مواعيد المستشفيات الحكومية</strong><small>بوابة MHRS الرسمية للمواعيد؛ ليست قائمة مناوبات الطوارئ</small></span><ExternalLink size={16} /></a>
+            </div>}
+          </div>
+
+          <div className="resident-accordion-group resident-saudi-accordion">
+            <button type="button" className="resident-accordion-trigger" aria-expanded={saudiServicesOpen} onClick={() => setSaudiServicesOpen((open) => !open)}>
+              <span><Landmark size={19} /> خدمات السعوديين الحكومية والعدلية</span><ChevronDown size={20} className={saudiServicesOpen ? "is-open" : ""} />
+            </button>
+            {saudiServicesOpen && <div className="resident-local-focus resident-saudi-content">
+              <div className="resident-local-focus-heading">
+                <span className="resident-local-focus-icon"><ShieldCheck size={19} /></span>
+                <div><strong>بوابتك للخدمات اليومية في المملكة</strong><small>روابط مباشرة للمنصات الرسمية. سجّل الدخول بنفسك عبر الموقع أو التطبيق الرسمي، ولا تشارك رمز التحقق أو كلمة المرور.</small></div>
+              </div>
+              <div className="resident-services-grid">
+                <a className="resident-service-card resident-service-saudi" href="https://www.absher.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ShieldCheck size={22} /></span><span className="resident-service-copy"><strong>أبشر</strong><small>خدمات وزارة الداخلية للمواطنين والمقيمين</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://ta.sdaia.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>توكلنا</strong><small>الخدمات الرقمية والوثائق والخدمات المرتبطة</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://najiz.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Landmark size={22} /></span><span className="resident-service-copy"><strong>ناجز</strong><small>المحاكم والوكالات والتنفيذ والخدمات العدلية</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://www.moj.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><BriefcaseBusiness size={22} /></span><span className="resident-service-copy"><strong>وزارة العدل</strong><small>الأنظمة والخدمات العدلية ومعلومات المحاكم</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://my.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ClipboardCheck size={22} /></span><span className="resident-service-copy"><strong>المنصة الوطنية الموحدة</strong><small>دليل الخدمات الحكومية السعودية</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://www.sba.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Scale size={22} /></span><span className="resident-service-copy"><strong>الهيئة السعودية للمحامين</strong><small>دليل المنشآت القانونية والمعلومات المهنية</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://mc.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><BriefcaseBusiness size={22} /></span><span className="resident-service-copy"><strong>وزارة التجارة</strong><small>الخدمات التجارية والسجلات وحماية المستهلك</small></span><ExternalLink size={16} /></a>
+                <a className="resident-service-card resident-service-saudi" href="https://www.hrsd.gov.sa/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>الموارد البشرية</strong><small>خدمات العمل والتنمية الاجتماعية</small></span><ExternalLink size={16} /></a>
+              </div>
+            </div>}
+          </div>
+
+          <div className="resident-accordion-group resident-family-businesses">
+            <button type="button" className="resident-accordion-trigger" aria-expanded={familyBusinessesOpen} onClick={() => setFamilyBusinessesOpen((open) => !open)}>
+              <span><BriefcaseBusiness size={19} /> خدمات وشركات العائلة</span><ChevronDown size={20} className={familyBusinessesOpen ? "is-open" : ""} />
+            </button>
+            {familyBusinessesOpen && <div className="resident-local-focus family-businesses-content">
+              <div className="resident-local-focus-heading">
+                <span className="resident-local-focus-icon"><Sparkles size={19} /></span>
+                <div><strong>خدمات موثوقة من شركائنا</strong><small>تعرف على الخدمات وتواصل مباشرة مع الجهة المناسبة. نضيف بيانات الفروع وروابطها بعد مطابقتها.</small></div>
+              </div>
+              <div className="family-business-grid">
+                <article className="family-business-card family-business-law">
+                  <div className="family-business-art"><Scale size={30} /><span>LEGAL SERVICES · SAUDI ARABIA</span></div>
+                  <div className="family-business-body">
+                    <span className="family-business-kicker">جدة · خدمات قانونية في جميع مناطق المملكة</span>
+                    <h3>شركة سرادق الحكمة للمحاماة والاستشارات القانونية</h3>
+                    <p>استشارات قانونية، تمثيل وترافع، قضايا تجارية وعمالية وجنائية وأحوال شخصية، عقود، تركات، عقار وتحكيم للأفراد والمنشآت.</p>
+                    <small><MapPin size={14} /> أبحر الشمالية · حي الياقوت · جدة</small>
+                    <div className="family-business-actions">
+                      <a href="https://saradiqalhikmah.com/" target="_blank" rel="noreferrer">الموقع الرسمي <ExternalLink size={14} /></a>
+                      <a href="https://wa.me/966550058638" target="_blank" rel="noreferrer">واتساب المكتب <Phone size={14} /></a>
+                      <a href="tel:+966550058638">اتصال <Phone size={14} /></a>
+                    </div>
+                  </div>
+                </article>
+                <article className="family-business-card family-business-flowers">
+                  <div className="family-business-art"><Heart size={30} /><span>FLOWERS · EVENTS · BRIDAL</span></div>
+                  <div className="family-business-body">
+                    <span className="family-business-kicker">ينبع الصناعية · حي الصبح</span>
+                    <h3>وردة بانسيه – Pansy Flower</h3>
+                    <p>ورد وباقات وتنسيق حفلات، مع خدمة نقل دبش العروس بسيارة خاصة مجهزة إلى مناطق المملكة، بحسب تفاصيل الخدمة التي زودتمونا بها.</p>
+                    <small><MapPin size={14} /> ينبع الصناعية · حي الصبح</small>
+                    <div className="family-business-actions">
+                      <a href="https://maps.yango.com/ar-sa/org/128374059647/" target="_blank" rel="noreferrer">الموقع على الخريطة <ExternalLink size={14} /></a>
+                      <a href="tel:+966542276625">اتصال 054 227 6625 <Phone size={14} /></a>
+                    </div>
+                  </div>
+                </article>
+                <article className="family-business-card family-business-wholesale">
+                  <div className="family-business-art"><Heart size={30} /><span>WHOLESALE FLOWERS</span></div>
+                  <div className="family-business-body">
+                    <span className="family-business-kicker">المدينة المنورة · توريد بالجملة</span>
+                    <h3>فرع توزيع الورد بالجملة</h3>
+                    <p>بيع وتوزيع الورد بالجملة لتجار ومحلات الورد ومجهزي المناسبات في المدينة المنورة ومختلف مناطق المملكة.</p>
+                    <small><MapPin size={14} /> المدينة المنورة · تفاصيل الفرع قيد المطابقة</small>
+                    <div className="family-business-actions"><span className="family-business-pending">بيانات التواصل والموقع تُضاف بعد تأكيد الفرع</span></div>
+                  </div>
+                </article>
+                <article className="family-business-card family-business-optical">
+                  <div className="family-business-art"><Sparkles size={30} /><span>OPTICAL · WHOLESALE</span></div>
+                  <div className="family-business-body">
+                    <span className="family-business-kicker">عالم روما للنظارات</span>
+                    <h3>روما للنظارات</h3>
+                    <p>النظارات الطبية والشمسية والعدسات، مع نشاط التوريد بالجملة وفق تعريفكم. يمكن للزائر التعرف على العلامة والتواصل عبر الموقع الرسمي.</p>
+                    <small><MapPin size={14} /> بيانات فرع الجملة تحتاج تأكيد المدينة والعنوان</small>
+                    <div className="family-business-actions">
+                      <a href="https://www.romaworld.com.sa/" target="_blank" rel="noreferrer">الموقع الرسمي <ExternalLink size={14} /></a>
+                      <a href="tel:+966532550333">اتصال 053 255 0333 <Phone size={14} /></a>
+                    </div>
+                  </div>
+                </article>
+              </div>
+              <p className="family-business-disclaimer">هذه مساحة تعريفية لخدمات العائلة. تُعرض بيانات التواصل والمواقع بعد التحقق، ويمكن تحديث الصور والعروض ومواعيد العمل من غرفة التحكم لاحقاً.</p>
             </div>}
           </div>
           <p className="resident-services-note"><ShieldCheck size={15} /> هذه روابط للبوابات الرسمية وليست استشارة قانونية أو ضمانًا لقبول الطلب. لا تشارك كلمة المرور أو رمز التحقق مع أي شخص، وتأكد من عنوان الموقع قبل إدخال بياناتك. رقم 112 للطوارئ فقط، وللاستفسارات العامة عن الإقامة وشؤون الأجانب استخدم YİMER 157.</p>
