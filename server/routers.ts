@@ -998,6 +998,7 @@ function getContextualFallback(
         return intro + "\n\n" + rows.join("\n\n") + "\n\n" + note;
       }
     }
+  }
 
   const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
   if (asksSupermarket) {
