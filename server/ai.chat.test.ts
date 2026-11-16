@@ -306,14 +306,14 @@ describe("live worldwide tourism place lookup", () => {
         return new Response(JSON.stringify({
           features: [
             { properties: { name: "Wrong Trabzon", city: "Other", country: "Georgia", countrycode: "ge" }, geometry: { coordinates: [41, 41] } },
-            { properties: { name: "Trabzon", city: "Trabzon", state: "Trabzon", country: "Türkiye", countrycode: "tr" }, geometry: { coordinates: [39.7167, 41.0027] } },
+            { properties: { name: "Trabzon", city: "Trabzon", state: "Trabzon", country: "Turkey", countrycode: "tr", country_code: "tr" }, geometry: { coordinates: [39.7167, 41.0027] } },
           ],
         }), { status: 200, headers: { "content-type": "application/geo+json" } });
       }
       return new Response(JSON.stringify({ elements: [{ type: "node", id: 9876, lat: 41.0028, lon: 39.7168, tags: { name: "Trabzon Museum", tourism: "museum" } }] }), { status: 200, headers: { "content-type": "application/json" } });
     });
     try {
-      const result = await getLiveTourismPlacesAnswer("رتب لي برنامج أربعة أيام في طرابزون", "AR");
+      const result = await getLiveTourismPlacesAnswer("أماكن سياحية في طرابزون", "AR");
       expect(result).toContain("Trabzon Museum");
       expect(result).toContain("Türkiye");
     } finally {
