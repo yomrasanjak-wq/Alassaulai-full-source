@@ -193,6 +193,13 @@ describe("real-brain regression scenarios", () => {
     expect(invokeLLM).toHaveBeenCalled();
   });
 
+  it("respects five-day itinerary requests written in Arabic words when AI providers fail", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "أبغى خطة خمسة أيام في ترابزون" }] });
+    expect(result.text).toContain("اليوم الخامس");
+    expect(result.text).not.toContain("اليوم السادس");
+    expect(result.text).toContain("ليس تحققاً من الطقس");
+  });
+
   it("offers a real map search instead of inventing breakfast restaurants after provider failure", async () => {
     const result = await caller().ai.chat({
       language: "AR",
