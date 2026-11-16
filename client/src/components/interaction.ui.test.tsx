@@ -11,6 +11,7 @@ vi.mock("@/lib/trpc", () => ({
       visitorCount: { useQuery: () => ({ data: 0, isLoading: false, refetch: vi.fn() }) },
       logout: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock }) },
     },
+    partners: { activeAds: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) } },
     ai: {
       chat: {
         useMutation: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),
