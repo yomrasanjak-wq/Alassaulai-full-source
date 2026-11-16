@@ -215,6 +215,15 @@ describe("real-brain regression scenarios", () => {
     expect(invokeLLM).toHaveBeenCalled();
   });
 
+  it("does not invent a Rize itinerary when the local fallback catalog has no verified Rize plan", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "أبغى خطة 4 أيام في ريزه" }] });
+    expect(result.text).toContain("تعذّر إعداد برنامج موثوق لهذه الوجهة");
+    expect(result.text).toContain("لن أخترع وجهات أو تفاصيل");
+    expect(result.text).toContain("4 أيام");
+    expect(result.text).not.toContain("https://www.google.com/maps/search/");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
 
   it("offers a real map search instead of inventing breakfast restaurants after provider failure", async () => {
     const result = await caller().ai.chat({
