@@ -680,9 +680,17 @@ type SpeechRecognitionLike = {
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function renderChatText(text: string) {
-  return text.split(/(https?:\/\/[^\s]+)/g).map((part, index) => /^https?:\/\//i.test(part)
-    ? <a key={`${index}-${part}`} href={part.replace(/[),.;]+$/, "")} target="_blank" rel="noreferrer" className="chat-inline-link">{part.replace(/[),.;]+$/, "")}</a>
-    : part);
+  // Render assistant-provided photographs inside the conversation rather than
+  // exposing their raw image URLs as text links.
+  return text.split(/(!\\[[^\\]]*\\]\\(https:\\/\\/upload\\.wikimedia\\.org\\/[^\\s)]+\\))/g).map((part, index) => {
+    const imageMatch = part.match(/^!\\[([^\\]]*)\\]\\((https:\\/\\/upload\\.wikimedia\\.org\\/[^\\s)]+)\\)$/);
+    if (imageMatch) {
+      return <img key={`chat-image-${index}`} src={imageMatch[2]} alt={imageMatch[1] || "صورة طلبها الزائر"} loading="lazy" decoding="async" className="my-3 block h-auto max-w-full rounded-xl border border-white/10 shadow-sm" style={{ maxHeight: 360, objectFit: "contain" }} />;
+    }
+    return part.split(/(https?:\\/\\/[^\\s]+)/g).map((segment, segmentIndex) => /^https?:\\/\\//i.test(segment)
+      ? <a key={`${index}-${segmentIndex}-${segment}`} href={segment.replace(/[),.;]+$/, "")} target="_blank" rel="noreferrer" className="chat-inline-link">{segment.replace(/[),.;]+$/, "")}</a>
+      : segment);
+  });
 }
 
 type MemoryCard = { id: number; pair: string; label: string; flipped: boolean; matched: boolean };
