@@ -1826,6 +1826,39 @@ img { display: block; max-width: 100%; }
 @media (max-width: 740px) { .destination-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .destination-photo-link { height: 145px; } .destination-photo-caption { padding: 11px; } .destination-photo-caption h3 { font-size: 11px; } .gallery-filter-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; } .gallery-filter-row button { flex: 0 0 auto; } }
 @media (max-width: 380px) { .destination-gallery-grid { grid-template-columns: 1fr; } .destination-photo-link { height: 210px; } }
 
+
+/* V50 — Saudi public services and family business showcase */
+.resident-saudi-content,
+.family-businesses-content { margin-top: 14px; }
+.resident-service-saudi .resident-service-icon { color: #285f54; background: #e3efe7; }
+.family-business-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+.family-business-card { min-width: 0; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #d7e1d7; border-radius: 17px; background: #fffdf8; box-shadow: 0 8px 22px rgb(23 61 54 / 6%); }
+.family-business-art { min-height: 104px; padding: 19px 20px; display: flex; align-items: center; gap: 13px; color: #f8f5eb; background: linear-gradient(120deg, #173d36, #286b5c); }
+.family-business-art > svg { flex: 0 0 auto; color: #d9bd83; }
+.family-business-art span { color: #e7dec8; font-size: 10px; letter-spacing: .12em; font-weight: 700; }
+.family-business-law .family-business-art { background: linear-gradient(120deg, #17332f, #536b55); }
+.family-business-flowers .family-business-art { background: linear-gradient(120deg, #315d53, #8b7770); }
+.family-business-wholesale .family-business-art { background: linear-gradient(120deg, #294c47, #71866e); }
+.family-business-optical .family-business-art { background: linear-gradient(120deg, #263c4b, #687d8b); }
+.family-business-body { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; padding: 18px; }
+.family-business-kicker { color: #9a773e; font-size: 10px; font-weight: 800; line-height: 1.7; }
+.family-business-body h3 { margin: 0; color: #173d36; font-size: 16px; line-height: 1.7; }
+.family-business-body p { margin: 0; color: #62766b; font-size: 12px; line-height: 1.9; }
+.family-business-body > small { display: flex; align-items: center; gap: 6px; color: #6f8177; font-size: 10px; line-height: 1.8; }
+.family-business-body > small svg { flex: 0 0 auto; color: #a17a3e; }
+.family-business-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 7px; }
+.family-business-actions a { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 11px; color: #1d574c; background: #edf4ed; border: 1px solid #d4e2d5; border-radius: 9px; text-decoration: none; font-size: 11px; font-weight: 700; }
+.family-business-actions a:hover { border-color: #b69a64; background: #f5f0e4; }
+.family-business-pending { color: #88754f; font-size: 10px; line-height: 1.8; }
+.family-business-disclaimer { margin: 14px 0 0; color: #728176; font-size: 10px; line-height: 1.9; }
+@media (max-width: 760px) {
+  .family-business-grid { grid-template-columns: 1fr; gap: 11px; }
+  .family-business-art { min-height: 82px; padding: 15px 17px; }
+  .family-business-body { padding: 15px; }
+  .family-business-body h3 { font-size: 15px; }
+  .family-business-actions a { min-height: 42px; flex: 1 1 auto; }
+}
+
 /* ALASSAUL V24 — resident services portal */
 .resident-services-section { background: #edf2ec; border-block: 1px solid #dce5da; }
 .resident-services-launcher { width: 100%; min-height: 104px; display: flex; align-items: center; gap: 16px; padding: 20px 22px; color: #173d36; background: linear-gradient(120deg, #fffdf8, #e5eee6); border: 1px solid #cbdacd; border-inline-start: 5px solid #b69a64; box-shadow: 0 8px 22px rgb(23 61 54 / 7%); text-align: start; cursor: pointer; }
