@@ -955,28 +955,28 @@ function getContextualFallback(
             const map = new URL("https://www.google.com/maps/search/");
             map.searchParams.set("api", "1");
             map.searchParams.set("query", place.query);
-            return \`• \${place.name} — \${place.region}\\n  \${map.toString()}\`;
+            return `• \${place.name} — \${place.region}\n  \${map.toString()}`;
           });
-          return \`\${dayLabel} \${dayIndex + 1}:\\n\${stops.join("\\n")}\`;
+          return `\${dayLabel} \${dayIndex + 1}:\n\${stops.join("\n")}`;
         }).filter(Boolean);
         const intro = language === "AR"
-          ? \`أعددت لك برنامجاً بديلاً من دليل ALASSAUL لطرابزون لمدة \${days} أيام، لأن مزود التخطيط متوقف مؤقتاً. رتبت الوجهات في مجموعات، ويمكنك فتح كل موقع على الخريطة:\`
+          ? `أعددت لك برنامجاً بديلاً من دليل ALASSAUL لطرابزون لمدة \${days} أيام، لأن مزود التخطيط متوقف مؤقتاً. رتبت الوجهات في مجموعات، ويمكنك فتح كل موقع على الخريطة:`
           : language === "TR"
-            ? \`Yapay zekâ sağlayıcısı geçici olarak kullanılamadığı için ALASSAUL Trabzon rehberinden \${days} günlük alternatif hazırladım:\`
-            : \`The planning provider is temporarily unavailable, so here is a \${days}-day alternative using ALASSAUL's curated Trabzon guide:\`;
+            ? `Yapay zekâ sağlayıcısı geçici olarak kullanılamadığı için ALASSAUL Trabzon rehberinden \${days} günlük alternatif hazırladım:`
+            : `The planning provider is temporarily unavailable, so here is a \${days}-day alternative using ALASSAUL's curated Trabzon guide:`;
         const note = language === "AR"
           ? "ملاحظة: هذا ترتيب مبدئي للوجهات، وليس تحققاً من ساعات العمل أو حالة الطرق. راجع الطقس وأوقات الزيارة قبل الانطلاق."
           : language === "TR"
             ? "Not: Bu ön plan açık saatlerini veya yol durumunu doğrulamaz. Yola çıkmadan önce kontrol edin."
             : "Note: This is a suggested grouping, not live verification of opening hours or road conditions.";
-        return intro + "\\n\\n" + rows.join("\\n\\n") + "\\n\\n" + note;
+        return intro + "\n\n" + rows.join("\n\n") + "\n\n" + note;
       }
     }
     const durationNote = requestedDays && requestedDays > 1
-      ? (language === "AR" ? \` طلبت برنامجاً لمدة \${requestedDays} أيام.\` : \` You requested \${requestedDays} days.\`)
+      ? (language === "AR" ? ` طلبت برنامجاً لمدة \${requestedDays} أيام.` : ` You requested \${requestedDays} days.`)
       : "";
     return language === "AR"
-      ? \`تعذّر إعداد برنامج موثوق لهذه الوجهة أثناء انقطاع مزود الذكاء الاصطناعي.\${durationNote} لن أخترع وجهات أو تفاصيل؛ اذكر المدينة أو أعد المحاولة بعد قليل.\`
+      ? `تعذّر إعداد برنامج موثوق لهذه الوجهة أثناء انقطاع مزود الذكاء الاصطناعي.\${durationNote} لن أخترع وجهات أو تفاصيل؛ اذكر المدينة أو أعد المحاولة بعد قليل.`
       : language === "TR"
         ? "Yapay zekâ sağlayıcısı geçici olarak kullanılamıyor. Doğrulanmamış yerler uydurmayacağım; lütfen şehri belirtin veya tekrar deneyin."
         : "The AI provider is temporarily unavailable. I won't invent destinations or details; please specify the city or retry shortly.";
