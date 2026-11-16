@@ -969,7 +969,7 @@ function getContextualFallback(
             const displayName = /قانيتا/.test(place.name) ? `غانيتا (${place.name})` : place.name;
             return `• ${displayName} — ${place.region}\n  ${map.toString()}`;
           });
-          return `${dayLabel} ${dayIndex + 1}:\n${stops.join("\n")}`;
+          return `${heading}:\n${stops.join("\n")}`;
         }).filter(Boolean);
         const intro = language === "AR"
           ? `أعددت لك برنامجاً بديلاً من دليل ALASSAUL لطرابزون لمدة ${days} أيام، لأن مزود التخطيط متوقف مؤقتاً. رتبت الوجهات في مجموعات، ويمكنك فتح كل موقع على الخريطة:`
