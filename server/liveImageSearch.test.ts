@@ -10,6 +10,7 @@ describe("Wikimedia Commons image search", () => {
     expect(isWikimediaImageRequest("طيب صوره لمكه المكرمه")).toBe(true);
     expect(isWikimediaImageRequest("صوره للفنان محمد عبده")).toBe(true);
     expect(isWikimediaImageRequest("صورة مركب بجوار أوزنجول")).toBe(true);
+    expect(isWikimediaImageRequest("طيب الصورة ما طلعت")).toBe(false);
     expect(isWikimediaImageRequest("السلام عليكم")).toBe(false);
   });
 
