@@ -296,6 +296,13 @@ describe("adaptive brain response strategy", () => {
     expect(getTribalGenealogyInstruction("ما حالة الطقس في طرابزون؟")).toBe("");
   });
 
+  it("selects evidence-led industrial competency guidance for Aramco mechanical assessment questions", () => {
+    const instruction = getAdaptiveTaskInstruction("ماذا تستخدم أرامكو في تقييم مهارات الميكانيكا للـ Competency Assessment؟");
+    expect(instruction).toContain("لا تنسب إليها نموذج تقييم أو اختباراً داخلياً دون مصدر رسمي منشور");
+    expect(instruction).toContain("الممارسات الصناعية الشائعة");
+    expect(instruction).toContain("أسئلة تدريبية مناسبة");
+  });
+
   it("selects safe step-by-step guidance for troubleshooting requests", () => {
     expect(getAdaptiveTaskInstruction("السيارة متعطلة وما تشتغل")).toContain("خطوات تشخيص مرتبة");
   });
