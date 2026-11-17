@@ -1754,6 +1754,7 @@ ${newsContext}`);
           max_completion_tokens: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText)) ? 1200 : /(?:التكلفة|التكلفه|تكلفة الرحلة|تكلفه الرحله|ميزانية السفر|كم يكلف|كم تكلف|trip cost|travel cost)/i.test(latestText) ? 900 : 512,
           reasoning: { effort: "minimal" },
           webSearch: needsLiveWebSearch,
+          timeoutMs: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText)) ? 22_000 : needsLiveWebSearch ? 18_000 : 15_000,
           messages: llmMessages,
         };
         const backupModel = getDistinctBackupModel(llmRequest.model, ENV.backupModel);
