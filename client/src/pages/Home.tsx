@@ -680,27 +680,52 @@ type SpeechRecognitionLike = {
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function renderChatText(text: string) {
-  return text.split(/(!\[[^\]]*\]\((?:\/images\/[^\s)]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[^\s)]+)\)|https?:\/\/[^\s]+)/g).map((part, index) => {
-    const imageMatch = part.match(/^!\[([^\]]*)\]\(((?:\/images\/[A-Za-z0-9._/%?=&-]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%?=&-]+))\)$/);
-    const imageUrl = imageMatch?.[2];
-    const safeLocalImage = Boolean(imageUrl && imageUrl.startsWith("/images/") && !imageUrl.split(/[?#]/, 1)[0].split("/").includes(".."));
-    const safeCommonsImage = Boolean(imageUrl && /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%-]+(?:\?[A-Za-z0-9._%=&-]*)?$/.test(imageUrl));
-    if (imageMatch && (safeLocalImage || safeCommonsImage)) {
-      return <img
-        key={"chat-image-" + index}
-        src={imageUrl}
-        alt={imageMatch[1] || "صورة من دليل ALASSAUL"}
-        loading="eager"
-        decoding="async"
-        referrerPolicy="no-referrer"
-        onError={(event) => { event.currentTarget.style.display = "none"; }}
-        style={{ display: "block", width: "min(100%, 480px)", maxHeight: "320px", objectFit: "cover", borderRadius: "14px", margin: "12px 0" }}
-      />;
+  const tokenPattern = /(!\[([^\]]*)\]\((https?:\/\/[^)\s]+|\/images\/[^)\s]+)\))|(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\))|(\*\*([^*]+)\*\*)|(https?:\/\/[^\s]+)/g;
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  let index = 0;
+  while ((match = tokenPattern.exec(text)) !== null) {
+    if (match.index > cursor) nodes.push(text.slice(cursor, match.index));
+    const key = "chat-token-" + index++;
+    if (match[1]) {
+      const alt = match[2] || "صورة من دليل ALASSAUL";
+      const src = match[3];
+      const safeLocal = src.startsWith("/images/") && !src.split(/[?#]/, 1)[0].split("/").includes("..");
+      let safeRemote = false;
+      try {
+        const url = new URL(src);
+        safeRemote = url.protocol === "https:" && (
+          (url.hostname === "upload.wikimedia.org" && url.pathname.startsWith("/wikipedia/commons/")
+            && /\.(?:jpe?g|png|webp|gif)$/i.test(url.pathname))
+          || (url.hostname === "api.openverse.org" && /^\/v1\/images\/[a-f0-9-]+\/thumb\/$/i.test(url.pathname))
+        );
+      } catch { safeRemote = false; }
+      if (safeLocal || safeRemote) {
+        nodes.push(<span key={key} className="chat-image-result"><img
+          src={src} alt={alt} loading="eager" decoding="async" referrerPolicy="no-referrer"
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+            const fallback = event.currentTarget.nextElementSibling as HTMLElement | null;
+            if (fallback) fallback.style.display = "inline";
+          }}
+          style={{ display: "block", width: "min(100%, 480px)", maxHeight: "320px", objectFit: "cover", borderRadius: "14px", margin: "12px 0" }}
+        /><a href={src} target="_blank" rel="noreferrer" className="chat-inline-link" style={{ display: "none" }}>تعذر تحميل الصورة؛ افتح الصورة مباشرة</a></span>);
+      } else {
+        nodes.push(alt);
+      }
+    } else if (match[4]) {
+      nodes.push(<a key={key} href={match[6]} target="_blank" rel="noreferrer" className="chat-inline-link">{match[5]}</a>);
+    } else if (match[7]) {
+      nodes.push(<strong key={key}>{match[8]}</strong>);
+    } else if (match[9]) {
+      const url = match[9].replace(/[),.;]+$/, "");
+      nodes.push(<a key={key} href={url} target="_blank" rel="noreferrer" className="chat-inline-link">{url}</a>);
     }
-    return /^https?:\/\//i.test(part)
-      ? <a key={index + "-" + part} href={part.replace(/[),.;]+$/, "")} target="_blank" rel="noreferrer" className="chat-inline-link">{part.replace(/[),.;]+$/, "")}</a>
-      : part;
-  });
+    cursor = tokenPattern.lastIndex;
+  }
+  if (cursor < text.length) nodes.push(text.slice(cursor));
+  return nodes;
 }
 
 type MemoryCard = { id: number; pair: string; label: string; flipped: boolean; matched: boolean };
