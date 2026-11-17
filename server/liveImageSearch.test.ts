@@ -12,6 +12,8 @@ describe("context-aware live image search", () => {
     expect(isWikimediaImageRequest("صورة مركب بجوار أوزنجول")).toBe(true);
     expect(isWikimediaImageRequest("صوره للاعب المعتزل ماجد عبدالله")).toBe(true);
     expect(isWikimediaImageRequest("صورة لشعار نادي الاتحاد السعودي")).toBe(true);
+    expect(isWikimediaImageRequest("طيب اعرض لي صوره تظهر جمال طرابزون")).toBe(true);
+    expect(isWikimediaImageRequest("ابغى صوره للميدان")).toBe(true);
     expect(isWikimediaImageRequest("طيب الصورة ما طلعت")).toBe(false);
     expect(isWikimediaImageRequest("السلام عليكم")).toBe(false);
   });
@@ -47,12 +49,40 @@ describe("context-aware live image search", () => {
     expect(sulfur).toContain("Kuzalan");
   });
 
+  it("understands natural Trabzon scenery and its Meydan square", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const trabzon = await getWikimediaImageAnswer("طيب اعرض لي صوره تظهر جمال طرابزون");
+    expect(trabzon).toContain("طرابزون");
+    expect(trabzon).toContain("Trabzon%20Turkey");
+
+    fetchMock.mockReset().mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+    const meydan = await getWikimediaImageAnswer("ابغى صوره للميدان");
+    expect(meydan).toContain("ميدان طرابزون");
+    expect(meydan).toContain("Trabzon%20Meydan%20Square");
+  });
+
   it("uses a scene-specific query for a boat beside Uzungol", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ query: { pages: [] } }) });
     vi.stubGlobal("fetch", fetchMock);
     const answer = await getWikimediaImageAnswer("صورة مركب بجوار أوزنجول");
     expect(fetchMock.mock.calls[0][0]).toContain("Uzungol+lake+boat");
     expect(answer).toContain("قارب بجوار بحيرة أوزنجول");
+  });
+
+  it("rejects an unrelated historical map returned for a city image query", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ query: { pages: [{
+        title: "File:1866 Johnson Map of Arabia Persia Turkey.jpg",
+        imageinfo: [{ url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/old-map.jpg",
+          descriptionurl: "https://commons.wikimedia.org/wiki/File:old-map.jpg", mime: "image/jpeg" }],
+      }] } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const answer = await getWikimediaImageAnswer("اعرض لي صوره عن طرابزون");
+    expect(answer).not.toContain("old-map.jpg");
+    expect(answer).toContain("صور Google الحديثة");
   });
 
   it("shows a Commons image with a clean title and source link", async () => {
