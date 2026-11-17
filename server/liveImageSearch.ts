@@ -31,10 +31,10 @@ function imageRequest(message: string): { title: string; query: string } | undef
   if (!/(?:صورة|صوره|صور|اعرض|أعرض|ورني|ورّني|أرني|ارني|ابغى اشوف|أبغى أشوف|ابي اشوف|أبي أشوف|show me|photo|picture|image)/i.test(text)) return undefined;
 
   if (/(?:مكة المكرمة|مكه المكرمه|مكة|مكه|makkah|mecca)/i.test(text)) {
-    return { title: "مكة المكرمة والمسجد الحرام", query: "Masjid al-Haram Mecca Kaaba" };
+    return { title: "مكة المكرمة والمسجد الحرام", query: "Masjid al-Haram Mecca Saudi Arabia Kaaba" };
   }
   if (/(?:محمد عبده|mohammed abdu|muhammad abdu)/i.test(text)) {
-    return { title: "الفنان محمد عبده", query: '"Mohammed Abdu" Saudi singer' };
+    return { title: "الفنان محمد عبده", query: "Mohammed Abdu Saudi singer" };
   }
   if (/(?:أوزنجول|اوزنجول|أوزنقول|اوزنقول|uzung[oö]l|زنجول|زنجود)/i.test(text)) {
     return { title: "أوزنجول", query: "Uzungol Trabzon lake" };
