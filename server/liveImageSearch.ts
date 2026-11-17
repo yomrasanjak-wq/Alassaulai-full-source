@@ -181,11 +181,11 @@ export async function getWikimediaImageAnswer(
       if (selected) {
         const source = "[المصدر](" + selected.foreign_landing_url + ")";
         const freshnessNote = request.modern
-          ? "\\nملاحظة: تاريخ الفهرسة لا يثبت تاريخ التقاط الصورة؛ لا أصفها بأنها ملتقطة حديثاً دون تاريخ موثوق."
+          ? "\nملاحظة: تاريخ الفهرسة لا يثبت تاريخ التقاط الصورة؛ لا أصفها بأنها ملتقطة حديثاً دون تاريخ موثوق."
           : "";
-        return "![" + request.title + "](" + selected.thumbnail + ")\\n\\n**"
+        return "![" + request.title + "](" + selected.thumbnail + ")\n\n**"
           + request.title + "** · " + source
-          + (request.modern ? "\\n\\n[صور Google الحديثة]" + "(" + googleUrl + ")" : "")
+          + (request.modern ? "\n\n[صور Google الحديثة]" + "(" + googleUrl + ")" : "")
           + freshnessNote;
       }
     } catch (error) {
