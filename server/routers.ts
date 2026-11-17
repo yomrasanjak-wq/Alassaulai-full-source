@@ -6,6 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
 import { getWikipediaSearchContext } from "./_core/wikipediaSearch";
+import { getWikimediaImageAnswer } from "./liveImageSearch";
 import { synthesizeSpeech } from "./_core/textToSpeech";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, controlStaffProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -1557,6 +1558,9 @@ export const appRouter = router({
           if (/(?:ما اسم|اسم|ما هو|ماهو|وين|أين|اين).{0,24}مطار ينبع|مطار ينبع.{0,24}(?:اسم|ما هو|ما اسمه)?/i.test(latestText)) {
             return { text: "مطار ينبع هو مطار الأمير عبد المحسن بن عبد العزيز (Prince Abdul Mohsin bin Abdulaziz Airport)، ورمز المطار الدولي IATA هو YNB. يخدم مدينة ينبع في منطقة المدينة المنورة بالمملكة العربية السعودية." };
           }
+
+          const imageAnswer = await getWikimediaImageAnswer(latestText, input.language);
+          if (imageAnswer) return { text: imageAnswer };
 
           const galleryImageAnswer = getGalleryImageAnswer(latestText);
           if (galleryImageAnswer) return { text: galleryImageAnswer };
