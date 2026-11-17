@@ -258,7 +258,7 @@ export function getLocalTourismCatalogContext(message: string, language: "AR" | 
  * Only curated same-origin assets are rendered; this avoids invented or untrusted image URLs.
  */
 export function getGalleryImageAnswer(message: string): string | undefined {
-  const normalized = message.normalize("NFKC").replace(/[\\u064B-\\u065F\\u0670\\u0640]/g, "").trim();
+  const normalized = message.normalize("NFKC").replace(/[\u064B-\u065F\u0670\u0640]/g, "").trim();
   const asksForImage = /(?:اعرض|أعرض|ورني|ورّني|أرني|ارني|ابغى اشوف|أبغى أشوف|ابي اشوف|أبي أشوف|شوفني|صورة|صور|صوره|picture|photo|image|show me)/i.test(normalized);
   if (!asksForImage) return undefined;
 
@@ -270,12 +270,12 @@ export function getGalleryImageAnswer(message: string): string | undefined {
       const name = item.name.normalize("NFKC").toLocaleLowerCase();
       return normalizedQuery.includes(name) && name.length >= 3;
     });
-  if (!place?.image || !/^\\/images\\/[a-z0-9._/-]+$/i.test(place.image)) return undefined;
+  if (!place?.image || !/^\/images\/[a-z0-9._/-]+$/i.test(place.image)) return undefined;
 
   const title = isUzungol ? "أوزنجول" : place.name;
-  return "تفضل، هذه صورة **" + title + "** من دليل ALASSAUL:\\n\\n!["
-    + place.alt.replace(/[\\[\\]\\r\\n]/g, " ").slice(0, 180) + "](" + place.image + ")"
-    + "\\n\\nهذه صورة مرجعية للمكان، وليست بثاً مباشراً أو صورة مؤكدة من هذا الشهر.";
+  return "تفضل، هذه صورة **" + title + "** من دليل ALASSAUL:\n\n!["
+    + place.alt.replace(/[\[\]\r\n]/g, " ").slice(0, 180) + "](" + place.image + ")"
+    + "\n\nهذه صورة مرجعية للمكان، وليست بثاً مباشراً أو صورة مؤكدة من هذا الشهر.";
 }
 
 async function waitForTourismRequestSlot(): Promise<void> {
