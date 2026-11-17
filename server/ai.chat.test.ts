@@ -271,7 +271,7 @@ describe("adaptive brain response strategy", () => {
     const instruction = getTribalGenealogyInstruction("من هم أولاد راشد؟");
     expect(instruction).toContain("راشد بن شاكر بن جنيد");
     expect(instruction).toContain("راشد بن جنيد بن شاكر");
-    expect(instruction).toContain("زبد، أزيد، زيود، حميدة");
+    expect(instruction).toContain("زبد، أزيد، زيود، حميدة");\n    expect(instruction).toContain("اذكر الفروع الأربعة بوضوح في متن الإجابة");
     expect(instruction).toContain("ذبيان دخلوا في جهينة حلفاً");
     expect(instruction).toContain("ميّز بين الحلف والنسب");
   });
@@ -292,11 +292,11 @@ describe("adaptive brain response strategy", () => {
     expect(instruction).toContain("ذبيان دخلوا في جهينة حلفاً");
   });
 
-  it("does not inject tribal genealogy context into unrelated questions", () => {
+  it("recognizes the founder by his full name in a direct identity question", () => {\n    const source = router.content;\n    expect(source).toContain("من هو|مين هو|من يكون).{0,18}يوسف\\s*عسول");\n  });\n\n  it("does not inject tribal genealogy context into unrelated questions", () => {
     expect(getTribalGenealogyInstruction("ما حالة الطقس في طرابزون؟")).toBe("");
   });
 
-  it("selects evidence-led industrial competency guidance for Aramco mechanical assessment questions", () => {
+  it("recognizes ASR variants of Aramco in industrial competency questions", () => {\n    expect(getAdaptiveTaskInstruction("ما هي الأدوات التي تستخدمها رام كل في تقييم مهارات الميكانيكا؟")).toContain("لا تنسب إليها نموذج تقييم أو اختباراً داخلياً دون مصدر رسمي منشور");\n    expect(isGoogleGroundingQuestion("رام كل تقييم مهارات الميكانيكا")).toBe(true);\n  });\n\n  it("selects evidence-led industrial competency guidance for Aramco mechanical assessment questions", () => {
     const instruction = getAdaptiveTaskInstruction("ماذا تستخدم أرامكو في تقييم مهارات الميكانيكا للـ Competency Assessment؟");
     expect(instruction).toContain("لا تنسب إليها نموذج تقييم أو اختباراً داخلياً دون مصدر رسمي منشور");
     expect(instruction).toContain("الممارسات الصناعية الشائعة");
