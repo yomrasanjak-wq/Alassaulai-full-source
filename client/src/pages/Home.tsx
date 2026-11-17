@@ -680,15 +680,17 @@ type SpeechRecognitionLike = {
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function renderChatText(text: string) {
-  return text.split(/(!\[[^\]]*\]\(\/images\/[^\s)]+\)|https?:\/\/[^\s]+)/g).map((part, index) => {
-    const imageMatch = part.match(/^!\[([^\]]*)\]\((\/images\/[A-Za-z0-9._/-]+)\)$/);
+  return text.split(/(!\[[^\]]*\]\((?:\/images\/[^\s)]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[^\s)]+)\)|https?:\/\/[^\s]+)/g).map((part, index) => {
+    const imageMatch = part.match(/^!\[([^\]]*)\]\(((?:\/images\/[A-Za-z0-9._/-]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/-]+))\)$/);
     if (imageMatch && !imageMatch[2].includes("..")) {
       return <img
         key={"chat-image-" + index}
         src={imageMatch[2]}
         alt={imageMatch[1] || "صورة من دليل ALASSAUL"}
-        loading="lazy"
+        loading="eager"
         decoding="async"
+        referrerPolicy="no-referrer"
+        onError={(event) => { event.currentTarget.style.display = "none"; }}
         style={{ display: "block", width: "min(100%, 480px)", maxHeight: "320px", objectFit: "cover", borderRadius: "14px", margin: "12px 0" }}
       />;
     }
