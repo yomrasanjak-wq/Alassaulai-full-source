@@ -168,14 +168,8 @@ export async function getWikimediaImageAnswer(
       try {
         const selected = await searchCommons(request, controller.signal);
         if (selected) {
-          const attribution = [
-            selected.artist ? "المصور/صاحب العمل: " + selected.artist : "",
-            selected.credit && selected.credit !== selected.artist ? "الاعتماد: " + selected.credit : "",
-            selected.license ? "الترخيص: " + selected.license : "",
-          ].filter(Boolean).join(" · ");
-          const source = "[صفحة الصورة ومصدرها" + (selected.license ? " — " + selected.license : "") + "](" + selected.descriptionUrl + ")";
-          return "تفضل، هذه صورة **" + request.title + "**:\n\n![" + request.title + "](" + selected.imageUrl + ")\n\n"
-            + (attribution ? attribution + "\n" : "") + source;
+          const source = "[المصدر](" + selected.descriptionUrl + ")";
+          return "![" + request.title + "](" + selected.imageUrl + ")\n\n**" + request.title + "** · " + source;
         }
       } catch (error) {
         console.warn("[ALASSAUL image search] Wikimedia Commons unavailable", error);
@@ -185,22 +179,14 @@ export async function getWikimediaImageAnswer(
     try {
       const selected = await searchOpenverse(request, controller.signal);
       if (selected) {
-        const creator = cleanMetadata(selected.creator);
-        const license = (selected.license ?? "").toUpperCase() + (selected.license_version ? " " + selected.license_version : "");
-        const indexed = selected.indexed_on ? new Date(selected.indexed_on).toLocaleDateString("ar-SA") : "";
-        const attribution = [
-          creator ? "المصور/صاحب العمل: " + creator : "",
-          license ? "الترخيص: " + license : "",
-          indexed ? "أُدرجت في فهرس الصور بتاريخ: " + indexed : "",
-        ].filter(Boolean).join(" · ");
-        const source = "[المصدر والترخيص](" + selected.foreign_landing_url + ")";
+        const source = "[المصدر](" + selected.foreign_landing_url + ")";
         const freshnessNote = request.modern
-          ? "\nملاحظة: تاريخ الفهرسة لا يثبت تاريخ التقاط الصورة؛ لا أصفها بأنها ملتقطة حديثاً دون تاريخ موثوق."
+          ? "\\nملاحظة: تاريخ الفهرسة لا يثبت تاريخ التقاط الصورة؛ لا أصفها بأنها ملتقطة حديثاً دون تاريخ موثوق."
           : "";
-        return "وجدت لك صورة من مكتبة الصور المفتوحة لـ **" + request.title + "**:\n\n!["
-          + cleanMetadata(selected.title) + "](" + selected.thumbnail + ")\n\n"
-          + (attribution ? attribution + " · " : "") + source
-          + "\n\n[شاهد صور Google الحديثة لهذا البحث](" + googleUrl + ")" + freshnessNote;
+        return "![" + request.title + "](" + selected.thumbnail + ")\\n\\n**"
+          + request.title + "** · " + source
+          + (request.modern ? "\\n\\n[صور Google الحديثة]" + "(" + googleUrl + ")" : "")
+          + freshnessNote;
       }
     } catch (error) {
       console.warn("[ALASSAUL image search] Openverse unavailable", error);
