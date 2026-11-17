@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getConversationContinuityInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
@@ -249,6 +249,34 @@ describe("model fallback selection", () => {
 
   it("does not invent a backup when the setting is missing", () => {
     expect(getDistinctBackupModel("primary-model", undefined)).toBeUndefined();
+  });
+});
+
+describe("conversation continuity guidance", () => {
+  it("recognizes a short follow-up and keeps the prior topic active", () => {
+    const instruction = getConversationContinuityInstruction([
+      { role: "user", content: "رتب لي رحلة إلى طرابزون لمدة خمسة أيام" },
+      { role: "assistant", content: "هذه خطة مبدئية..." },
+      { role: "user", content: "وكم تكلف؟" },
+    ]);
+    expect(instruction).toContain("متابعة قصيرة");
+    expect(instruction).toContain("لا تطلب إعادة السياق");
+  });
+
+  it("treats a correction as an update while preserving the remaining constraints", () => {
+    const instruction = getConversationContinuityInstruction([
+      { role: "user", content: "رتب رحلة لعائلة من أربعة أشخاص" },
+      { role: "assistant", content: "سأضع الخطة..." },
+      { role: "user", content: "لا، أقصد ستة أشخاص" },
+    ]);
+    expect(instruction).toContain("تصحيح أو تعديل");
+    expect(instruction).toContain("احتفظ ببقية سياق الطلب");
+  });
+
+  it("does not label the first user message as a follow-up", () => {
+    expect(getConversationContinuityInstruction([
+      { role: "user", content: "السلام عليكم" },
+    ])).toContain("بداية موضوع جديد");
   });
 });
 

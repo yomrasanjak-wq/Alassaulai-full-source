@@ -59,6 +59,15 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - اجعل الردود حية ومختلفة بحسب الموقف؛ لا تكرر الترحيب أو الاعتذار أو عبارات مثل «كيف يمكنني مساعدتك؟» في كل رسالة. استخدم اسم الزائر فقط إذا ذكره بنفسه أو كان متاحاً صراحة في سياق موثوق، ولا تكرره للتصنع.
 - أظهر اهتماماً في الأسلوب دون ادعاء مشاعر أو تجارب شخصية حقيقية. لا تدّع أنك إنسان أو موظف بشري؛ إذا سألك الزائر فقل بوضوح إنك مساعد ذكاء اصطناعي، مع الاستمرار في الحوار بود.
 - لا تجعل كل حديث يتحول إلى قائمة أو نصيحة؛ أحياناً يكون المطلوب دردشة قصيرة أو تفاعلاً طبيعياً. لا تفرض سؤالاً في نهاية كل إجابة، ولا تنه الحوار بطريقة تقطعه ما دام الزائر يريد المتابعة.
+
+قواعد استمرارية الحوار بدقة:
+- اعتبر الرسائل السابقة سياقاً فعالاً، لا نصاً انتهى دوره. إذا قال الزائر «وكم يكلف؟» أو «وماذا عن المسافة؟» أو «طيب، وبعدها؟»، اربط السؤال بآخر موضوع وخطة وتفاصيل ذات صلة بدلاً من بدء موضوع جديد.
+- إذا غيّر الزائر تفصيلاً واحداً، مثل الميزانية أو عدد الأشخاص أو الوجهة أو مدة الرحلة، فحدّث هذا التفصيل وحده واحتفظ ببقية الشروط السابقة ما لم يلغها صراحة.
+- إذا صحّح معلومة، اعتمد التصحيح فوراً، ولا تدافع عن الإجابة السابقة ولا تكرر المعلومة الخاطئة.
+- لا تطلب إعادة معلومات واضحة موجودة في سجل المحادثة. لخّص ما فهمته باقتضاب فقط إذا كان ذلك يمنع سوء الفهم.
+- إذا احتمل السؤال المختصر أكثر من مرجع معقول، اسأل سؤالاً واحداً محدداً بدلاً من اختيار مرجع عشوائي.
+- أجب عن الجزء الجديد الذي سأل عنه الزائر، ولا تعِد الخطة أو الشرح كاملاً إلا إذا طلب ذلك.
+- لا تستنتج تفضيلاً أو معلومة شخصية من الصمت أو التخمين؛ استخدم ما ورد صراحة في السياق فقط.
 `;
 
 const MAX_CHAT_HISTORY = 14;
@@ -122,6 +131,22 @@ export function getAdaptiveTaskInstruction(message: string): string {
     return "نمط الدليل السياحي العالمي: لا تحصر الاقتراحات في شمال تركيا؛ حدّد البلد والمنطقة المقصودة، ثم اقترح 5 إلى 8 معالم مع وصف قصير لما يميز كل مكان ونوع التجربة (طبيعة، تاريخ، عائلة، تسوق أو شاطئ). رتّب الأماكن المتقاربة معاً، واذكر أفضل موسم بصورة عامة عند معرفته. لا تخترع صوراً أو إحداثيات أو ساعات عمل أو رسوم دخول؛ لا تدّع أن المكان مفتوح الآن دون مصدر حي. إذا كانت المنطقة واسعة فاسأل سؤال تحديد واحداً فقط، وإذا كان المكان محدداً فاقترح رابط خريطة مناسباً عندما تتوفر بيانات موثوقة.";
   }
   return "نمط الإجابة العامة: حدّد المطلوب بدقة، أجب مباشرة، واذكر أهم معلومة أو خطوات عملية. إذا كانت الإجابة تعتمد على بيانات حديثة غير متاحة في هذه المحادثة فقل ذلك بوضوح ولا تخترع مصدراً أو نتيجة.";
+}
+
+/** Add a narrow instruction when the newest user turn is a follow-up or correction. */
+export function getConversationContinuityInstruction(messages: Array<{ role: "user" | "assistant"; content: string }>): string {
+  const latestUserIndex = messages.map((message) => message.role).lastIndexOf("user");
+  if (latestUserIndex < 0) return "استمر في الحوار وفق السياق المتاح دون افتراض معلومات غير مذكورة.";
+  const latest = messages[latestUserIndex].content.normalize("NFKC").trim();
+  const previousUserExists = messages.slice(0, latestUserIndex).some((message) => message.role === "user");
+  if (!previousUserExists) return "لا يوجد سؤال سابق من الزائر؛ تعامل مع هذه الرسالة كبداية موضوع جديد.";
+  if (/(?:لا،?\s*(?:أقصد|اقصد)|قصدي|الصحيح|بل\s|عدّل|عدل|غيّر|غير|بدلًا من|بدلا من)/i.test(latest)) {
+    return "هذه رسالة تصحيح أو تعديل: اعتمد أحدث تصحيح للجزء الذي حدده الزائر فقط، واحتفظ ببقية سياق الطلب السابق وشروطه.";
+  }
+  if (latest.split(/\s+/).length <= 12 && /^(?:(?:طيب|تمام|حسنًا|حسنا|وبالنسبة|وبخصوص|وماذا|وكم|كم|وهل|وإذا|واذا|وكيف|وأيضًا|وايضا|بعدها|ثم|هذا|هذه|وهذا|وهذه)[،,؟?\s]*)/i.test(latest)) {
+    return "هذه متابعة قصيرة على الأرجح: اربطها بأقرب موضوع سابق ذي صلة، واستعمل تفاصيله وقيوده، وأجب عن النقطة الجديدة فقط. لا تطلب إعادة السياق.";
+  }
+  return "استعمل سجل الحوار لفهم الإشارات والضمائر والقيود السابقة، مع إعطاء الأولوية لأحدث تصحيح أو تغيير صريح من الزائر.";
 }
 
 export function compactChatHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
@@ -1673,7 +1698,7 @@ ${newsContext}`);
           }
         }
         const llmMessages: Array<{ role: "system" | "user" | "assistant"; content: string | Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string; detail: "auto" } }> }> = [
-          { role: "system", content: `${assistantSystemPrompt}\n${getVisitorIdentityInstruction(ctx.user?.name)}${savedMemoryInstruction}\n${languageInstruction}\n\nتوجيه المهمة الحالية:\n${taskInstruction}${sourceInstruction}` },
+          { role: "system", content: `${assistantSystemPrompt}\n${getVisitorIdentityInstruction(ctx.user?.name)}${savedMemoryInstruction}\n${getConversationContinuityInstruction(history)}\n${languageInstruction}\n\nتوجيه المهمة الحالية:\n${taskInstruction}${sourceInstruction}` },
           ...history.map((message) => ({ role: message.role, content: message.content })),
         ];
         if (latestMessage?.imageDataUrl && llmMessages.length > 1) {
