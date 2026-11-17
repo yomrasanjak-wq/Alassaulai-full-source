@@ -817,14 +817,37 @@ describe("ai.chat", () => {
     }
   });
 
-  it("shows a curated gallery image directly when a visitor asks for an Uzungol photo", async () => {
-    const caller = appRouter.createCaller(createPublicContext());
-    const result = await caller.ai.chat({
-      language: "AR",
-      messages: [{ role: "user", content: "اعرض لي صورة أوزنجول" }],
-    });
-    expect(result.text).toContain("![بحيرة أوزنجول والجبال المحيطة](/images/modern-uzungol.webp)");
-    expect(vi.mocked(invokeLLM)).not.toHaveBeenCalled();
+  it("shows a Wikimedia image directly when a visitor asks for an Uzungol photo", async () => {
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        query: {
+          pages: [{
+            title: "File:Uzungol.jpg",
+            imageinfo: [{
+              thumburl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Uzungol.jpg/960px-Uzungol.jpg",
+              url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/Uzungol.jpg",
+              descriptionurl: "https://commons.wikimedia.org/wiki/File:Uzungol.jpg",
+              mime: "image/jpeg",
+              extmetadata: { LicenseShortName: { value: "CC BY-SA 4.0" } },
+            }],
+          }],
+        },
+      }),
+    }));
+    try {
+      const caller = appRouter.createCaller(createPublicContext());
+      const result = await caller.ai.chat({
+        language: "AR",
+        messages: [{ role: "user", content: "اعرض لي صورة أوزنجول" }],
+      });
+      expect(result.text).toContain("![أوزنجول](https://upload.wikimedia.org/");
+      expect(result.text).toContain("CC BY-SA 4.0");
+      expect(vi.mocked(invokeLLM)).not.toHaveBeenCalled();
+    } finally {
+      vi.stubGlobal("fetch", originalFetch);
+    }
   });
 
   it("forwards an attached image to the model as vision content", async () => {
