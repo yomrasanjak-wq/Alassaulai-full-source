@@ -37,7 +37,10 @@ function imageRequest(message: string): { title: string; query: string } | undef
     return { title: "الفنان محمد عبده", query: "Mohammed Abdu Saudi singer" };
   }
   if (/(?:أوزنجول|اوزنجول|أوزنقول|اوزنقول|uzung[oö]l|زنجول|زنجود)/i.test(text)) {
-    return { title: "أوزنجول", query: "Uzungol Trabzon lake" };
+    const asksForBoat = /(?:مركب|قارب|قوارب|مراكب|boat|boats|canoe)/i.test(text);
+    return asksForBoat
+      ? { title: "قارب بجوار بحيرة أوزنجول", query: "Uzungol lake boat Trabzon Turkey" }
+      : { title: "أوزنجول", query: "Uzungol Trabzon lake" };
   }
 
   const query = text
