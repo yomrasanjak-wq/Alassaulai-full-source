@@ -681,11 +681,14 @@ type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function renderChatText(text: string) {
   return text.split(/(!\[[^\]]*\]\((?:\/images\/[^\s)]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[^\s)]+)\)|https?:\/\/[^\s]+)/g).map((part, index) => {
-    const imageMatch = part.match(/^!\[([^\]]*)\]\(((?:\/images\/[A-Za-z0-9._/%-]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%-]+))\)$/);
-    if (imageMatch && !imageMatch[2].includes("..")) {
+    const imageMatch = part.match(/^!\[([^\]]*)\]\(((?:\/images\/[A-Za-z0-9._/%?=&-]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%?=&-]+))\)$/);
+    const imageUrl = imageMatch?.[2];
+    const safeLocalImage = Boolean(imageUrl && imageUrl.startsWith("/images/") && !imageUrl.split(/[?#]/, 1)[0].split("/").includes(".."));
+    const safeCommonsImage = Boolean(imageUrl && /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%-]+(?:\?[A-Za-z0-9._%=&-]*)?$/.test(imageUrl));
+    if (imageMatch && (safeLocalImage || safeCommonsImage)) {
       return <img
         key={"chat-image-" + index}
-        src={imageMatch[2]}
+        src={imageUrl}
         alt={imageMatch[1] || "صورة من دليل ALASSAUL"}
         loading="eager"
         decoding="async"
