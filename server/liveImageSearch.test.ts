@@ -9,7 +9,20 @@ describe("Wikimedia Commons image search", () => {
   it("recognizes Arabic image requests for Makkah and public figures", () => {
     expect(isWikimediaImageRequest("طيب صوره لمكه المكرمه")).toBe(true);
     expect(isWikimediaImageRequest("صوره للفنان محمد عبده")).toBe(true);
+    expect(isWikimediaImageRequest("صورة مركب بجوار أوزنجول")).toBe(true);
     expect(isWikimediaImageRequest("السلام عليكم")).toBe(false);
+  });
+
+  it("uses the requested scene when the visitor asks for a boat at Uzungol", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ query: { pages: [] } }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const answer = await getWikimediaImageAnswer("صورة مركب بجوار أوزنجول");
+    expect(fetchMock.mock.calls[0][0]).toContain("Uzungol+lake+boat");
+    expect(answer).toContain("قارب بجوار بحيرة أوزنجول");
   });
 
   it("returns a displayable image with source and license attribution", async () => {
