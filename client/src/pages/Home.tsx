@@ -680,7 +680,7 @@ type SpeechRecognitionLike = {
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function renderChatText(text: string) {
-  const tokenPattern = /(!\\[([^\\]]*)\\]\\((https?:\\/\\/[^)\\s]+|\\/images\\/[^)\\s]+)\\))|(\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\))|(\\*\\*([^*]+)\\*\\*)|(https?:\\/\\/[^\\s]+)/g;
+  const tokenPattern = /(!\[([^\]]*)\]\((https?:\/\/[^)\s]+|\/images\/[^)\s]+)\))|(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\))|(\*\*([^*]+)\*\*)|(https?:\/\/[^\s]+)/g;
   const nodes: React.ReactNode[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null;
@@ -697,8 +697,8 @@ function renderChatText(text: string) {
         const url = new URL(src);
         safeRemote = url.protocol === "https:" && (
           (url.hostname === "upload.wikimedia.org" && url.pathname.startsWith("/wikipedia/commons/")
-            && /\\.(?:jpe?g|png|webp|gif)$/i.test(url.pathname))
-          || (url.hostname === "api.openverse.org" && /^\\/v1\\/images\\/[a-f0-9-]+\\/thumb\\/$/i.test(url.pathname))
+            && /\.(?:jpe?g|png|webp|gif)$/i.test(url.pathname))
+          || (url.hostname === "api.openverse.org" && /^\/v1\/images\/[a-f0-9-]+\/thumb\/$/i.test(url.pathname))
         );
       } catch { safeRemote = false; }
       if (safeLocal || safeRemote) {
