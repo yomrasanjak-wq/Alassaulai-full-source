@@ -4,7 +4,7 @@
 export type GroundingLanguage = "AR" | "TR" | "EN";
 
 export function isGenealogyResearchQuestion(message: string): boolean {
-  return /(?:نسب|الأنساب|الانساب|أصل القبيلة|اصل القبيله|أصل العائلة|اصل العائله|قبيلة|قبيله|عشيرة|عشيره|فخذ|أفخاذ|افخاذ|بطون|بطن|شجرة العائلة|شجرة نسب|من أي قبيلة|من اي قبيله|يرجعون إلى|يرجعون الى|يرجع إلى|يرجع الى|لقب العائلة|لقب|surname|genealogy|tribe|clan|family lineage)/i.test(message.normalize("NFKC"));
+  return /(?:نسب|الأنساب|الانساب|أصل القبيلة|اصل القبيله|أصل العائلة|اصل العائله|أصل عائلة|اصل عائله|قبيلة|قبيله|عشيرة|عشيره|فخذ|أفخاذ|افخاذ|بطون|بطن|شجرة العائلة|شجرة نسب|من أي قبيلة|من اي قبيله|من هم أولاد|من هم اولاد|أولاد راشد|اولاد راشد|بني راشد|يرجعون إلى|يرجعون الى|يرجع إلى|يرجع الى|لقب العائلة|لقب|surname|genealogy|tribe|clan|family lineage)/i.test(message.normalize("NFKC"));
 }
 
 export function isGoogleGroundingQuestion(message: string): boolean {
