@@ -72,8 +72,8 @@ describe("context-aware live image search", () => {
     vi.stubGlobal("fetch", fetchMock);
     const answer = await getWikimediaImageAnswer("صوره لمكه المكرمه");
     expect(answer).toContain("![مكة المكرمة والمسجد الحرام](https://upload.wikimedia.org/");
-    expect(answer).toContain("CC BY-SA 4.0");
-    expect(answer).toContain("https://commons.wikimedia.org/wiki/File:Masjid_al-Haram.jpg");
+    expect(answer).toContain("**مكة المكرمة والمسجد الحرام**");
+    expect(answer).toContain("[المصدر](https://commons.wikimedia.org/wiki/File:Masjid_al-Haram.jpg)");
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
