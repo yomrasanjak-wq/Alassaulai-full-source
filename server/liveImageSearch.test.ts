@@ -42,7 +42,7 @@ describe("context-aware live image search", () => {
           mime: "image/jpeg",
           extmetadata: { LicenseShortName: { value: "CC BY-SA 4.0" }, Artist: { value: "Example Photographer" } },
         }],
-      }] }) ,
+      }] } }) ,
     });
     vi.stubGlobal("fetch", fetchMock);
     const answer = await getWikimediaImageAnswer("صوره لمكه المكرمه");
