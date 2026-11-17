@@ -57,7 +57,8 @@ function knownSubject(text: string): { title: string; query: string } | undefine
 
 function parseStandaloneRequest(message: string): ImageRequest | undefined {
   const text = message.normalize("NFKC").replace(/[\u064B-\u065F\u0670\u0640]/g, "").trim();
-  if (!imageIntent.test(text)) return undefined;\n  if (imageComplaint.test(text) && !knownSubject(text)) return undefined;
+  if (!imageIntent.test(text)) return undefined;
+  if (imageComplaint.test(text) && !knownSubject(text)) return undefined;
   const modern = modernIntent.test(text);
   const known = knownSubject(text);
   if (known) return { ...known, modern, googleQuery: known.query + (modern ? " latest recent photos" : "") };
