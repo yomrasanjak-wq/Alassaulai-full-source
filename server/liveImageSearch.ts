@@ -32,7 +32,7 @@ function cleanMetadata(value: string | undefined): string {
 }
 
 const imageIntent = /(?:صورة|صوره|صور|الصورة|الصوره|اعرض|أعرض|ورني|ورّني|أرني|ارني|ابغى اشوف|أبغى أشوف|ابي اشوف|أبي أشوف|ابحث في جوجل|ابحث بجوجل|من جوجل|google images|show me|photo|picture|image)/i;
-const modernIntent = /(?:حديث|حديثه|حديثة|جديد|جديده|جديدة|ملون|ملونه|ملونة|بالألوان|بالالوان|مو قديم|ليست قديمة|مش قديم|recent|modern|latest|new|color|colour)/i;
+const modernIntent = /(?:حديث|حديثه|حديثة|جديد|جديده|جديدة|ملون|ملونه|ملونة|بالألوان|بالالوان|مو قديم|ليست قديمة|مش قديم|جمال|منظر|مناظر|طبيعة|ساحل|recent|modern|latest|new|color|colour|scenic)/i;
 const imageComplaint = /(?:كل الصور|الصور.*(?:قديم|قديمة|قديمه)|الصورة.*(?:ما طلعت|ما ظهرت|لم تظهر|ما اشتغلت|ما تحملت|ما تفتح)|(?:ما طلعت|ما ظهرت|لم تظهر).{0,24}(?:الصورة|الصوره))/i;
 
 function knownSubject(text: string): { title: string; query: string } | undefined {
@@ -41,6 +41,8 @@ function knownSubject(text: string): { title: string; query: string } | undefine
     return { title: "اللاعب محمد عبده", query: "Mohammed Abdu Saudi football player" };
   }
   const rules: Array<[RegExp, string, string]> = [
+    [/(?:طرابزون|ترابزون|trabzon)/i, "طرابزون – مشاهد المدينة والساحل", "Trabzon Turkey Black Sea coast city skyline modern scenic view"],
+    [/(?:الميدان|ميدان طرابزون|trabzon meydan|meydan square)/i, "ميدان طرابزون", "Trabzon Meydan Square city center Turkey"],
     [/(?:مطار\s*ريزا|ريزا\s*مطار|مطار\s*ريزه|rize(?:-artvin)?\s*airport|rize\s*havalimani)/i, "مطار ريزا-أرتفين", "Rize Artvin Airport Turkey terminal aerial sea runway"],
     [/(?:حيدر\s*نبي|حيدرنبى|هيدر\s*نبي|هيدرنبى|hidirnebi|hıdırnebi|hidirnebi\s*yaylasi)/i, "مرتفعات حيدر نبي", "Hidirnebi Plateau Trabzon Turkey mountain landscape"],
     [/(?:مياه?.*(?:كبريت|كبيريت).*(?:جرسون|جيرسون|giresun)|(?:جرسون|جيرسون|giresun).*(?:كبريت|kükürt|sulfur))/i, "المياه الكبريتية في منتزه كوزالان – جرسون", "Kuzalan Nature Park Giresun sulfur springs travertines Turkey"],
@@ -121,20 +123,34 @@ async function searchCommons(request: ImageRequest, signal: AbortSignal) {
   });
   if (!response.ok) throw new Error("Wikimedia Commons HTTP " + response.status);
   const data = await response.json() as { query?: { pages?: CommonsPage[] } };
-  return (data.query?.pages ?? []).flatMap((page) => {
+  const pages = data.query?.pages ?? [];
+  const query = request.query.toLowerCase();
+  const identityTerms = query.split(/[^a-z0-9]+/i).filter((word) =>
+    word.length > 3 && !/^(turkey|saudi|arabia|football|player|legend|landscape|terminal|aerial|runway|coast|scenic|modern|city|center|square|view|photos|photo|black|sea)$/i.test(word)
+  );
+  const rejectedTitle = /(?:\bmap\b|\batlas\b|\bchart\b|\bdiagram\b|\bpostcard\b|\bengraving\b|\b lithograph\b|\b186[0-9]\b|\b19[0-4][0-9]\b)/i;
+  const candidates = pages.flatMap((page) => {
     const info = page.imageinfo?.[0];
     const imageUrl = info?.url || info?.thumburl || "";
+    const title = page.title ?? "";
     if (!/^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\//i.test(imageUrl)) return [];
     if (!/^image\/(?:jpeg|png|webp|gif)$/i.test(info?.mime ?? "")) return [];
     const descriptionUrl = info?.descriptionurl || "";
     if (!/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/i.test(descriptionUrl)) return [];
+    if (rejectedTitle.test(title)) return [];
+    const normalizedTitle = title.toLowerCase();
+    const matchedTerms = identityTerms.filter((term) => normalizedTitle.includes(term));
+    // Reject unrelated Commons search hits (for example, an old regional map for a city-photo request).
+    if (identityTerms.length && !matchedTerms.length) return [];
     return [{
-      title: page.title ?? request.title, imageUrl, descriptionUrl,
+      title, imageUrl, descriptionUrl,
+      score: matchedTerms.length,
       license: cleanMetadata(info?.extmetadata?.LicenseShortName?.value),
       artist: cleanMetadata(info?.extmetadata?.Artist?.value),
       credit: cleanMetadata(info?.extmetadata?.Credit?.value),
     }];
-  })[0];
+  });
+  return candidates.sort((left, right) => right.score - left.score)[0];
 }
 
 async function searchOpenverse(request: ImageRequest, signal: AbortSignal): Promise<OpenverseImage | undefined> {
