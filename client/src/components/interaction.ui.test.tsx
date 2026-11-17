@@ -2,6 +2,10 @@
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const stylesheet = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
 
 const { mutateAsyncMock, auxiliaryMutationMock } = vi.hoisted(() => ({ mutateAsyncMock: vi.fn(), auxiliaryMutationMock: vi.fn() }));
 vi.mock("@/lib/trpc", () => ({
@@ -587,12 +591,11 @@ describe("TikTok profile page", () => {
 });
 
 describe("Official live channel actions", () => {
-  it("opens the Makkah channel inside the broadcast box", () => {
+  it("opens the current official Makkah live video inside the broadcast box", () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
     const iframe = screen.getByTitle("مكة المكرمة") as HTMLIFrameElement;
-    expect(iframe).toBeTruthy();
-    expect(iframe.src).toContain("youtube-nocookie.com/embed/eC4LfEVxvKg");
+    expect(iframe.src).toContain("youtube-nocookie.com/embed/kYqGbBqmp8g");
     expect(document.querySelector(".video-shell")).toBeNull();
   });
 
@@ -685,9 +688,9 @@ it("keeps the assistant panel physically centered in RTL layouts", () => {
   fireEvent.click(screen.getByRole("button", { name: "chat" }));
   const panel = document.querySelector(".chat-panel");
   expect(panel).toBeTruthy();
-  expect(getComputedStyle(panel as HTMLElement).left).toBe("12px");
-  expect(getComputedStyle(panel as HTMLElement).right).toBe("12px");
-  expect(getComputedStyle(panel as HTMLElement).transform).toBe("none");
+  // jsdom does not apply the app stylesheet to getComputedStyle; verify the shipped CSS contract instead.
+  expect(stylesheet).toContain(".chat-panel { left: 12px !important; right: 12px !important; transform: none !important; margin-inline: auto !important; }");
+  expect(stylesheet).toContain("width: calc(100vw - 24px) !important");
 });
 
 describe("Global search guidance", () => {

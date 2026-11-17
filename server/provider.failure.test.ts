@@ -20,15 +20,15 @@ describe("provider failure communication", () => {
   });
 
   it.each([
-    [new Error("No language-model API key is configured"), "مفتاح مزود الذكاء الاصطناعي غير مضبوط"],
-    [new Error("LLM invoke failed: 429 Too Many Requests"), "حد الطلبات مؤقتاً"],
-    [new DOMException("The operation timed out", "TimeoutError"), "انتهت مهلة الاتصال"],
-  ])("returns a specific Arabic next step for %s", async (error, expected) => {
+    [new Error("No language-model API key is configured"), "مفتاح مزود الذكاء الاصطناعي غير مضبوط", 2],
+    [new Error("LLM invoke failed: 429 Too Many Requests"), "حد الطلبات مؤقتاً", 2],
+    [new DOMException("The operation timed out", "TimeoutError"), "انتهت مهلة الاتصال", 1],
+  ])("returns a specific Arabic next step for %s", async (error, expected, expectedAttempts) => {
     vi.mocked(invokeLLM).mockReset().mockRejectedValue(error);
     const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "اشرح لي ظاهرة علمية" }] });
     expect(result.text).toContain(expected);
     expect(result.text).not.toContain(error.message);
-    expect(invokeLLM).toHaveBeenCalledTimes(2);
+    expect(invokeLLM).toHaveBeenCalledTimes(expectedAttempts);
   });
 });

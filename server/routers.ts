@@ -4,7 +4,7 @@ import { countRegisteredVisitors, createControlAuditLog, createControlRequest, c
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
-import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
+import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGenealogyResearchQuestion, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
 import { getWikipediaSearchContext } from "./_core/wikipediaSearch";
 import { synthesizeSpeech } from "./_core/textToSpeech";
 import { systemRouter } from "./_core/systemRouter";
@@ -61,6 +61,44 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - لا تجعل كل حديث يتحول إلى قائمة أو نصيحة؛ أحياناً يكون المطلوب دردشة قصيرة أو تفاعلاً طبيعياً. لا تفرض سؤالاً في نهاية كل إجابة، ولا تنه الحوار بطريقة تقطعه ما دام الزائر يريد المتابعة.
 `;
 
+/** Match direct questions about the named founder without misclassifying general identity questions. */
+export function isFounderIdentityQuestion(message: string): boolean {
+  return /(?:من هو|مين هو|من يكون|عرفني على)\s*(?:المهندس\s*)?يوسف\s*عسول/i.test(message.normalize("NFKC"));
+}
+
+/** General genealogy research guidance, with a separately attributed Awlad Rashid family note. */
+export function getTribalGenealogyInstruction(message: string): string {
+  const normalized = message.normalize("NFKC");
+  const isGenealogyQuestion = isGenealogyResearchQuestion(normalized);
+  if (!isGenealogyQuestion) return "";
+
+  const generalGuidance = [
+    "نمط بحث الأنساب — متاح لكل القبائل والعائلات والألقاب، وليس لقبيلة واحدة:",
+    "ابدأ بتحديد الاسم كما كتبه المستخدم، ثم ابحث عن أصوله وفروعه وبطونه ومناطق وجوده تاريخياً وحديثاً. لا تفترض أن كل من يحمل اللقب نفسه يرجع إلى جد واحد؛ فقد تتشابه الأسماء بين أسر وقبائل لا يجمعها نسب.",
+    "إذا كان الاسم مشتركاً أو كانت المنطقة غير واضحة، اسأل سؤال توضيح واحداً عن البلد أو المنطقة أو اسم الجد الأقرب. لا تطلب تفاصيل شخصية حساسة، ولا تجعل المستخدم يشارك وثائق عائلية خاصة إلا إذا أراد ذلك.",
+    "ميّز بوضوح بين النسب المثبت بوثائق أو مصادر تاريخية معتبرة، والرواية الشفهية أو العائلية، والانتساب بالحلف أو الجوار أو المصاهرة. ميّز بين الحلف والنسب؛ فالحلف لا يثبت وحده وحدة النسب، ولا تحوّل الحليف إلى ابن عم نسباً.",
+    "اعتمد عند البحث على المصادر التاريخية والأكاديمية والوثائق المنشورة والمراجع المحلية المعروفة، واذكر اسم المصدر وما الذي يدعمه تحديداً. أعطِ الأولوية للمصدر الأصلي أو الدراسة المتخصصة، ولا تجعل صفحات الأنساب المجهولة أو منشورات المنتديات أو ويكيبيديا وحدها دليلاً قاطعاً.",
+    "إذا اختلفت الروايات، اعرض كل رواية مع نسبتها إلى مصدرها وبيّن موضع الاتفاق والاختلاف دون تركيب سلسلة نسب توفيقية. لا تخترع أسماء أجداد أو بطون أو هجرات أو تواريخ، ولا تصف نسباً بأنه مؤكد إذا كانت الأدلة لا تسمح بذلك.",
+    "في الأنساب التفصيلية استخدم البحث الحي متى كان متاحاً، وأرفق المصادر الفعلية التي تم الرجوع إليها. إذا لم تتوفر نتائج موثوقة، قل إن المعلومة غير محسومة واطلب تحديد البلد أو اسم الجد بدلاً من التخمين.",
+    "قدّم إجابة مفهومة ومختصرة أولاً، ثم اعرض الفروع والتفاصيل التي تدعمها المصادر فقط. هذه الخدمة مفتوحة للزائر أياً كانت قبيلته أو عائلته أو بلده."
+  ];
+
+  const isAwladRashid = /(أولاد\s*راشد|اولاد\s*راشد|بني\s*راشد|بنو\s*راشد|الراشد|راشد بن|الجنيد|ذبيان)/i.test(normalized);
+  if (!isAwladRashid) return generalGuidance.join("\n");
+
+  return [
+    ...generalGuidance,
+    "",
+    "ملف معرفة إضافي — أولاد راشد (يُعرض فقط عند السؤال عن هذا الاسم):",
+    "وفق الرواية العائلية التي قدمها أحد أبناء القبيلة للمنصة: راشد بن شاكر بن جنيد، وأن راشداً هاجر وذريته من الجزيرة العربية إلى السودان، ثم انتشرت فروع ذريته في السودان وتشاد ومناطق أخرى. تعامل مع هذا بوصفه رواية عائلية منسوبة إلى ناقلها، لا وثيقة تاريخية مثبتة.",
+    "توجد رواية منشورة مختلفة في ترتيب الاسم، تذكر: راشد بن جنيد بن شاكر بن أحمد الأجذم بن شعوف الأشجع بن عيسى بن مطر بن ديان بن عبد الله بن الفضل. اذكر اختلاف ترتيب شاكر وجنيد صراحة، ولا توحّد الروايتين أو تخترع حلاً للتعارض.",
+    "عند السؤال عن أولاد راشد أو نسبهم، اذكر الفروع الأربعة بوضوح في متن الإجابة: زبد، أزيد، زيود، حميدة، ثم اذكر البطون المتداولة ذات الصلة؛ لا تكتفِ بذكر اسم الجد أو طلب تحديد البلد إذا كان السؤال عن هذه الأسرة تحديداً. انسب الرواية العائلية والرواية المنشورة كلٌّ على حدة، وبيّن أن التفصيل المتداول ليس وثيقة نسب قاطعة.",
+    "الفروع الأربعة المتداولة: زبد، أزيد، زيود، حميدة. ومن البطون المنشورة: أولاد زبد (مليك، مسعد، أولاد جيقان، أولاد عيد، أولاد المقيم)؛ أولاد أزيد (عيد، أولاد مهيا، أولاد جبران، عيص/العياصاد، دقيل)؛ أولاد زيود (دار سالم، مهدي، أولاد أحمد، أولاد سعيد، أولاد سعد، المهادي، رمضان)؛ أولاد حميدة (أولاد عيسى، عبوس بفروع بلال ورواف وسيار وعياد، وأولاد مالك بفروع شاكر ونافع وأولاد عواني وعبد الكريم وموسى وعبد العالي). قد تختلف التقسيمات محلياً؛ انسبها إلى الرواية المنشورة ولا تعرضها كقائمة نهائية.",
+    "تذكر كتابات تاريخية صلة بين بني راشد والزيود في وداي وبرنو؛ انسب هذه المعلومة إلى الكتابات التي تذكرها ولا تعممها على كل جماعة تحمل اسماً مشابهاً.",
+    "بحسب إفادة عائلية وصلت إلى المنصة، ذبيان دخلوا في جهينة حلفاً. هذه إفادة شفوية تحتاج توثيقاً مستقلاً؛ لا تجعل ذبيان نسباً من جهينة لمجرد الحلف."
+  ].join("\n");
+}
+
 const MAX_CHAT_HISTORY = 14;
 const MAX_CHAT_MESSAGE_CHARS = 1200;
 
@@ -79,7 +117,10 @@ export function getDistinctBackupModel(primaryModel: string | undefined, backupM
 export function getAdaptiveTaskInstruction(message: string): string {
   const text = message.normalize("NFKC").toLowerCase();
   if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|أخبار السعودية|اخبار السعودية|السعودية اليوم|أخبار اليمن|اخبار اليمن|اليمن اليوم|latest news|world news|breaking news)/i.test(text)) {
-    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. التزم بالعدد الذي يطلبه المستخدم حرفياً؛ إذا طلب ثلاثة أخبار فاعرض ثلاثة فقط، وإذا لم يحدد عدداً فاعرض ثلاثة أخبار كحد افتراضي. في موجز أخبار العالم نوّع التغطية جغرافياً وموضوعياً، وفضّل ثلاثة ناشرين موثوقين مختلفين متى توفرت تغطية حديثة قابلة للتحقق؛ لا تضحِّ بالدقة لمجرد التنويع. لكل خبر عنوان دقيق يعكس محتوى صفحة الناشر، وملخص موجز وتاريخ النشر واسم الناشر. ميّز بوضوح بين الوقائع المؤكدة والادعاءات والتقارير الأولية، ولا تكرر الخبر نفسه بصيغ مختلفة. لا تكتب روابط Markdown داخل متن الإجابة ولا تنشئ قائمة مصادر يدوياً؛ ستُرفق روابط المصادر الموثقة تلقائياً بعد الإجابة. لا تعرض روابط Google News أو RSS أو صفحات تجميع الأخبار على أنها مصادر أصلية، ولا تنسب خبراً إلى ناشر لمجرد ظهوره في نتيجة بحث. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. إذا لم تتوفر أداة بحث حي أو روابط ناشر أصلية، صرّح بذلك ولا تختلق عناوين أو مصادر.";
+    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. التزم بالعدد الذي يطلبه المستخدم حرفياً؛ إذا طلب ثلاثة أخبار فاعرض ثلاثة فقط، وإذا لم يحدد عدداً فاعرض ثلاثة أخبار كحد افتراضي. في موجز أخبار العالم نوّع التغطية جغرافياً وموضوعياً، وفضّل ثلاثة ناشرين موثوقين مختلفين متى توفرت تغطية حديثة قابلة للتحقق؛ لا تضحِّ بالدقة لمجرد التنويع. لكل خبر عنوان دقيق يعكس محتوى صفحة الناشر، وملخص موجز وتاريخ النشر واسم الناشر. ميّز بوضوح بين الوقائع المؤكدة والادعاءات والتقارير الأولية، ولا تكرر الخبر نفسه بصيغ مختلفة. لا تكتب روابط Markdown داخل متن الإجابة ولا تنشئ قائمة مصادر يدوياً؛ ستُرفق روابط المصادر الموثقة تلقائياً بعد الإجابة. لا تعرض روابط Google News أو RSS أو صفحات تجميع الأخبار على أنها مصادر أصلية، ولا تنسب خبراً إلى ناشر لمجرد ظهوره في نتيجة بحث. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. لا تعرض معلومة على أنها حدث اليوم دون تحقق من تاريخ نشرها. إذا لم تتوفر أداة بحث حي أو روابط ناشر أصلية، صرّح بذلك ولا تختلق عناوين أو مصادر.";
+  }
+  if (/(أرامكو|ارامكو|رامكو|رام\s*كل|الميكانيكا|ميكانيكي|ميكانيكا|الصيانة الصناعية|المعدات الدوارة|المضخات|المحركات|اللحام|الفنيين|المهارات الفنية|تقييم الكفاءة|تقييم المهارات|competency|mechanical|industrial maintenance|rotating equipment|machinist|technician)/i.test(text)) {
+    return "نمط الاستشارة المهنية والصناعية: حدّد التخصص والمسمى الوظيفي ومستوى الخبرة إن كانت مؤثرة. اشرح الكفاءة المطلوبة عملياً، واربطها بمهام العمل ومعايير السلامة والجودة، وميّز بين المعرفة النظرية والاختبار العملي وسجل الخبرة. عند السؤال عن شركة بعينها مثل أرامكو، لا تنسب إليها نموذج تقييم أو اختباراً داخلياً دون مصدر رسمي منشور؛ افصل بين ما تؤكده المصادر الرسمية والممارسات الصناعية الشائعة، واذكر تاريخ المصدر وحدود ما يثبته. إذا كان المصطلح غامضاً مثل Competency Assessment فوضّح معناه واسأل عن الوظيفة أو التخصص عند الحاجة. قدّم مثالاً عملياً وأسئلة تدريبية مناسبة، ولا تخترع درجات نجاح أو متطلبات اعتماد.";
   }
   if (/(كيف أصلح|كيف اصلح|متعطل|عطل|لا يعمل|ما يشتغل|ما يفتح|خطأ|مشكلة|حل المشكلة|تشخيص)/i.test(text)) {
     return "نمط معالجة مشكلة: حدّد الاحتمال الأقرب دون الجزم، ثم أعطِ خطوات تشخيص مرتبة من الأبسط والأكثر أماناً إلى المتقدم. اذكر ما ينبغي عدم فعله، واسأل عن معلومة واحدة فقط إذا كانت ضرورية.";
@@ -88,7 +129,7 @@ export function getAdaptiveTaskInstruction(message: string): string {
     return "نمط الرياضة الحية: حدّد البطولة والتاريخ المقصود، واستخدم أحدث بيانات موثوقة متاحة. عند طلب مباريات اليوم أو جدول دوري روشن، اعرض جدولاً واضحاً بأعمدة: المباراة | الساعة بتوقيت السعودية | القناة الناقلة. حوّل الأوقات إلى توقيت Asia/Riyadh وتحقق من التاريخ وحالة المباراة. لا تذكر قناة إلا إذا أكدها مصدر موثوق؛ وإلا اكتب «غير معلنة في المصدر المتاح». أدرج تاريخ ووقت آخر تحديث والمصدر عند توفرهما. لا تخلط الأخبار بجدول المباريات ولا تخمّن مباراة أو نتيجة أو موعداً؛ إذا فشل المصدر فقل ذلك صراحة.";
   }
   if (/(رتب لي|برنامج|خطة|جدول|خطط|نظم|نظّم|رحلة|بكج|ميزانية|خلال \d+ أيام)/i.test(text)) {
-    const itinerary = "نمط التخطيط: لا تكتفِ بالقول إنك تستطيع التخطيط؛ أنشئ البرنامج مباشرة عندما تكون الوجهة والمدة واضحتين. قسّم الرحلة يوماً بيوم، وبترتيب صباحي ومسائي مع أوقات تقريبية، وأسماء الوجهات والأنشطة، واقتراح مطاعم أو استراحات عند ملاءمة المسار، ومدة التنقل الواقعية بين المحطات. اجمع المواقع المتقاربة جغرافياً ولا تحشر وجهات بعيدة في يوم واحد. أضف ميزانية تقريبية ونصائح توفير عندما تفيد، واذكر افتراضاتك بوضوح. إذا ذكر المستخدم أشخاصاً أو مدناً أو ترتيباً أو محطات محددة فالتزم بها. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، ولا تخترع ساعات عمل أو أنشطة موسمية.";
+    const itinerary = "نمط التخطيط: لا تكتفِ بالقول إنك تستطيع التخطيط؛ أنشئ البرنامج مباشرة عندما تكون الوجهة والمدة واضحتين، وقدّم خطة قابلة للتنفيذ. قسّم الرحلة يوماً بيوم، وبترتيب صباحي ومسائي مع أوقات تقريبية، وأسماء الوجهات والأنشطة، واقتراح مطاعم أو استراحات عند ملاءمة المسار، ومدة التنقل الواقعية بين المحطات. اجمع المواقع المتقاربة جغرافياً ولا تحشر وجهات بعيدة في يوم واحد. أضف ميزانية تقريبية ونصائح توفير عندما تفيد، واذكر افتراضاتك بوضوح. إذا ذكر المستخدم أشخاصاً أو مدناً أو ترتيباً أو محطات محددة فالتزم بها. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، ولا تخترع ساعات عمل أو أنشطة موسمية.";
     if (/(طرابزون|ترابزون|أوزنجول|اوزنجول|أيدر|ايدر|ريزه|سامسون|أوردو|جيرسون|إسطنبول|اسطنبول|شمال تركيا|سورميني|أراكلي)/i.test(text)) {
       return `${itinerary} خصّص الخطة لشمال تركيا: اجمع الوجهات المتقاربة في اليوم نفسه، وراعِ وقت القيادة والطقس الجبلي، وضمّن عند ملاءمة المسار سامسون وأوردو وجيرسون وأرسين وسورميني وأراكلي وإسطنبول، ولا تضعها كلها في مسار واحد إن كان الوقت لا يسمح.`;
     }
@@ -491,14 +532,53 @@ export function getContextualWeatherQuestion(messages: Array<{ role: "user" | "a
 
 export async function getLiveWeatherAnswer(content: string): Promise<string | undefined> {
   if (!/(?:طقس|أجواء|الجو|درجة الحرارة|الحرارة|weather|temperature)/i.test(content)) return undefined;
+  const asksWeeklyForecast = /(?:الأسبوع القادم|الاسبوع القادم|الأسبوع الجاي|الاسبوع الجاي|الأيام القادمة|الايام القادمة|السبعة أيام|سبعة أيام|7 أيام|7 ايام|next week|next 7 days|weekly forecast)/i.test(content);
   const city = WEATHER_CITIES.find((candidate) => candidate.names.test(content));
-  if (!city) return undefined;
+  if (!city) {
+    return asksWeeklyForecast
+      ? "أكيد، لأي مدينة تريد توقعات الأسبوع القادم؟ اذكر اسم المدينة وسأعرض لك درجات الحرارة واحتمالات الأمطار يوماً بيوم."
+      : undefined;
+  }
   try {
     const url = new URL("https://api.open-meteo.com/v1/forecast");
-    url.search = new URLSearchParams({ latitude: String(city.latitude), longitude: String(city.longitude), current: "temperature_2m,apparent_temperature,weather_code,wind_speed_10m", timezone: city.timezone }).toString();
-    const response = await fetch(url.toString(), { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(5000) });
+    const params: Record<string, string> = {
+      latitude: String(city.latitude),
+      longitude: String(city.longitude),
+      timezone: city.timezone,
+    };
+    if (asksWeeklyForecast) {
+      params.forecast_days = "7";
+      params.daily = "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max";
+    } else {
+      params.current = "temperature_2m,apparent_temperature,weather_code,wind_speed_10m";
+    }
+    url.search = new URLSearchParams(params).toString();
+    const response = await fetch(url.toString(), { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6000) });
     if (!response.ok) throw new Error(`weather-http-${response.status}`);
-    const data = await response.json() as { current?: { time?: string; temperature_2m?: number; apparent_temperature?: number; weather_code?: number; wind_speed_10m?: number } };
+    const data = await response.json() as {
+      current?: { time?: string; temperature_2m?: number; apparent_temperature?: number; weather_code?: number; wind_speed_10m?: number };
+      daily?: { time?: string[]; weather_code?: number[]; temperature_2m_max?: number[]; temperature_2m_min?: number[]; precipitation_probability_max?: number[]; wind_speed_10m_max?: number[] };
+    };
+    if (asksWeeklyForecast) {
+      const daily = data.daily;
+      if (!daily?.time?.length || !daily.weather_code || !daily.temperature_2m_max || !daily.temperature_2m_min) {
+        throw new Error("weekly-weather-data-invalid");
+      }
+      const rows = daily.time.slice(0, 7).map((date, index) => {
+        const day = new Intl.DateTimeFormat("ar", { weekday: "long", day: "numeric", month: "short", timeZone: city.timezone }).format(new Date(date + "T12:00:00"));
+        const high = daily.temperature_2m_max?.[index];
+        const low = daily.temperature_2m_min?.[index];
+        const code = daily.weather_code?.[index];
+        if (!Number.isFinite(high) || !Number.isFinite(low) || !Number.isFinite(code)) return null;
+        const rain = daily.precipitation_probability_max?.[index];
+        const wind = daily.wind_speed_10m_max?.[index];
+        const rainText = Number.isFinite(rain) ? ` | احتمال المطر ${Math.round(rain as number)}٪` : "";
+        const windText = Number.isFinite(wind) ? ` | الرياح ${Math.round(wind as number)} كم/س` : "";
+        return `• ${day}: ${weatherDescription(code as number)}، العظمى ${Math.round(high as number)}° والصغرى ${Math.round(low as number)}°${rainText}${windText}`;
+      }).filter((row): row is string => Boolean(row));
+      if (!rows.length) throw new Error("weekly-weather-rows-empty");
+      return `توقعات الطقس للأيام السبعة القادمة في ${city.name}:\n\n${rows.join("\n")}\n\nالمصدر: Open-Meteo. التوقعات قابلة للتغير، خصوصاً احتمالات الأمطار.`;
+    }
     const current = data.current;
     if (!current || !Number.isFinite(current.temperature_2m) || !Number.isFinite(current.weather_code)) throw new Error("weather-data-invalid");
     const feels = Number.isFinite(current.apparent_temperature) ? `، والمحسوسة ${Math.round(current.apparent_temperature as number)}°` : "";
@@ -507,7 +587,7 @@ export async function getLiveWeatherAnswer(content: string): Promise<string | un
     return `الطقس الآن في ${city.name}: ${Math.round(current.temperature_2m as number)}° مئوية${feels}. ${weatherDescription(current.weather_code as number)}${wind}.${readAt} المصدر: Open-Meteo. هذه قراءة حالية وقد تتغير خلال اليوم.`;
   } catch (error) {
     console.warn("[ALASSAUL weather] live source unavailable", error);
-    return `تعذر التحقق من الطقس الحي في ${city.name} الآن؛ لن أخمّن درجة الحرارة أو حالة الجو. جرّب بعد قليل أو افتح مصدر الطقس مباشرة: https://open-meteo.com/`;
+    return `تعذر التحقق من ${asksWeeklyForecast ? "توقعات الأسبوع القادم" : "الطقس الحي"} في ${city.name} الآن؛ لن أخمّن درجات الحرارة أو الأمطار. جرّب بعد قليل.`;
   }
 }
 
@@ -933,19 +1013,76 @@ function getContextualFallback(
 ): string | undefined {
   const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const recentUserText = messages.filter((message) => message.role === "user").slice(-4).map((message) => message.content).join(" ");
-  const asksItinerary = /(?:رتب|رتّب|خطط|خطّط|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i.test(latest)
-    && /(?:طرابزون|ترابزون|trabzon|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i.test(latest);
+  const itineraryIntent = /(?:رتب|رتّب|خطط|خطّط|خطة|برنامج|جدول|اقترح|itinerary|plan a trip|travel plan)/i;
+  const itineraryCity = /(?:طرابزون|ترابزون|trabzon|ريزه|ريزا|ريزة|rize|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i;
+  const hasPriorItineraryContext = itineraryIntent.test(recentUserText) && itineraryCity.test(recentUserText);
+  const isDurationFollowUp = /(?:خليها|خلها|اجعلها|اجعل البرنامج|لمدة|تكون|مدتها|make it|for)\s*/i.test(latest)
+    && /(?:\d{1,2}\s*(?:أيام|ايام|يوم|days?)|يوم واحد|يومين|يومان|ثلاث|ثلاثة|أربع|أربعة|اربع|اربعة|خمس|خمسة|ست|ستة|سبع|سبعة)/i.test(latest);
+  const asksItinerary = (itineraryIntent.test(latest) && itineraryCity.test(latest))
+    || (hasPriorItineraryContext && isDurationFollowUp);
   if (asksItinerary) {
     const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
-    const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
-    const durationNote = requestedDays && requestedDays > 1
-      ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
-      : "";
-    return language === "AR"
-      ? `تعذّر إكمال برنامج الرحلة بسبب انقطاع مؤقت في مزود الذكاء الاصطناعي.${durationNote} أعد المحاولة بعد قليل، وسأرتب البرنامج كاملاً يوماً بيوم بدلاً من تخمين تفاصيل ناقصة.`
-      : language === "TR"
-        ? "Gezi programı yapay zekâ sağlayıcısındaki geçici kesinti nedeniyle tamamlanamadı. Lütfen biraz sonra tekrar deneyin."
-        : "The itinerary could not be completed because the AI provider temporarily timed out. Please retry shortly; I won't replace a multi-day plan with an incomplete one-day answer.";
+    const wordDuration: Array<[RegExp, number]> = [
+      [/(?:يوم واحد|يومٍ واحد|one\s+day)/i, 1],
+      [/(?:يومين|يومان|two\s+days?)/i, 2],
+      [/(?:ثلاثة|ثلاث)\s*(?:أيام|ايام|يوم)/i, 3],
+      [/(?:أربعة|اربعة|أربع|اربع)\s*(?:أيام|ايام|يوم)/i, 4],
+      [/(?:خمسة|خمس)\s*(?:أيام|ايام|يوم)/i, 5],
+      [/(?:ستة|ست)\s*(?:أيام|ايام|يوم)/i, 6],
+      [/(?:سبعة|سبع)\s*(?:أيام|ايام|يوم)/i, 7],
+    ];
+    const requestedDays = durationMatch ? Number(durationMatch[1]) : wordDuration.find(([pattern]) => pattern.test(latest))?.[1];
+    const latestMentionsTrabzon = /طرابزون|ترابزون|trabzon/i.test(latest);
+    const latestMentionsRize = /ريزه|ريزا|ريزة|rize/i.test(latest);
+    const previousCityMessage = [...messages].reverse().find((message) =>
+      message.role === "user" && /طرابزون|ترابزون|trabzon|ريزه|ريزا|ريزة|rize/i.test(message.content),
+    )?.content ?? recentUserText;
+    const asksTrabzon = latestMentionsTrabzon || (!latestMentionsRize && /طرابزون|ترابزون|trabzon/i.test(previousCityMessage));
+    const asksRize = latestMentionsRize || (!latestMentionsTrabzon && /ريزه|ريزا|ريزة|rize/i.test(previousCityMessage));
+    const itineraryCityName = asksTrabzon ? "طرابزون" : asksRize ? "ريزا" : "";
+    if (itineraryCityName) {
+      // Provider-independent fallback: use only places in the published ALASSAUL guide.
+      // Include Trabzon districts/highlands, not only entries whose region literally says "Trabzon".
+      const places = DESTINATION_GALLERY.filter((place) => {
+        if (asksRize) return /ريزا|ريزه|ريزة|rize|تشايلي/i.test(place.region);
+        return /طرابزون|trabzon|يومرا|كاش.?أوستو|أرسين|سورميني|أراكلي|أوف|تشايكارا|ماتشكا|أكشابات|دوزكوي/i.test(place.region)
+          || /طرابزون|trabzon/i.test(place.category)
+          || /أوزنجول والمرتفعات/i.test(place.category);
+      }).slice(0, 14);
+      if (places.length) {
+        const days = Math.max(1, Math.min(requestedDays ?? 3, 7, places.length));
+        const selectedPlaces = places.slice(0, Math.min(14, days * 2));
+        const dayLabel = language === "AR" ? "اليوم" : language === "TR" ? "Gün" : "Day";
+        const arabicDayOrdinals = ["الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس", "السابع"];
+        const rows = Array.from({ length: days }, (_, dayIndex) => {
+          // Distribute stops across every requested day, including uneven counts.
+          const start = Math.floor(dayIndex * selectedPlaces.length / days);
+          const end = Math.floor((dayIndex + 1) * selectedPlaces.length / days);
+          const dayPlaces = selectedPlaces.slice(start, end);
+          if (!dayPlaces.length) return "";
+          const heading = language === "AR" ? `${dayLabel} ${arabicDayOrdinals[dayIndex]}` : `${dayLabel} ${dayIndex + 1}`;
+          const stops = dayPlaces.map((place) => {
+            const map = new URL("https://www.google.com/maps/search/");
+            map.searchParams.set("api", "1");
+            map.searchParams.set("query", place.query);
+            const displayName = /قانيتا/.test(place.name) ? `غانيتا (${place.name})` : place.name;
+            return `• ${displayName} — ${place.region}\n  ${map.toString()}`;
+          });
+          return `${heading}:\n${stops.join("\n")}`;
+        }).filter(Boolean);
+        const intro = language === "AR"
+          ? `أعددت لك برنامجاً بديلاً من دليل ALASSAUL ل${itineraryCityName} لمدة ${days} أيام، لأن مزود التخطيط متوقف مؤقتاً. وزعت الوجهات المتاحة على الأيام، ويمكنك فتح كل موقع على الخريطة:`
+          : language === "TR"
+            ? `Yapay zekâ sağlayıcısı geçici olarak kullanılamadığı için ALASSAUL ${itineraryCityName} rehberinden ${days} günlük alternatif hazırladım:`
+            : `The planning provider is temporarily unavailable, so here is a ${days}-day alternative using the curated ALASSAUL guide for ${itineraryCityName}:`;
+        const note = language === "AR"
+          ? "ملاحظة: هذا ترتيب مبدئي للوجهات، وليس تحققاً من الطقس أو ساعات العمل أو حالة الطرق. راجع الظروف وأوقات الزيارة قبل الانطلاق."
+          : language === "TR"
+            ? "Not: Bu ön plan açık saatlerini veya yol durumunu doğrulamaz. Yola çıkmadan önce kontrol edin."
+            : "Note: This is a suggested grouping, not live verification of opening hours or road conditions.";
+        return intro + "\n\n" + rows.join("\n\n") + "\n\n" + note;
+      }
+    }
   }
 
   const asksSupermarket = /(?:سوبر\s*ماركت|سوبرماركت|بقالة|بقالات|هايبر\s*ماركت|هايبرماركت|hypermarket|supermarket|grocery)/i.test(latest);
@@ -1182,6 +1319,73 @@ function extractChatText(content: unknown): string {
     if (part.content !== undefined) return extractChatText(part.content);
   }
   return "";
+}
+
+/** Retrieve real, embeddable photographs for explicit image/scene requests.
+ * Commons thumbnails are rendered inline by the chat UI; visitors are not sent
+ * to a search-results page or given a bare image URL. */
+export function isImageRequest(message: string): boolean {
+  return /(?:صورة|صور|صوّر|صوره|منظر|مناظر|مشهد|لقطة|picture|photo|image|show me\s+(?:a\s+)?(?:photo|picture|image|view|scenery))/i.test(message);
+}
+
+export function getImageSearchQueries(message: string): string[] {
+  const query = message
+    .replace(/(?:من فضلك|لو سمحت|ممكن|أبغى|ابغى|أبي|ابي|أريد|اريد|ورني|ورّني|أرني|ارني|اعرض لي|صور(?:ة)? لي|صوره|صورة|صوّر|صور|منظر|مناظر|مشهد|لقطة|picture|photo|image|show me|please)/gi, " ")
+    .replace(/[؟?!،,.;:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || message.trim();
+  const normalized = query.normalize("NFKC").replace(/[\u064B-\u065F\u0670\u0640]/g, "").toLowerCase();
+  // Commons search is strongest with English equipment/model names. Translate
+  // common Arabic voice-input variants before falling back to the visitor's text.
+  let translated: string | undefined;
+  if (/(?:ساكويا|sequoia)/i.test(normalized)) translated = "Toyota Sequoia engine";
+  else if (/(?:مضخ|pump)/i.test(normalized)) translated = "industrial pump";
+  else if (/(?:صمام|valve)/i.test(normalized)) translated = "industrial valve";
+  else if (/(?:محرك|ماكينه|ماكينة|مكينة|engine)/i.test(normalized) && /(?:سيار|تويوتا|toyota|car|vehicle)/i.test(normalized)) translated = "car engine";
+  else if (/(?:أوزنجول|اوزنجول|uzungol)/i.test(normalized)) translated = "Uzungol lake";
+  else if (/[a-z]/i.test(query)) translated = query;
+  return [...new Set([translated, query].filter((value): value is string => Boolean(value)))];
+}
+
+export async function getRequestedImagesAnswer(message: string, language: "AR" | "TR" | "EN" = "AR"): Promise<string> {
+  const queries = getImageSearchQueries(message);
+  try {
+    let images: Array<{ title: string; url: string }> = [];
+    for (const query of queries) {
+      const params = new URLSearchParams({
+        action: "query", generator: "search", gsrsearch: "filetype:bitmap " + query,
+        gsrnamespace: "6", gsrlimit: "6", prop: "imageinfo", iiprop: "url",
+        iiurlwidth: "1100", format: "json", formatversion: "2",
+      });
+      const response = await fetch("https://commons.wikimedia.org/w/api.php?" + params.toString(), {
+        headers: { accept: "application/json", "user-agent": "ALASSAUL-AI/1.0 (https://alassaul.com; inline image search)" },
+        signal: AbortSignal.timeout(5500),
+      });
+      if (!response.ok) throw new Error("Wikimedia Commons HTTP " + response.status);
+      const data = await response.json() as { query?: { pages?: Array<{ title?: string; imageinfo?: Array<{ thumburl?: string; url?: string }> }> } };
+      images = (data.query?.pages ?? []).flatMap((page) => {
+        const image = page.imageinfo?.[0];
+        const url = image?.thumburl ?? image?.url;
+        if (!page.title || !url || !/^https:\/\/upload\.wikimedia\.org\//i.test(url)) return [];
+        const title = page.title.replace(/^File:/i, "").replace(/\.[^.]+$/, "").replace(/_/g, " ").slice(0, 100);
+        return [{ title, url }];
+      }).slice(0, 3);
+      if (images.length) break;
+    }
+    if (!images.length) {
+      return language === "EN" ? "I couldn't find a reliable, displayable image for that request right now. Try a more specific place or scene."
+        : language === "TR" ? "Bu istek için şu anda güvenilir ve görüntülenebilir bir fotoğraf bulamadım. Daha belirli bir yer veya manzara deneyin."
+        : "ما حصلت الآن على صورة موثوقة قابلة للعرض لهذا الطلب. جرّب تحديد المكان أو وصف المنظر بشكل أدق.";
+    }
+    const intro = language === "EN" ? "Here are the images you asked for:" : language === "TR" ? "İstediğiniz fotoğraflar:" : "تفضل، هذه الصور التي طلبتها:";
+    const credits = language === "EN" ? "Images from Wikimedia Commons." : language === "TR" ? "Görseller Wikimedia Commons kaynaklıdır." : "الصور من أرشيف ويكيميديا كومنز.";
+    return intro + "\n\n" + images.map((image) => `![${image.title}](${image.url})`).join("\n\n") + "\n\n" + credits;
+  } catch (error) {
+    console.warn("[ALASSAUL images] image lookup unavailable", safeProviderDiagnostic(error));
+    return language === "EN" ? "Image search is temporarily unavailable, so I don't want to send you an unverified or broken link. Please try again shortly."
+      : language === "TR" ? "Fotoğraf araması geçici olarak kullanılamıyor. Doğrulanmamış veya bozuk bir bağlantı göndermek istemiyorum; lütfen biraz sonra tekrar deneyin."
+      : "البحث عن الصور متوقف مؤقتاً، وما أبغى أرسل لك رابطاً غير موثوق أو صورة لا تعمل. جرّب مرة ثانية بعد قليل.";
+  }
 }
 
 export const appRouter = router({
@@ -1470,6 +1674,10 @@ export const appRouter = router({
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
         const contextualWeatherText = getContextualWeatherQuestion(input.messages);
+        // Return actual inline photos for explicit image/scene requests.
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl && isImageRequest(latestText)) {
+          return { text: await getRequestedImagesAnswer(latestText, input.language) };
+        }
         const usesResponsesWebSearch = /\/v1\/responses$/i.test(ENV.llmApiUrl ?? "");
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
@@ -1490,13 +1698,13 @@ export const appRouter = router({
         // Keep simple identity and supported live-data questions available even
         // when the external language-model provider is temporarily unavailable.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
-          if (/^(?:السلام عليكم(?: ورحمة الله وبركاته)?|مرحبا|مرحباً|هلا|أهلاً وسهلاً|صباح الخير|مساء الخير)[\\s.!،؟]*$/i.test(latestText.trim())) {
+          if (/^(?:السلام عليكم(?: ورحمة الله وبركاته)?|مرحبا|مرحباً|هلا|أهلاً وسهلاً|صباح الخير|مساء الخير)[\s.!،؟]*$/i.test(latestText.trim())) {
             return { text: "وعليكم السلام ورحمة الله وبركاته، حيّاك الله! كيف أقدر أساعدك؟" };
           }
 
-          if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|صاحب.{0,18}(?:المنصة|الموقع|العسول)|مؤسس.{0,18}(?:المنصة|الموقع|العسول)|مالك.{0,18}(?:المنصة|الموقع|العسول)|who are you|what is alassaul)/i.test(latestText)) {
+          if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|صاحب.{0,18}(?:المنصة|الموقع|العسول)|مؤسس.{0,18}(?:المنصة|الموقع|العسول)|مالك.{0,18}(?:المنصة|الموقع|العسول)|who are you|what is alassaul)/i.test(latestText) || isFounderIdentityQuestion(latestText)) {
             // Answer common platform identity questions without depending on the model provider.
-            if (/(?:صاحب|مؤسس|مالك).{0,18}(?:المنصة|الموقع|العسول|alassaul)|(?:من هو|مين هو).{0,18}(?:صاحب|مؤسس|مالك)/i.test(latestText)) {
+            if (/(?:صاحب|مؤسس|مالك).{0,18}(?:المنصة|الموقع|العسول|alassaul)|(?:من هو|مين هو).{0,18}(?:صاحب|مؤسس|مالك)/i.test(latestText) || isFounderIdentityQuestion(latestText)) {
               return { text: "صاحب ومؤسس مشروع ALASSAUL-AI هو يوسف عسول، وهو المشروع الذي يطوّره ليكون دليلاً ومساعداً للمعرفة والخدمات والرحلات، مع تركيز خاص على شمال تركيا." };
             }
             return { text: "أنا روبوت ALASSAUL الرسمي، مساعد الذكاء الاصطناعي لمنصة ALASSAUL-AI. أساعدك في المعرفة العامة والأخبار والعلوم والرحلات، وأدلة وخدمات شمال تركيا، وأوضح لك عندما لا أستطيع التحقق من معلومة حديثة." };
@@ -1632,7 +1840,7 @@ ${newsContext}`);
         }
 
         // Free keyless reference lookup adds background context, never breaking news or local live data.
-        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl && !isItineraryPlanningQuestion(latestText)) {
+        if (latestMessage?.role === "user" && !latestMessage.imageDataUrl && !isItineraryPlanningQuestion(latestText) && !isGenealogyResearchQuestion(latestText)) {
           const referenceContext = await getWikipediaSearchContext(latestText, input.language);
           if (referenceContext) liveContext.push(`نتيجة مرجعية من ويكيبيديا (للمعلومات الخلفية وليست مصدراً للأحداث اللحظية):\n${referenceContext}`);
         }
@@ -1673,7 +1881,7 @@ ${newsContext}`);
           }
         }
         const llmMessages: Array<{ role: "system" | "user" | "assistant"; content: string | Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string; detail: "auto" } }> }> = [
-          { role: "system", content: `${assistantSystemPrompt}\n${getVisitorIdentityInstruction(ctx.user?.name)}${savedMemoryInstruction}\n${languageInstruction}\n\nتوجيه المهمة الحالية:\n${taskInstruction}${sourceInstruction}` },
+          { role: "system", content: `${assistantSystemPrompt}\n${getVisitorIdentityInstruction(ctx.user?.name)}${savedMemoryInstruction}\n${languageInstruction}\n\nتوجيه المهمة الحالية:\n${taskInstruction}\n${getTribalGenealogyInstruction(latestText)}${sourceInstruction}` },
           ...history.map((message) => ({ role: message.role, content: message.content })),
         ];
         if (latestMessage?.imageDataUrl && llmMessages.length > 1) {
@@ -1687,11 +1895,12 @@ ${newsContext}`);
           };
         }
         const needsLiveWebSearch = isWorldNewsQuestion(latestText)
+          || isGenealogyResearchQuestion(latestText)
           || isGoogleGroundingQuestion(latestText)
           || /(?:سعر|أسعار|اسعار|حراج|مستعمل|قيمة السوق|حارس|لاعب|تشكيلة|مدرب|كم.*(?:السوق|حراج)|current|latest|today)/i.test(latestText);
         const llmRequest = {
           model: ENV.primaryModel,
-          max_completion_tokens: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText)) ? 1200 : 512,
+          max_completion_tokens: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText) || isGenealogyResearchQuestion(latestText)) ? 1200 : 512,
           reasoning: { effort: "minimal" },
           webSearch: needsLiveWebSearch,
           messages: llmMessages,

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getRequestedImagesAnswer, getImageSearchQueries, getTribalGenealogyInstruction, getVisitorIdentityInstruction, isFounderIdentityQuestion, isImageRequest, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
+import { isGenealogyResearchQuestion, isGoogleGroundingQuestion } from "./_core/googleGrounding";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
@@ -252,7 +253,68 @@ describe("model fallback selection", () => {
   });
 });
 
+describe("genealogy live research intent", () => {
+  it("routes Arabic and English genealogy questions to grounded web research", () => {
+    for (const question of ["ما نسب قبيلة حرب؟", "أصل عائلة العتيبي وفروعها", "genealogy of the Shammar tribe"]) {
+      expect(isGenealogyResearchQuestion(question)).toBe(true);
+      expect(isGoogleGroundingQuestion(question)).toBe(true);
+    }
+  });
+
+  it("does not classify unrelated questions as genealogy research", () => {
+    expect(isGenealogyResearchQuestion("كيف الطقس في طرابزون؟")).toBe(false);
+  });
+});
+
 describe("adaptive brain response strategy", () => {
+  it("provides attributed Awlad Rashid genealogy and distinguishes alliance from lineage", () => {
+    const instruction = getTribalGenealogyInstruction("من هم أولاد راشد؟");
+    expect(instruction).toContain("راشد بن شاكر بن جنيد");
+    expect(instruction).toContain("راشد بن جنيد بن شاكر");
+    expect(instruction).toContain("زبد، أزيد، زيود، حميدة");
+    expect(instruction).toContain("اذكر الفروع الأربعة بوضوح في متن الإجابة");
+    expect(instruction).toContain("ذبيان دخلوا في جهينة حلفاً");
+    expect(instruction).toContain("ميّز بين الحلف والنسب");
+  });
+
+  it("provides general genealogy research guidance for every tribe and family name", () => {
+    const instruction = getTribalGenealogyInstruction("ما أصل قبيلة شمر وما فروعها؟");
+    expect(instruction).toContain("متاح لكل القبائل والعائلات والألقاب");
+    expect(instruction).toContain("لا تفترض أن كل من يحمل اللقب نفسه يرجع إلى جد واحد");
+    expect(instruction).toContain("ميّز بوضوح بين النسب");
+    expect(instruction).toContain("اعتمد عند البحث على المصادر التاريخية والأكاديمية");
+    expect(instruction).not.toContain("ملف معرفة إضافي — أولاد راشد");
+  });
+
+  it("adds Awlad Rashid family notes only when that name is asked about", () => {
+    const instruction = getTribalGenealogyInstruction("ما نسب أولاد راشد؟");
+    expect(instruction).toContain("ملف معرفة إضافي — أولاد راشد");
+    expect(instruction).toContain("راشد بن شاكر بن جنيد");
+    expect(instruction).toContain("ذبيان دخلوا في جهينة حلفاً");
+  });
+
+  it("recognizes the founder by his full name in a direct identity question", () => {
+    expect(isFounderIdentityQuestion("من هو يوسف عسول؟")).toBe(true);
+    expect(isFounderIdentityQuestion("مين هو المهندس يوسف عسول")).toBe(true);
+    expect(isFounderIdentityQuestion("من هو أحمد؟")).toBe(false);
+  });
+
+  it("does not inject tribal genealogy context into unrelated questions", () => {
+    expect(getTribalGenealogyInstruction("ما حالة الطقس في طرابزون؟")).toBe("");
+  });
+
+  it("recognizes ASR variants of Aramco in industrial competency questions", () => {
+    expect(getAdaptiveTaskInstruction("ما هي الأدوات التي تستخدمها رام كل في تقييم مهارات الميكانيكا؟")).toContain("لا تنسب إليها نموذج تقييم أو اختباراً داخلياً دون مصدر رسمي منشور");
+    expect(isGoogleGroundingQuestion("رام كل تقييم مهارات الميكانيكا")).toBe(true);
+  });
+
+  it("selects evidence-led industrial competency guidance for Aramco mechanical assessment questions", () => {
+    const instruction = getAdaptiveTaskInstruction("ماذا تستخدم أرامكو في تقييم مهارات الميكانيكا للـ Competency Assessment؟");
+    expect(instruction).toContain("لا تنسب إليها نموذج تقييم أو اختباراً داخلياً دون مصدر رسمي منشور");
+    expect(instruction).toContain("الممارسات الصناعية الشائعة");
+    expect(instruction).toContain("أسئلة تدريبية مناسبة");
+  });
+
   it("selects safe step-by-step guidance for troubleshooting requests", () => {
     expect(getAdaptiveTaskInstruction("السيارة متعطلة وما تشتغل")).toContain("خطوات تشخيص مرتبة");
   });
@@ -301,19 +363,19 @@ describe("live worldwide tourism place lookup", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
       if (url.startsWith("https://photon.komoot.io/api/")) {
-        expect(decodeURIComponent(url)).toContain("طرابزون, Türkiye");
+        expect(new URL(url).searchParams.get("q")).toBe("طرابزون, Türkiye");
         expect(new URL(url).searchParams.has("lang")).toBe(false);
         return new Response(JSON.stringify({
           features: [
             { properties: { name: "Wrong Trabzon", city: "Other", country: "Georgia", countrycode: "ge" }, geometry: { coordinates: [41, 41] } },
-            { properties: { name: "Trabzon", city: "Trabzon", state: "Trabzon", country: "Türkiye", countrycode: "tr" }, geometry: { coordinates: [39.7167, 41.0027] } },
+            { properties: { name: "Trabzon", city: "Trabzon", state: "Trabzon", country: "Türkiye", countrycode: "tr", country_code: "tr" }, geometry: { coordinates: [39.7167, 41.0027] } },
           ],
         }), { status: 200, headers: { "content-type": "application/geo+json" } });
       }
       return new Response(JSON.stringify({ elements: [{ type: "node", id: 9876, lat: 41.0028, lon: 39.7168, tags: { name: "Trabzon Museum", tourism: "museum" } }] }), { status: 200, headers: { "content-type": "application/json" } });
     });
     try {
-      const result = await getLiveTourismPlacesAnswer("رتب لي برنامج أربعة أيام في طرابزون", "AR");
+      const result = await getLiveTourismPlacesAnswer("أماكن سياحية في طرابزون", "AR");
       expect(result).toContain("Trabzon Museum");
       expect(result).toContain("Türkiye");
     } finally {
@@ -339,7 +401,7 @@ describe("live worldwide tourism place lookup", () => {
           }],
         }), { status: 200, headers: { "content-type": "application/geo+json" } });
       }
-      expect(url).toBe("https://overpass-api.de/api/interpreter");
+      expect(["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]).toContain(url);
       return new Response(JSON.stringify({
         elements: [{
           type: "node", id: 12345, lat: 35.039, lon: 135.729,
@@ -353,7 +415,8 @@ describe("live worldwide tourism place lookup", () => {
       expect(result).toContain("openstreetmap.org/node/12345");
       expect(result).toContain("google.com/maps/dir/");
       expect(result).toContain("OpenStreetMap contributors");
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy.mock.calls.filter(([input]) => String(input).startsWith("https://photon.komoot.io/api/"))).toHaveLength(1);
+    expect(fetchSpy.mock.calls.filter(([input]) => String(input).startsWith("https://overpass"))).toHaveLength(3);
     } finally {
       fetchSpy.mockRestore();
     }
@@ -397,8 +460,8 @@ describe("live worldwide tourism place lookup", () => {
     }));
     try {
       const result = await getLiveTourismPlacesAnswer("أماكن سياحية في مكان غير معروف", "AR");
-      expect(result).toContain("لم أتمكن من تحديد");
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(result).toContain("لم أتمكن من تحديد «مكان غير معروف» جغرافياً بشكل موثوق");
+      expect(fetchSpy).toHaveBeenCalledTimes(2); // Photon, then Nominatim fallback.
     } finally {
       fetchSpy.mockRestore();
     }
@@ -579,6 +642,37 @@ describe("live weather source", () => {
     }
   });
 
+  it("returns a seven-day city forecast with daily highs, lows, rain chance, and wind", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({
+      daily: {
+        time: ["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21", "2026-11-22"],
+        weather_code: [0, 1, 3, 61, 2, 80, 3],
+        temperature_2m_max: [24, 25, 23, 21, 22, 20, 22],
+        temperature_2m_min: [15, 16, 14, 13, 14, 12, 13],
+        precipitation_probability_max: [0, 5, 10, 65, 20, 55, 15],
+        wind_speed_10m_max: [8, 9, 11, 18, 12, 20, 10],
+      },
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    try {
+      const answer = await getLiveWeatherAnswer("توقعات الطقس الأسبوع القادم في طرابزون");
+      expect(answer).toContain("توقعات الطقس للأيام السبعة القادمة في طرابزون");
+      expect(answer).toContain("العظمى 24° والصغرى 15°");
+      expect(answer).toContain("احتمال المطر 65٪");
+      expect(answer).toContain("الرياح 20 كم/س");
+      expect(answer).toContain("Open-Meteo");
+      const requestUrl = new URL(String(fetchSpy.mock.calls[0]?.[0]));
+      expect(requestUrl.searchParams.get("forecast_days")).toBe("7");
+      expect(requestUrl.searchParams.get("daily")).toContain("temperature_2m_max");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("asks for a city instead of guessing when a weekly forecast has no location", async () => {
+    const answer = await getLiveWeatherAnswer("أبغى توقعات الطقس الأسبوع القادم");
+    expect(answer).toContain("لأي مدينة");
+  });
+
   it("reports live weather failure without inventing current conditions", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network unavailable"));
     try {
@@ -592,13 +686,64 @@ describe("live weather source", () => {
 });
 
 describe("ai.chat", () => {
+  it("answers a greeting naturally without calling the model", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "السلام عليكم" }] });
+    expect(result.text).toContain("وعليكم السلام");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(invokeLLM).mockRejectedValue(new Error("test provider unavailable"));
   });
+  it("returns real inline photographs for an explicit image request instead of a bare link", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        query: { pages: [
+          { title: "File:Uzungol lake panorama.jpg", imageinfo: [{ thumburl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Uzungol.jpg/1100px-Uzungol.jpg" }] },
+          { title: "File:Uzungol village view.jpg", imageinfo: [{ thumburl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Uzungol-village.jpg/1100px-Uzungol-village.jpg" }] },
+        ] },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const caller = appRouter.createCaller(createPublicContext());
+      const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "أرني صورة بحيرة أوزنجول" }] });
+      expect(isImageRequest("أبغى منظر للشلال")).toBe(true);
+      expect(isImageRequest("أرني الطريق إلى المطار")).toBe(false);
+      expect(result.text).toContain("![Uzungol lake panorama]");
+      expect(result.text).toContain("https://upload.wikimedia.org/");
+      expect(result.text).not.toContain("افتح الرابط");
+      expect(invokeLLM).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
+      expect(requestUrl.searchParams.get("gsrsearch")).toContain("Uzungol lake");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("translates Arabic equipment and vehicle image requests into useful English Commons searches", () => {
+    expect(getImageSearchQueries("صورة مضخة صناعية")).toEqual(["industrial pump", "مضخة صناعية"]);
+    expect(getImageSearchQueries("صورة صمام صناعي")).toEqual(["industrial valve", "صمام صناعي"]);
+    expect(getImageSearchQueries("صوره لماكينه سياره ساكويا")).toEqual(["Toyota Sequoia engine", "لماكينه سياره ساكويا"]);
+  });
+
+  it("does not invent or return external links when the image source has no usable photographs", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ query: { pages: [] } }) }));
+    try {
+      const answer = await getRequestedImagesAnswer("أبغى منظر غير موجود", "AR");
+      expect(answer).toContain("ما حصلت الآن على صورة موثوقة");
+      expect(answer).not.toContain("https://");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
 
   it.each([
-    "السلام عليكم",
     "اشرح لي معنى الصبر في القرآن وكيف أطبقه يومياً",
     "لماذا يتكوّن الضباب فوق الجبال صباحاً؟",
     "من أين أبدأ في زيارة ريزا إذا كانت إقامتي ثلاثة أيام؟",
@@ -816,8 +961,11 @@ describe("ai.chat", () => {
   it("does not replace an unavailable Saudi Pro League fixture list with news articles", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = new URL(String(input));
-      expect(url.hostname).toBe("site.api.espn.com");
-      expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      if (url.hostname === "site.api.espn.com") {
+        expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      } else {
+        expect(url.hostname).toBe("www.spl.com.sa");
+      }
       return new Response("temporarily unavailable", { status: 503 });
     });
     try {
@@ -828,7 +976,7 @@ describe("ai.chat", () => {
       expect(result.text).toContain("تعذر جلب جدول مباريات دوري روشن");
       expect(result.text).not.toContain("أحدث أخبار دوري روشن");
       expect(result.text).not.toContain("روابط تقارير حديثة");
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(4); // ESPN scoreboard plus three official SPL pages.
       expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
@@ -963,7 +1111,7 @@ describe("ai.chat", () => {
     };
     await appRouter.createCaller(namedContext).ai.chat({
       language: "AR",
-      messages: [{ role: "user", content: "السلام عليكم" }],
+      messages: [{ role: "user", content: "ساعدني في أمر ما" }],
     });
     const request = vi.mocked(invokeLLM).mock.calls[0]?.[0];
     const systemMessage = request?.messages?.[0]?.content;

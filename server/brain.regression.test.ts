@@ -17,8 +17,13 @@ beforeEach(() => {
 });
 
 describe("real-brain regression scenarios", () => {
+  it("answers a simple greeting naturally without calling the language model", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "السلام عليكم" }] });
+    expect(result.text).toBe("وعليكم السلام ورحمة الله وبركاته، حيّاك الله! كيف أقدر أساعدك؟");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
   it.each([
-    ["السلام عليكم", "وعليكم السلام، أهلاً بك. ما السؤال الذي تريد مناقشته؟"],
     ["عند كم درجة يغلي الماء؟", "يغلي الماء قرب 100 درجة مئوية عند مستوى سطح البحر."],
     ["اشرح لي الانكسار الضوئي بمثال من جدة", "مثال الانكسار في الماء يوضح تغير اتجاه الضوء."],
     ["كم المسافة بالسيارة من طرابزون إلى أوردو؟", "المسافة تقريبية، تحقق من خرائط الطريق قبل الانطلاق."],
@@ -192,6 +197,90 @@ describe("real-brain regression scenarios", () => {
     expect(result.text).toContain("ليس تحققاً من الطقس");
     expect(invokeLLM).toHaveBeenCalled();
   });
+
+  it("respects five-day itinerary requests written in Arabic words when AI providers fail", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "أبغى خطة خمسة أيام في ترابزون" }] });
+    expect(result.text).toContain("اليوم الخامس");
+    expect(result.text).not.toContain("اليوم السادس");
+    expect(result.text).toContain("ليس تحققاً من الطقس");
+  });
+
+  it("keeps the Trabzon itinerary context when the user specifies its duration in a follow-up", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [
+        { role: "user", content: "أبغى خطة في طرابزون" },
+        { role: "assistant", content: "أكيد، كم يوماً تفضل؟" },
+        { role: "user", content: "خليها خمسة أيام" },
+      ],
+    });
+    expect(result.text).toContain("برنامجاً بديلاً من دليل ALASSAUL لطرابزون لمدة 5 أيام");
+    expect(result.text).toContain("اليوم الخامس");
+    expect(result.text).not.toContain("اليوم السادس");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
+  it.each([
+    ["أبغى خطة يوم واحد في طرابزون", 1, "اليوم الأول", "اليوم الثاني"],
+    ["أبغى برنامج 7 أيام في طرابزون", 7, "اليوم السابع", "اليوم الثامن"],
+    ["أبغى خطة 10 أيام في طرابزون", 7, "اليوم السابع", "اليوم الثامن"],
+  ])("keeps fallback itinerary within the requested safe duration: %s", async (question, expectedDays, lastDay, forbiddenDay) => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: question }] });
+    const dayHeadings = result.text.match(/^اليوم (?:الأول|الثاني|الثالث|الرابع|الخامس|السادس|السابع):/gm) ?? [];
+    expect(dayHeadings).toHaveLength(expectedDays);
+    expect(result.text).toContain(lastDay);
+    expect(result.text).not.toContain(forbiddenDay);
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).toContain("ليس تحققاً من الطقس");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
+  it("builds a four-day Rize itinerary from curated ALASSAUL destinations and fills every day", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "أبغى خطة 4 أيام في ريزه" }] });
+    const dayHeadings = result.text.match(/^اليوم (?:الأول|الثاني|الثالث|الرابع):/gm) ?? [];
+    expect(dayHeadings).toHaveLength(4);
+    expect(result.text).toContain("برج كأس الشاي العملاق");
+    expect(result.text).toContain("حديقة زراعات النباتية للشاي");
+    expect(result.text).toContain("مرتفعات آيدر");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(result.text).toContain("ليس تحققاً من الطقس");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
+  it("keeps the Rize itinerary context when the user changes only its duration", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [
+        { role: "user", content: "أبغى خطة في ريزا" },
+        { role: "assistant", content: "أكيد، كم يوماً تفضل؟" },
+        { role: "user", content: "خليها خمسة أيام" },
+      ],
+    });
+    expect(result.text).toContain("لريزا لمدة 5 أيام");
+    expect(result.text).toContain("اليوم الخامس");
+    expect(result.text).not.toContain("قصر أتاتورك");
+    expect(result.text).toContain("برج كأس الشاي العملاق");
+    expect(result.text).toContain("https://www.google.com/maps/search/");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
+  it("uses a newly named Rize destination instead of stale Trabzon itinerary context", async () => {
+    const result = await caller().ai.chat({
+      language: "AR",
+      messages: [
+        { role: "user", content: "أبغى خطة في طرابزون" },
+        { role: "assistant", content: "أكيد، كم يوماً تفضل؟" },
+        { role: "user", content: "بل خليها في ريزا أربعة أيام" },
+      ],
+    });
+    expect(result.text).toContain("لريزا لمدة 4 أيام");
+    expect(result.text).toContain("برج كأس الشاي العملاق");
+    expect(result.text).not.toContain("قصر أتاتورك");
+    expect(result.text).toContain("اليوم الرابع");
+    expect(invokeLLM).toHaveBeenCalled();
+  });
+
 
   it("offers a real map search instead of inventing breakfast restaurants after provider failure", async () => {
     const result = await caller().ai.chat({
