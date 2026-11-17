@@ -271,7 +271,8 @@ describe("adaptive brain response strategy", () => {
     const instruction = getTribalGenealogyInstruction("من هم أولاد راشد؟");
     expect(instruction).toContain("راشد بن شاكر بن جنيد");
     expect(instruction).toContain("راشد بن جنيد بن شاكر");
-    expect(instruction).toContain("زبد، أزيد، زيود، حميدة");\n    expect(instruction).toContain("اذكر الفروع الأربعة بوضوح في متن الإجابة");
+    expect(instruction).toContain("زبد، أزيد، زيود، حميدة");
+    expect(instruction).toContain("اذكر الفروع الأربعة بوضوح في متن الإجابة");
     expect(instruction).toContain("ذبيان دخلوا في جهينة حلفاً");
     expect(instruction).toContain("ميّز بين الحلف والنسب");
   });
