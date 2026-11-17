@@ -15,6 +15,8 @@ describe("context-aware live image search", () => {
     expect(isWikimediaImageRequest("صورة لشعار نادي الاتحاد السعودي")).toBe(true);
     expect(isWikimediaImageRequest("طيب اعرض لي صوره تظهر جمال طرابزون")).toBe(true);
     expect(isWikimediaImageRequest("ابغى صوره للميدان")).toBe(true);
+    expect(isWikimediaImageRequest("ابغى منظر الهمسه كوي")).toBe(true);
+    expect(isWikimediaImageRequest("اعرض صورة للهمسة كوي")).toBe(true);
     expect(isWikimediaImageRequest("طيب الصورة ما طلعت")).toBe(false);
     expect(isWikimediaImageRequest("السلام عليكم")).toBe(false);
   });
@@ -62,6 +64,17 @@ describe("context-aware live image search", () => {
     const meydan = await getWikimediaImageAnswer("ابغى صوره للميدان");
     expect(meydan).toContain("ميدان طرابزون");
     expect(meydan).toContain("Trabzon%20Meydan%20Square");
+  });
+
+  it("keeps a new Hamsikoy request separate from an older car image request", async () => {
+    const oldHistory = [{ role: "user" as const, content: "صورة لسيارة ساكويا تويوتا 2010" }];
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [] }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const answer = await getWikimediaImageAnswer("ابغى منظر الهمسه كوي", "AR", oldHistory);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toContain("Hamsikoy");
+    expect(answer).toContain("همسي كوي");
+    expect(answer).not.toContain("ساكويا");
   });
 
   it("uses a scene-specific query for a boat beside Uzungol", async () => {

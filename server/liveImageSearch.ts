@@ -31,18 +31,30 @@ function cleanMetadata(value: string | undefined): string {
     .replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
+function normalizeImageText(value: string): string {
+  return value.normalize("NFKC")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleLowerCase();
+}
+
 const imageIntent = /(?:صورة|صوره|صور|الصورة|الصوره|اعرض|أعرض|ورني|ورّني|أرني|ارني|منظر|مناظر|مشهد|مشاهد|ابغى اشوف|أبغى أشوف|ابي اشوف|أبي أشوف|ابحث في جوجل|ابحث بجوجل|من جوجل|google images|show me|photo|picture|image)/i;
 const modernIntent = /(?:حديث|حديثه|حديثة|جديد|جديده|جديدة|ملون|ملونه|ملونة|بالألوان|بالالوان|مو قديم|ليست قديمة|مش قديم|جمال|منظر|مناظر|طبيعة|ساحل|recent|modern|latest|new|color|colour|scenic)/i;
 const imageComplaint = /(?:كل الصور|الصور.*(?:قديم|قديمة|قديمه)|الصورة.*(?:ما طلعت|ما ظهرت|لم تظهر|ما اشتغلت|ما تحملت|ما تفتح)|(?:ما طلعت|ما ظهرت|لم تظهر).{0,24}(?:الصورة|الصوره))/i;
 
 function knownSubject(text: string): { title: string; query: string } | undefined {
-  if (/(?:محمد عبده|mohammed abdu|muhammad abdu)/i.test(text)
-    && /(?:لاعب|كرة القدم|كورة|نادي|football|player|club)/i.test(text)) {
+  const normalized = normalizeImageText(text);
+  if (/(?:محمد عبده|mohammed abdu|muhammad abdu)/i.test(normalized)
+    && /(?:لاعب|كره القدم|كوره|نادي|football|player|club)/i.test(normalized)) {
     return { title: "اللاعب محمد عبده", query: "Mohammed Abdu Saudi football player" };
   }
   const rules: Array<[RegExp, string, string]> = [
     [/(?:الميدان|ميدان طرابزون|trabzon meydan|meydan square)/i, "ميدان طرابزون", "Trabzon Meydan Square city center Turkey"],
-    [/(?:همسي\s*كوي|همسه\s*كوي|همسيكوي|همسهكوي|hamsik[oö]y|hamse\s*koy)/i, "همسي كوي", "Hamsikoy Trabzon Turkey village mountain landscape"],
+    [/(?:ال)?همس[يه]\s*كوي|(?:ال)?همس[يه]كوي|hamsik[oö]y|hamse\s*koy/i, "همسي كوي", "Hamsikoy Trabzon Turkey village mountain landscape"],
     [/(?:طرابزون|ترابزون|trabzon)/i, "طرابزون – مشاهد المدينة والساحل", "Trabzon Turkey Black Sea coast city skyline modern scenic view"],
     [/(?:مطار\s*ريزا|ريزا\s*مطار|مطار\s*ريزه|rize(?:-artvin)?\s*airport|rize\s*havalimani)/i, "مطار ريزا-أرتفين", "Rize Artvin Airport Turkey terminal aerial sea runway"],
     [/(?:حيدر\s*نبي|حيدرنبى|هيدر\s*نبي|هيدرنبى|hidirnebi|hıdırnebi|hidirnebi\s*yaylasi)/i, "مرتفعات حيدر نبي", "Hidirnebi Plateau Trabzon Turkey mountain landscape"],
@@ -58,7 +70,7 @@ function knownSubject(text: string): { title: string; query: string } | undefine
     [/(?:أوزنجول|اوزنجول|أوزنقول|اوزنقول|uzung[oö]l|زنجول|زنجود)/i, "أوزنجول", "Uzungol Trabzon lake Turkey"],
   ];
   for (const [pattern, title, query] of rules) {
-    if (!pattern.test(text)) continue;
+    if (!pattern.test(normalized)) continue;
     const asksForBoat = /(?:مركب|قارب|قوارب|مراكب|boat|boats|canoe)/i.test(text);
     return asksForBoat
       ? { title: "قارب بجوار بحيرة أوزنجول", query: "Uzungol lake boat Trabzon Turkey" }
@@ -68,7 +80,7 @@ function knownSubject(text: string): { title: string; query: string } | undefine
 }
 
 function parseStandaloneRequest(message: string): ImageRequest | undefined {
-  const text = message.normalize("NFKC").replace(/[\u064B-\u065F\u0670\u0640]/g, "").trim();
+  const text = normalizeImageText(message);
   if (!imageIntent.test(text)) return undefined;
   if (imageComplaint.test(text) && !knownSubject(text)) return undefined;
   const modern = modernIntent.test(text);
@@ -83,12 +95,22 @@ function parseStandaloneRequest(message: string): ImageRequest | undefined {
   return { title, query, modern, googleQuery: query + (modern ? " latest recent photos" : "") };
 }
 
+function hasExplicitNewImageSubject(message: string): boolean {
+  const remainder = normalizeImageText(message)
+    .replace(/(?:اعرض|ورني|ارني|ابغى|ابي|ممكن|صوره|صورة|صور|الصوره|الصورة|منظر|مناظر|مشهد|مشاهد|جمال|طبيعه|ساحل|حديث|حديثه|حديثة|جديد|جديده|جديدة|ملون|ملونه|ملونه|بالالوان|بالالوان|photo|picture|image|show me|please|من فضلك|لو سمحت|يا اخي|يا اخي|تطلع|تظهر|لي|عن|ل|في|من|على|هذه|هذي|كل|الصور|قديمة|قديمه|قديم|ما|لم|طلعت|ظهرت|اشتغلت|ثانيه|ثانية|اخرى|أخرى|نفس|المكان|الموقع|كمان|ايضا|أيضا)/gi, " ")
+    .replace(/[،,.!?؟]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return remainder.length > 0;
+}
+
 function imageRequest(message: string, history: ChatMessage[] = []): ImageRequest | undefined {
   const direct = parseStandaloneRequest(message);
   if (direct?.query) return direct;
 
-  // Only explicit image/display language may inherit an earlier subject. Words such as
-  // "منظر" or "حديث" alone must never pull an unrelated old request into a new turn.
+  // A fresh, named subject must never inherit a different subject from older turns.
+  // Only generic follow-ups (e.g. "show another", "these images are old") may inherit.
+  if (hasExplicitNewImageSubject(message)) return undefined;
   const isContextualFollowup = imageIntent.test(message) || imageComplaint.test(message);
   if (!isContextualFollowup) return undefined;
   const previousUsers = history.filter((item) => item.role === "user").slice(-8).reverse();
