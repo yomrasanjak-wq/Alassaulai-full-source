@@ -1559,11 +1559,11 @@ export const appRouter = router({
             return { text: "مطار ينبع هو مطار الأمير عبد المحسن بن عبد العزيز (Prince Abdul Mohsin bin Abdulaziz Airport)، ورمز المطار الدولي IATA هو YNB. يخدم مدينة ينبع في منطقة المدينة المنورة بالمملكة العربية السعودية." };
           }
 
-          const imageAnswer = await getWikimediaImageAnswer(latestText, input.language);
-          if (imageAnswer) return { text: imageAnswer };
-
           const galleryImageAnswer = getGalleryImageAnswer(latestText);
           if (galleryImageAnswer) return { text: galleryImageAnswer };
+
+          const imageAnswer = await getWikimediaImageAnswer(latestText, input.language);
+          if (imageAnswer) return { text: imageAnswer };
 
           const directWeather = await getLiveWeatherAnswer(contextualWeatherText)
             ?? await getAyderWeatherAnswer(latestText)
