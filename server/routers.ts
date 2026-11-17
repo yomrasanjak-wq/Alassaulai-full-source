@@ -61,6 +61,11 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - لا تجعل كل حديث يتحول إلى قائمة أو نصيحة؛ أحياناً يكون المطلوب دردشة قصيرة أو تفاعلاً طبيعياً. لا تفرض سؤالاً في نهاية كل إجابة، ولا تنه الحوار بطريقة تقطعه ما دام الزائر يريد المتابعة.
 `;
 
+/** Match direct questions about the named founder without misclassifying general identity questions. */
+export function isFounderIdentityQuestion(message: string): boolean {
+  return /(?:من هو|مين هو|من يكون|عرفني على)\s*(?:المهندس\s*)?يوسف\s*عسول/i.test(message.normalize("NFKC"));
+}
+
 /** General genealogy research guidance, with a separately attributed Awlad Rashid family note. */
 export function getTribalGenealogyInstruction(message: string): string {
   const normalized = message.normalize("NFKC");
@@ -1677,9 +1682,9 @@ export const appRouter = router({
             return { text: "وعليكم السلام ورحمة الله وبركاته، حيّاك الله! كيف أقدر أساعدك؟" };
           }
 
-          if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|(?:من هو|مين هو|من يكون).{0,18}يوسف\s*عسول|يوسف\s*عسول|عرف بنفسك|عرّف بنفسك|صاحب.{0,18}(?:المنصة|الموقع|العسول)|مؤسس.{0,18}(?:المنصة|الموقع|العسول)|مالك.{0,18}(?:المنصة|الموقع|العسول)|who are you|what is alassaul)/i.test(latestText)) {
+          if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|صاحب.{0,18}(?:المنصة|الموقع|العسول)|مؤسس.{0,18}(?:المنصة|الموقع|العسول)|مالك.{0,18}(?:المنصة|الموقع|العسول)|who are you|what is alassaul)/i.test(latestText)) {
             // Answer common platform identity questions without depending on the model provider.
-            if (/(?:صاحب|مؤسس|مالك).{0,18}(?:المنصة|الموقع|العسول|alassaul)|(?:من هو|مين هو).{0,18}(?:صاحب|مؤسس|مالك)|(?:من هو|مين هو|من يكون).{0,18}يوسف\s*عسول|يوسف\s*عسول/i.test(latestText)) {
+            if (/(?:صاحب|مؤسس|مالك).{0,18}(?:المنصة|الموقع|العسول|alassaul)|(?:من هو|مين هو).{0,18}(?:صاحب|مؤسس|مالك)|isFounderIdentityQuestion(latestText)) {
               return { text: "صاحب ومؤسس مشروع ALASSAUL-AI هو يوسف عسول، وهو المشروع الذي يطوّره ليكون دليلاً ومساعداً للمعرفة والخدمات والرحلات، مع تركيز خاص على شمال تركيا." };
             }
             return { text: "أنا روبوت ALASSAUL الرسمي، مساعد الذكاء الاصطناعي لمنصة ALASSAUL-AI. أساعدك في المعرفة العامة والأخبار والعلوم والرحلات، وأدلة وخدمات شمال تركيا، وأوضح لك عندما لا أستطيع التحقق من معلومة حديثة." };
