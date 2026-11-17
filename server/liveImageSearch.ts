@@ -36,11 +36,16 @@ const modernIntent = /(?:حديث|حديثه|حديثة|جديد|جديده|جد
 const imageComplaint = /(?:كل الصور|الصور.*(?:قديم|قديمة|قديمه)|الصورة.*(?:ما طلعت|ما ظهرت|لم تظهر|ما اشتغلت|ما تحملت|ما تفتح)|(?:ما طلعت|ما ظهرت|لم تظهر).{0,24}(?:الصورة|الصوره))/i;
 
 function knownSubject(text: string): { title: string; query: string } | undefined {
+  if (/(?:محمد عبده|mohammed abdu|muhammad abdu)/i.test(text)
+    && /(?:لاعب|كرة القدم|كورة|نادي|football|player|club)/i.test(text)) {
+    return { title: "اللاعب محمد عبده", query: "Mohammed Abdu Saudi football player" };
+  }
   const rules: Array<[RegExp, string, string]> = [
     [/(?:مطار\s*ريزا|ريزا\s*مطار|مطار\s*ريزه|rize(?:-artvin)?\s*airport|rize\s*havalimani)/i, "مطار ريزا-أرتفين", "Rize Artvin Airport Turkey terminal aerial sea runway"],
     [/(?:حيدر\s*نبي|حيدرنبى|هيدر\s*نبي|هيدرنبى|hidirnebi|hıdırnebi|hidirnebi\s*yaylasi)/i, "مرتفعات حيدر نبي", "Hidirnebi Plateau Trabzon Turkey mountain landscape"],
     [/(?:مياه?.*(?:كبريت|كبيريت).*(?:جرسون|جيرسون|giresun)|(?:جرسون|جيرسون|giresun).*(?:كبريت|kükürt|sulfur))/i, "المياه الكبريتية في منتزه كوزالان – جرسون", "Kuzalan Nature Park Giresun sulfur springs travertines Turkey"],
     [/(?:مكة المكرمة|مكه المكرمه|مكة|مكه|makkah|mecca)/i, "مكة المكرمة والمسجد الحرام", "Masjid al-Haram Mecca Saudi Arabia Kaaba"],
+    [/(?:محمد نور|mohammed noor|mohammad noor|mohamed noor)/i, "اللاعب محمد نور نجم الاتحاد السابق", "Mohammed Noor Saudi footballer Al Ittihad legend"],
     [/(?:محمد عبده|mohammed abdu|muhammad abdu)/i, "الفنان محمد عبده", "Mohammed Abdu Saudi singer"],
     [/(?:ماجد عبدالله|ماجد عبد الله|majed abdullah|majed abdullah)/i, "اللاعب ماجد عبدالله", "Majed Abdullah Saudi football legend"],
     [/(?:الاتحاد السعودي|نادي الاتحاد|شعار الاتحاد|ittihad|al.?ittihad)/i, "شعار نادي الاتحاد السعودي", "Al Ittihad Saudi football club official crest logo"],
@@ -118,7 +123,7 @@ async function searchCommons(request: ImageRequest, signal: AbortSignal) {
   const data = await response.json() as { query?: { pages?: CommonsPage[] } };
   return (data.query?.pages ?? []).flatMap((page) => {
     const info = page.imageinfo?.[0];
-    const imageUrl = info?.thumburl || info?.url || "";
+    const imageUrl = info?.url || info?.thumburl || "";
     if (!/^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\//i.test(imageUrl)) return [];
     if (!/^image\/(?:jpeg|png|webp|gif)$/i.test(info?.mime ?? "")) return [];
     const descriptionUrl = info?.descriptionurl || "";
