@@ -8,7 +8,7 @@ export function isGenealogyResearchQuestion(message: string): boolean {
 }
 
 export function isGoogleGroundingQuestion(message: string): boolean {
-  return isGenealogyResearchQuestion(message) || /(?:أرامكو|ارامكو|تقييم الكفاءة|تقييم المهارات|تقييم الكفاءات|تقييم مهارات|اعتماد الكفاءة|تأهيل الفنيين|تأهيل المقاولين|competency assessment|competency assurance|competency assistance|mechanical skills assessment|mechanical competency|أخبار|اخبار|خبر عاجل|عاجل|آخر المستجدات|اخر المستجدات|اليوم|الآن|الان|حالي(?:اً|ا)?|نتيجة المباراة|نتائج المباريات|ترتيب الدوري|جدول المباريات|متى يلعب|من فاز|مباراة اليوم|الدوري|روشن|الطقس|الأجواء|الاجواء|مفتوح الآن|مفتوح الان|أقرب|اقرب|حول(?:ي|نا)?|near me|open now|latest|today|current|breaking news|world news|live score|standings|fixtures|weather|nearby)/i.test(message);
+  return isGenealogyResearchQuestion(message) || /(?:أرامكو|ارامكو|رامكو|رام\s*كل|تقييم الكفاءة|تقييم المهارات|تقييم الكفاءات|تقييم مهارات|اعتماد الكفاءة|تأهيل الفنيين|تأهيل المقاولين|competency assessment|competency assurance|competency assistance|mechanical skills assessment|mechanical competency|أخبار|اخبار|خبر عاجل|عاجل|آخر المستجدات|اخر المستجدات|اليوم|الآن|الان|حالي(?:اً|ا)?|نتيجة المباراة|نتائج المباريات|ترتيب الدوري|جدول المباريات|متى يلعب|من فاز|مباراة اليوم|الدوري|روشن|الطقس|الأجواء|الاجواء|مفتوح الآن|مفتوح الان|أقرب|اقرب|حول(?:ي|نا)?|near me|open now|latest|today|current|breaking news|world news|live score|standings|fixtures|weather|nearby)/i.test(message);
 }
 
 function safeText(value: unknown): string {
