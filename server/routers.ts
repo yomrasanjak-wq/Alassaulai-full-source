@@ -1328,31 +1328,50 @@ export function isImageRequest(message: string): boolean {
   return /(?:صورة|صور|صوّر|صوره|منظر|مناظر|مشهد|لقطة|picture|photo|image|show me\s+(?:a\s+)?(?:photo|picture|image|view|scenery))/i.test(message);
 }
 
-export async function getRequestedImagesAnswer(message: string, language: "AR" | "TR" | "EN" = "AR"): Promise<string> {
+export function getImageSearchQueries(message: string): string[] {
   const query = message
     .replace(/(?:من فضلك|لو سمحت|ممكن|أبغى|ابغى|أبي|ابي|أريد|اريد|ورني|ورّني|أرني|ارني|اعرض لي|صور(?:ة)? لي|صورة|صور|صوّر|صوره|منظر|مناظر|مشهد|لقطة|picture|photo|image|show me|please)/gi, " ")
     .replace(/[؟?!،,.;:]+/g, " ")
     .replace(/\s+/g, " ")
     .trim() || message.trim();
-  const params = new URLSearchParams({
-    action: "query", generator: "search", gsrsearch: "filetype:bitmap " + query,
-    gsrnamespace: "6", gsrlimit: "4", prop: "imageinfo", iiprop: "url",
-    iiurlwidth: "1100", format: "json", formatversion: "2",
-  });
+  const normalized = query.normalize("NFKC").replace(/[\u064B-\u065F\u0670\u0640]/g, "").toLowerCase();
+  // Commons search is strongest with English equipment/model names. Translate
+  // common Arabic voice-input variants before falling back to the visitor's text.
+  let translated: string | undefined;
+  if (/(?:ساكويا|sequoia)/i.test(normalized)) translated = "Toyota Sequoia engine";
+  else if (/(?:مضخ|pump)/i.test(normalized)) translated = "industrial pump";
+  else if (/(?:صمام|valve)/i.test(normalized)) translated = "industrial valve";
+  else if (/(?:محرك|ماكينه|ماكينة|مكينة|engine)/i.test(normalized) && /(?:سيار|تويوتا|toyota|car|vehicle)/i.test(normalized)) translated = "car engine";
+  else if (/(?:أوزنجول|اوزنجول|uzungol)/i.test(normalized)) translated = "Uzungol lake";
+  else if (/[a-z]/i.test(query)) translated = query;
+  return [...new Set([translated, query].filter((value): value is string => Boolean(value)))];
+}
+
+export async function getRequestedImagesAnswer(message: string, language: "AR" | "TR" | "EN" = "AR"): Promise<string> {
+  const queries = getImageSearchQueries(message);
   try {
-    const response = await fetch("https://commons.wikimedia.org/w/api.php?" + params.toString(), {
-      headers: { accept: "application/json", "user-agent": "ALASSAUL-AI/1.0 (https://alassaul.com; inline image search)" },
-      signal: AbortSignal.timeout(5500),
-    });
-    if (!response.ok) throw new Error("Wikimedia Commons HTTP " + response.status);
-    const data = await response.json() as { query?: { pages?: Array<{ title?: string; imageinfo?: Array<{ thumburl?: string; url?: string }> }> } };
-    const images = (data.query?.pages ?? []).flatMap((page) => {
-      const image = page.imageinfo?.[0];
-      const url = image?.thumburl ?? image?.url;
-      if (!page.title || !url || !/^https:\/\/upload\.wikimedia\.org\//i.test(url)) return [];
-      const title = page.title.replace(/^File:/i, "").replace(/\.[^.]+$/, "").replace(/_/g, " ").slice(0, 100);
-      return [{ title, url }];
-    }).slice(0, 3);
+    let images: Array<{ title: string; url: string }> = [];
+    for (const query of queries) {
+      const params = new URLSearchParams({
+        action: "query", generator: "search", gsrsearch: "filetype:bitmap " + query,
+        gsrnamespace: "6", gsrlimit: "6", prop: "imageinfo", iiprop: "url",
+        iiurlwidth: "1100", format: "json", formatversion: "2",
+      });
+      const response = await fetch("https://commons.wikimedia.org/w/api.php?" + params.toString(), {
+        headers: { accept: "application/json", "user-agent": "ALASSAUL-AI/1.0 (https://alassaul.com; inline image search)" },
+        signal: AbortSignal.timeout(5500),
+      });
+      if (!response.ok) throw new Error("Wikimedia Commons HTTP " + response.status);
+      const data = await response.json() as { query?: { pages?: Array<{ title?: string; imageinfo?: Array<{ thumburl?: string; url?: string }> }> } };
+      images = (data.query?.pages ?? []).flatMap((page) => {
+        const image = page.imageinfo?.[0];
+        const url = image?.thumburl ?? image?.url;
+        if (!page.title || !url || !/^https:\/\/upload\.wikimedia\.org\//i.test(url)) return [];
+        const title = page.title.replace(/^File:/i, "").replace(/\.[^.]+$/, "").replace(/_/g, " ").slice(0, 100);
+        return [{ title, url }];
+      }).slice(0, 3);
+      if (images.length) break;
+    }
     if (!images.length) {
       return language === "EN" ? "I couldn't find a reliable, displayable image for that request right now. Try a more specific place or scene."
         : language === "TR" ? "Bu istek için şu anda güvenilir ve görüntülenebilir bir fotoğraf bulamadım. Daha belirli bir yer veya manzara deneyin."
