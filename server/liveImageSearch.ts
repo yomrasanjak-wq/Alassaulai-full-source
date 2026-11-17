@@ -37,6 +37,9 @@ const imageComplaint = /(?:كل الصور|الصور.*(?:قديم|قديمة|ق
 
 function knownSubject(text: string): { title: string; query: string } | undefined {
   const rules: Array<[RegExp, string, string]> = [
+    [/(?:مطار\s*ريزا|ريزا\s*مطار|مطار\s*ريزه|rize(?:-artvin)?\s*airport|rize\s*havalimani)/i, "مطار ريزا-أرتفين", "Rize Artvin Airport Turkey terminal aerial sea runway"],
+    [/(?:حيدر\s*نبي|حيدرنبى|هيدر\s*نبي|هيدرنبى|hidirnebi|hıdırnebi|hidirnebi\s*yaylasi)/i, "مرتفعات حيدر نبي", "Hidirnebi Plateau Trabzon Turkey mountain landscape"],
+    [/(?:مياه?.*(?:كبريت|كبيريت).*(?:جرسون|جيرسون|giresun)|(?:جرسون|جيرسون|giresun).*(?:كبريت|kükürt|sulfur))/i, "المياه الكبريتية في منتزه كوزالان – جرسون", "Kuzalan Nature Park Giresun sulfur springs travertines Turkey"],
     [/(?:مكة المكرمة|مكه المكرمه|مكة|مكه|makkah|mecca)/i, "مكة المكرمة والمسجد الحرام", "Masjid al-Haram Mecca Saudi Arabia Kaaba"],
     [/(?:محمد عبده|mohammed abdu|muhammad abdu)/i, "الفنان محمد عبده", "Mohammed Abdu Saudi singer"],
     [/(?:ماجد عبدالله|ماجد عبد الله|majed abdullah|majed abdullah)/i, "اللاعب ماجد عبدالله", "Majed Abdullah Saudi football legend"],
