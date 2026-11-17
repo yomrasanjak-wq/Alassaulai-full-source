@@ -57,13 +57,13 @@ function knownSubject(text: string): { title: string; query: string } | undefine
 
 function parseStandaloneRequest(message: string): ImageRequest | undefined {
   const text = message.normalize("NFKC").replace(/[\u064B-\u065F\u0670\u0640]/g, "").trim();
-  if (!imageIntent.test(text)) return undefined;
+  if (!imageIntent.test(text)) return undefined;\n  if (imageComplaint.test(text) && !knownSubject(text)) return undefined;
   const modern = modernIntent.test(text);
   const known = knownSubject(text);
   if (known) return { ...known, modern, googleQuery: known.query + (modern ? " latest recent photos" : "") };
 
   const query = text
-    .replace(/(?:ابحث في جوجل|ابحث بجوجل|من جوجل|صور جوجل|جوجل|google images|من فضلك|لو سمحت|يا اخي|يا أخي|ممكن|أبغى|ابغى|أبي|ابي|اعرض لي|أعرض لي|ورني|ورّني|أرني|ارني|ابغى اشوف|أبغى أشوف|صورة|صوره|صور|الصورة|الصوره|حديثة|حديثه|حديث|جديدة|جديده|جديد|ملونة|ملونه|ملون|بالألوان|بالالوان|مو قديم|ليست قديمة|مش قديم|photo|picture|image|show me|recent|modern|latest|new|color|colour)/gi, " ")
+    .replace(/(?:ابحث في جوجل|ابحث بجوجل|من جوجل|صور جوجل|جوجل|google images|من فضلك|لو سمحت|يا اخي|يا أخي|تطلع لي|تطلع|تظهر|ممكن|أبغى|ابغى|أبي|ابي|اعرض لي|أعرض لي|ورني|ورّني|أرني|ارني|ابغى اشوف|أبغى أشوف|صورة|صوره|صور|الصورة|الصوره|حديثة|حديثه|حديث|جديدة|جديده|جديد|ملونة|ملونه|ملون|بالألوان|بالالوان|مو قديم|ليست قديمة|مش قديم|photo|picture|image|show me|recent|modern|latest|new|color|colour)/gi, " ")
     .replace(/[،,.!?؟]+/g, " ").replace(/\s+/g, " ").trim();
   if (query.length < 2) return undefined;
   const title = query.slice(0, 90);
