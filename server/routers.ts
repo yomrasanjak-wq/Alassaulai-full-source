@@ -264,6 +264,8 @@ export function getGalleryImageAnswer(message: string): string | undefined {
   if (!asksForImage) return undefined;
 
   const isUzungol = /(?:أوزنجول|اوزنجول|أوزنقول|اوزنقول|uzung[oö]l|زنجول|زنجود)/i.test(normalized);
+  const asksForSpecificBoatScene = /(?:مركب|قارب|قوارب|مراكب|boat|boats|canoe)/i.test(normalized);
+  if (isUzungol && asksForSpecificBoatScene) return undefined;
   const normalizedQuery = normalized.toLocaleLowerCase();
   const place = isUzungol
     ? DESTINATION_GALLERY.find((item) => /أوزنجول/.test(item.name))
