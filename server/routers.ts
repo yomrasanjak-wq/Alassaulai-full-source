@@ -1330,7 +1330,7 @@ export function isImageRequest(message: string): boolean {
 
 export function getImageSearchQueries(message: string): string[] {
   const query = message
-    .replace(/(?:من فضلك|لو سمحت|ممكن|أبغى|ابغى|أبي|ابي|أريد|اريد|ورني|ورّني|أرني|ارني|اعرض لي|صور(?:ة)? لي|صورة|صور|صوّر|صوره|منظر|مناظر|مشهد|لقطة|picture|photo|image|show me|please)/gi, " ")
+    .replace(/(?:من فضلك|لو سمحت|ممكن|أبغى|ابغى|أبي|ابي|أريد|اريد|ورني|ورّني|أرني|ارني|اعرض لي|صور(?:ة)? لي|صوره|صورة|صوّر|صور|منظر|مناظر|مشهد|لقطة|picture|photo|image|show me|please)/gi, " ")
     .replace(/[؟?!،,.;:]+/g, " ")
     .replace(/\s+/g, " ")
     .trim() || message.trim();
