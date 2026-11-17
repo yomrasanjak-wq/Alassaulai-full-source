@@ -55,7 +55,7 @@ describe("context-aware live image search", () => {
     expect(answer).toContain("قارب بجوار بحيرة أوزنجول");
   });
 
-  it("keeps Commons images with source and license attribution", async () => {
+  it("shows a Commons image with a clean title and source link", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ query: { pages: [{
