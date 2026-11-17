@@ -28,6 +28,7 @@ function cleanMetadata(value: string | undefined): string {
 
 function imageRequest(message: string): { title: string; query: string } | undefined {
   const text = message.normalize("NFKC").replace(/[\u064B-\u065F\u0670\u0640]/g, "").trim();
+  if (/(?:الصورة|الصوره|صورة|صوره).{0,24}(?:ما طلعت|ما ظهرت|لم تظهر|ما اشتغلت|ما تحملت|ما تفتح|لا تظهر|لا تعمل)|(?:ما طلعت|ما ظهرت|لم تظهر|ما اشتغلت|ما تحملت|ما تفتح).{0,24}(?:الصورة|الصوره|صورة|صوره)/i.test(text)) return undefined;
   if (!/(?:صورة|صوره|صور|اعرض|أعرض|ورني|ورّني|أرني|ارني|ابغى اشوف|أبغى أشوف|ابي اشوف|أبي أشوف|show me|photo|picture|image)/i.test(text)) return undefined;
 
   if (/(?:مكة المكرمة|مكه المكرمه|مكة|مكه|makkah|mecca)/i.test(text)) {
