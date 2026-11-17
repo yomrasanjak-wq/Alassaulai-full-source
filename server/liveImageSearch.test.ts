@@ -22,6 +22,31 @@ describe("context-aware live image search", () => {
     expect(isWikimediaImageRequest("كل الصور حقتك قديمه ما في صوره حديثه", historyForMakkah)).toBe(true);
   });
 
+  it("normalizes regional place names to reliable image-search subjects", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ query: { pages: [] } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const airport = await getWikimediaImageAnswer("ابغى صوره لمطار ريزا");
+    expect(airport).toContain("مطار ريزا-أرتفين");
+    expect(airport).toContain("Rize%20Artvin%20Airport");
+
+    fetchMock.mockReset()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ query: { pages: [] } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+    const plateau = await getWikimediaImageAnswer("اريد صوره منظر لحيدر نبي");
+    expect(plateau).toContain("مرتفعات حيدر نبي");
+    expect(plateau).toContain("Hidirnebi");
+
+    fetchMock.mockReset()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ query: { pages: [] } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+    const sulfur = await getWikimediaImageAnswer("ابغى صوره للمياه الكبريتيه في جرسون");
+    expect(sulfur).toContain("المياه الكبريتية في منتزه كوزالان");
+    expect(sulfur).toContain("Kuzalan");
+  });
+
   it("uses a scene-specific query for a boat beside Uzungol", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ query: { pages: [] } }) });
     vi.stubGlobal("fetch", fetchMock);
