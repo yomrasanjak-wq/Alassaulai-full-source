@@ -71,7 +71,7 @@ describe("context-aware live image search", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     const answer = await getWikimediaImageAnswer("صوره لمكه المكرمه");
-    expect(answer).toContain("![مكة المكرمة والمسجد الحرام](https://upload.wikimedia.org/");
+    expect(answer).toContain("![مكة المكرمة والمسجد الحرام](https://upload.wikimedia.org/wikipedia/commons/a/ab/Masjid.jpg)");
     expect(answer).toContain("**مكة المكرمة والمسجد الحرام**");
     expect(answer).toContain("[المصدر](https://commons.wikimedia.org/wiki/File:Masjid_al-Haram.jpg)");
     expect(fetchMock).toHaveBeenCalledOnce();
@@ -100,6 +100,19 @@ describe("context-aware live image search", () => {
     expect(answer).toContain("![Masjid al-Haram recent view](https://api.openverse.org/");
     expect(answer).toContain("صور Google الحديثة");
     expect(answer).toContain("تاريخ التقاط الصورة");
+  });
+
+  it("distinguishes a footballer named Mohammed Abdu and recognizes former Al Ittihad player Mohammed Noor", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ query: { pages: [] } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const abdu = await getWikimediaImageAnswer("صورة اللاعب محمد عبده");
+    expect(abdu).toContain("اللاعب محمد عبده");
+    expect(abdu).toContain("Mohammed%20Abdu%20Saudi%20football%20player");
+
+    fetchMock.mockReset().mockResolvedValue({ ok: true, json: async () => ({ query: { pages: [] } }) });
+    const noor = await getWikimediaImageAnswer("صورة اللاعب الاتحاد المعتزل محمد نور");
+    expect(noor).toContain("اللاعب محمد نور");
+    expect(noor).toContain("Mohammed%20Noor%20Saudi%20footballer");
   });
 
   it("falls back to Google Images rather than inventing a result", async () => {
