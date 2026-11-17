@@ -28,7 +28,7 @@ export async function getWikipediaSearchContext(message: string, language: Refer
   try {
     const response = await fetch(url.toString(), {
       headers: { Accept: "application/json", "User-Agent": "ALASSAUL-AI/1.0 (reference lookup)" },
-      signal: AbortSignal.timeout(4500),
+      signal: AbortSignal.timeout(2500),
     });
     if (!response.ok) throw new Error(`Wikipedia search failed with HTTP ${response.status}`);
     const data = await response.json() as { pages?: Array<{ title?: string; excerpt?: string; description?: string; key?: string }> };
