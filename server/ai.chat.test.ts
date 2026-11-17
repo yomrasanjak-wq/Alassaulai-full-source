@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getRequestedImagesAnswer, getTribalGenealogyInstruction, getVisitorIdentityInstruction, isFounderIdentityQuestion, isImageRequest, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getRequestedImagesAnswer, getImageSearchQueries, getTribalGenealogyInstruction, getVisitorIdentityInstruction, isFounderIdentityQuestion, isImageRequest, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { isGenealogyResearchQuestion, isGoogleGroundingQuestion } from "./_core/googleGrounding";
 import { invokeLLM } from "./_core/llm";
@@ -719,10 +719,16 @@ describe("ai.chat", () => {
       expect(invokeLLM).not.toHaveBeenCalled();
       expect(fetchMock).toHaveBeenCalledOnce();
       const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
-      expect(requestUrl.searchParams.get("gsrsearch")).toContain("بحيرة أوزنجول");
+      expect(requestUrl.searchParams.get("gsrsearch")).toContain("Uzungol lake");
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it("translates Arabic equipment and vehicle image requests into useful English Commons searches", () => {
+    expect(getImageSearchQueries("صورة مضخة صناعية")).toEqual(["industrial pump", "مضخة صناعية"]);
+    expect(getImageSearchQueries("صورة صمام صناعي")).toEqual(["industrial valve", "صمام صناعي"]);
+    expect(getImageSearchQueries("صوره لماكينه سياره ساكويا")).toEqual(["Toyota Sequoia engine", "لماكينه سياره ساكويا"]);
   });
 
   it("does not invent or return external links when the image source has no usable photographs", async () => {
