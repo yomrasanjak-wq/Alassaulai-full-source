@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isItineraryPlanningQuestion, isResponsesWebSearchConfigured, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
@@ -432,6 +432,22 @@ describe("keyless reference search", () => {
     try {
       await expect(getWikipediaSearchContext("ما معنى الفيزياء؟", "AR")).resolves.toBeUndefined();
     } finally { fetchSpy.mockRestore(); }
+  });
+});
+
+describe("Responses API live web search detection", () => {
+  it("recognizes Netlify AI Gateway URLs as Responses API endpoints", () => {
+    expect(isResponsesWebSearchConfigured("https://example.net/.netlify/ai/v1")).toBe(true);
+    expect(isResponsesWebSearchConfigured("https://example.net/.netlify/ai/v1/responses")).toBe(true);
+  });
+
+  it("recognizes direct Responses API URLs", () => {
+    expect(isResponsesWebSearchConfigured("https://api.openai.com/v1/responses")).toBe(true);
+  });
+
+  it("does not classify legacy chat-completions providers as Responses API", () => {
+    expect(isResponsesWebSearchConfigured("https://api.groq.com/openai/v1")).toBe(false);
+    expect(isResponsesWebSearchConfigured(undefined)).toBe(false);
   });
 });
 

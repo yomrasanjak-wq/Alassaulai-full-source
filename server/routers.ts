@@ -1184,6 +1184,13 @@ function extractChatText(content: unknown): string {
   return "";
 }
 
+/** Keep route-level news handling aligned with the Responses API detection in llm.ts.
+ * Netlify AI Gateway URLs use /.netlify/ai/... and do not necessarily end in /v1/responses. */
+export function isResponsesWebSearchConfigured(apiUrl: string | undefined): boolean {
+  const base = apiUrl ?? "";
+  return /\/\.netlify\/ai(?:\/|$)/i.test(base) || /\/v1\/responses$/i.test(base);
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -1470,7 +1477,7 @@ export const appRouter = router({
         const latestMessage = input.messages[input.messages.length - 1];
         const latestText = latestMessage?.content ?? "";
         const contextualWeatherText = getContextualWeatherQuestion(input.messages);
-        const usesResponsesWebSearch = /\/v1\/responses$/i.test(ENV.llmApiUrl ?? "");
+        const usesResponsesWebSearch = isResponsesWebSearchConfigured(ENV.llmApiUrl);
         // A directions URL needs no Gemini or Google Maps API key.
         // Return a usable link for explicit route-opening requests.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl
