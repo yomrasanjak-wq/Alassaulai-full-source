@@ -11,6 +11,7 @@ describe("context-aware live image search", () => {
     expect(isWikimediaImageRequest("صوره للفنان محمد عبده")).toBe(true);
     expect(isWikimediaImageRequest("صورة مركب بجوار أوزنجول")).toBe(true);
     expect(isWikimediaImageRequest("صوره للاعب المعتزل ماجد عبدالله")).toBe(true);
+    expect(isWikimediaImageRequest("صوره للفنان محمد علي سندي")).toBe(true);
     expect(isWikimediaImageRequest("صورة لشعار نادي الاتحاد السعودي")).toBe(true);
     expect(isWikimediaImageRequest("طيب اعرض لي صوره تظهر جمال طرابزون")).toBe(true);
     expect(isWikimediaImageRequest("ابغى صوره للميدان")).toBe(true);
@@ -130,6 +131,14 @@ describe("context-aware live image search", () => {
     expect(answer).toContain("![Masjid al-Haram recent view](https://api.openverse.org/");
     expect(answer).toContain("صور Google الحديثة");
     expect(answer).toContain("تاريخ التقاط الصورة");
+  });
+
+  it("recognizes Saudi singer Mohammed Ali Sindi", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [] }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const answer = await getWikimediaImageAnswer("صوره للفنان محمد علي سندي");
+    expect(answer).toContain("الفنان محمد علي سندي");
+    expect(answer).toContain("Mohammed%20Ali%20Sindi");
   });
 
   it("distinguishes a footballer named Mohammed Abdu and recognizes former Al Ittihad player Mohammed Noor", async () => {
