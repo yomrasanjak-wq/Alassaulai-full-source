@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getConversationContinuityInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getConversationContinuityInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getGalleryImageAnswer, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getVisitorIdentityInstruction, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
@@ -285,6 +285,13 @@ describe("adaptive brain response strategy", () => {
     expect(getAdaptiveTaskInstruction("السيارة متعطلة وما تشتغل")).toContain("خطوات تشخيص مرتبة");
   });
 
+  it("selects a careful, assumption-free travel budget strategy", () => {
+    const instruction = getAdaptiveTaskInstruction("كم التكلفه تقريبا بالريال السعودي؟");
+    expect(instruction).toContain("لا تفترض عدد المسافرين");
+    expect(instruction).toContain("افصل السكن والتنقل والطعام والأنشطة والطيران");
+    expect(instruction).toContain("لا تقدّم تقديراً على أنه عرض حجز");
+  });
+
   it("selects practical itinerary planning for travel requests", () => {
     expect(getAdaptiveTaskInstruction("رتب لي برنامج 5 أيام في طرابزون وأوزنجول")).toContain("خطة قابلة للتنفيذ");
   });
@@ -315,6 +322,18 @@ describe("adaptive brain response strategy", () => {
 });
 
 
+
+describe("curated chat gallery images", () => {
+  it("returns the locally hosted Uzungol image for a spoken or misspelled image request", () => {
+    const answer = getGalleryImageAnswer("طيب اعرض لي أي صورة أنا زنجود");
+    expect(answer).toContain("![بحيرة أوزنجول والجبال المحيطة](/images/modern-uzungol.webp)");
+    expect(answer).toContain("صورة مرجعية للمكان");
+  });
+
+  it("does not invent an image when the visitor did not ask to see one", () => {
+    expect(getGalleryImageAnswer("ما أجمل أوزنجول في الشتاء")).toBeUndefined();
+  });
+});
 
 describe("live worldwide tourism place lookup", () => {
   it("recognizes itinerary requests and extracts their destination without classifying them as generic attraction questions", () => {
@@ -796,6 +815,16 @@ describe("ai.chat", () => {
       ENV.backupModel = originalBackup;
       log.mockRestore();
     }
+  });
+
+  it("shows a curated gallery image directly when a visitor asks for an Uzungol photo", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "اعرض لي صورة أوزنجول" }],
+    });
+    expect(result.text).toContain("![بحيرة أوزنجول والجبال المحيطة](/images/modern-uzungol.webp)");
+    expect(vi.mocked(invokeLLM)).not.toHaveBeenCalled();
   });
 
   it("forwards an attached image to the model as vision content", async () => {
