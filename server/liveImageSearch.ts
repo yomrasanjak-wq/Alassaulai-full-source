@@ -31,7 +31,7 @@ function cleanMetadata(value: string | undefined): string {
     .replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
-const imageIntent = /(?:صورة|صوره|صور|الصورة|الصوره|اعرض|أعرض|ورني|ورّني|أرني|ارني|ابغى اشوف|أبغى أشوف|ابي اشوف|أبي أشوف|ابحث في جوجل|ابحث بجوجل|من جوجل|google images|show me|photo|picture|image)/i;
+const imageIntent = /(?:صورة|صوره|صور|الصورة|الصوره|اعرض|أعرض|ورني|ورّني|أرني|ارني|منظر|مناظر|مشهد|مشاهد|ابغى اشوف|أبغى أشوف|ابي اشوف|أبي أشوف|ابحث في جوجل|ابحث بجوجل|من جوجل|google images|show me|photo|picture|image)/i;
 const modernIntent = /(?:حديث|حديثه|حديثة|جديد|جديده|جديدة|ملون|ملونه|ملونة|بالألوان|بالالوان|مو قديم|ليست قديمة|مش قديم|جمال|منظر|مناظر|طبيعة|ساحل|recent|modern|latest|new|color|colour|scenic)/i;
 const imageComplaint = /(?:كل الصور|الصور.*(?:قديم|قديمة|قديمه)|الصورة.*(?:ما طلعت|ما ظهرت|لم تظهر|ما اشتغلت|ما تحملت|ما تفتح)|(?:ما طلعت|ما ظهرت|لم تظهر).{0,24}(?:الصورة|الصوره))/i;
 
@@ -41,8 +41,9 @@ function knownSubject(text: string): { title: string; query: string } | undefine
     return { title: "اللاعب محمد عبده", query: "Mohammed Abdu Saudi football player" };
   }
   const rules: Array<[RegExp, string, string]> = [
-    [/(?:طرابزون|ترابزون|trabzon)/i, "طرابزون – مشاهد المدينة والساحل", "Trabzon Turkey Black Sea coast city skyline modern scenic view"],
     [/(?:الميدان|ميدان طرابزون|trabzon meydan|meydan square)/i, "ميدان طرابزون", "Trabzon Meydan Square city center Turkey"],
+    [/(?:همسي\s*كوي|همسه\s*كوي|همسيكوي|همسهكوي|hamsik[oö]y|hamse\s*koy)/i, "همسي كوي", "Hamsikoy Trabzon Turkey village mountain landscape"],
+    [/(?:طرابزون|ترابزون|trabzon)/i, "طرابزون – مشاهد المدينة والساحل", "Trabzon Turkey Black Sea coast city skyline modern scenic view"],
     [/(?:مطار\s*ريزا|ريزا\s*مطار|مطار\s*ريزه|rize(?:-artvin)?\s*airport|rize\s*havalimani)/i, "مطار ريزا-أرتفين", "Rize Artvin Airport Turkey terminal aerial sea runway"],
     [/(?:حيدر\s*نبي|حيدرنبى|هيدر\s*نبي|هيدرنبى|hidirnebi|hıdırnebi|hidirnebi\s*yaylasi)/i, "مرتفعات حيدر نبي", "Hidirnebi Plateau Trabzon Turkey mountain landscape"],
     [/(?:مياه?.*(?:كبريت|كبيريت).*(?:جرسون|جيرسون|giresun)|(?:جرسون|جيرسون|giresun).*(?:كبريت|kükürt|sulfur))/i, "المياه الكبريتية في منتزه كوزالان – جرسون", "Kuzalan Nature Park Giresun sulfur springs travertines Turkey"],
@@ -86,7 +87,9 @@ function imageRequest(message: string, history: ChatMessage[] = []): ImageReques
   const direct = parseStandaloneRequest(message);
   if (direct?.query) return direct;
 
-  const isContextualFollowup = imageIntent.test(message) || modernIntent.test(message) || imageComplaint.test(message);
+  // Only explicit image/display language may inherit an earlier subject. Words such as
+  // "منظر" or "حديث" alone must never pull an unrelated old request into a new turn.
+  const isContextualFollowup = imageIntent.test(message) || imageComplaint.test(message);
   if (!isContextualFollowup) return undefined;
   const previousUsers = history.filter((item) => item.role === "user").slice(-8).reverse();
   for (const previous of previousUsers) {
