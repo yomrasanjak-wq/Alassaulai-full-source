@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getRequestedImagesAnswer, getTribalGenealogyInstruction, getVisitorIdentityInstruction, isImageRequest, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
+import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTourismDestination, getAdaptiveTaskInstruction, getContextualWeatherQuestion, getDistinctBackupModel, getLiveTourismPlacesAnswer, getLiveWeatherAnswer, getRequestedImagesAnswer, getTribalGenealogyInstruction, getVisitorIdentityInstruction, isFounderIdentityQuestion, isImageRequest, isItineraryPlanningQuestion, isTourismPlacesQuestion } from "./routers";
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { isGenealogyResearchQuestion, isGoogleGroundingQuestion } from "./_core/googleGrounding";
 import { invokeLLM } from "./_core/llm";
@@ -292,7 +292,13 @@ describe("adaptive brain response strategy", () => {
     expect(instruction).toContain("ذبيان دخلوا في جهينة حلفاً");
   });
 
-  it("recognizes the founder by his full name in a direct identity question", () => {\n    const source = router.content;\n    expect(source).toContain("من هو|مين هو|من يكون).{0,18}يوسف\\s*عسول");\n  });\n\n  it("does not inject tribal genealogy context into unrelated questions", () => {
+  it("recognizes the founder by his full name in a direct identity question", () => {
+    expect(isFounderIdentityQuestion("من هو يوسف عسول؟")).toBe(true);
+    expect(isFounderIdentityQuestion("مين هو المهندس يوسف عسول")).toBe(true);
+    expect(isFounderIdentityQuestion("من هو أحمد؟")).toBe(false);
+  });
+
+  it("does not inject tribal genealogy context into unrelated questions", () => {
     expect(getTribalGenealogyInstruction("ما حالة الطقس في طرابزون؟")).toBe("");
   });
 
