@@ -33,7 +33,7 @@ function chooseVoice(language: string, gender: VoiceGender, voices: SpeechSynthe
 }
 
 function cleanSpeechText(text: string) {
-  return text.replace(/```[\s\S]*?```/g, "").replace(/https?:\/\/\S+/g, "").replace(/[*_#`]/g, "").replace(/\[(.*?)\]\(.*?\)/g, "$1").replace(/\s+/g, " ").trim();
+  return text.replace(/```[\s\S]*?```/g, "").replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/https?:\/\/\S+/g, "").replace(/[*_#`]/g, "").replace(/\[(.*?)\]\(.*?\)/g, "$1").replace(/\s+/g, " ").trim();
 }
 
 function splitSpeechChunks(text: string, maxLen = 220) {
