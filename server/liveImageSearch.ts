@@ -48,6 +48,7 @@ function knownSubject(text: string): { title: string; query: string } | undefine
     [/(?:مياه?.*(?:كبريت|كبيريت).*(?:جرسون|جيرسون|giresun)|(?:جرسون|جيرسون|giresun).*(?:كبريت|kükürt|sulfur))/i, "المياه الكبريتية في منتزه كوزالان – جرسون", "Kuzalan Nature Park Giresun sulfur springs travertines Turkey"],
     [/(?:مكة المكرمة|مكه المكرمه|مكة|مكه|makkah|mecca)/i, "مكة المكرمة والمسجد الحرام", "Masjid al-Haram Mecca Saudi Arabia Kaaba"],
     [/(?:محمد نور|mohammed noor|mohammad noor|mohamed noor)/i, "اللاعب محمد نور نجم الاتحاد السابق", "Mohammed Noor Saudi footballer Al Ittihad legend"],
+    [/(?:محمد علي سندي|محمد على سندي|mohammed ali sindi|muhammad ali sindi)/i, "الفنان محمد علي سندي", "Mohammed Ali Sindi Saudi singer"],
     [/(?:محمد عبده|mohammed abdu|muhammad abdu)/i, "الفنان محمد عبده", "Mohammed Abdu Saudi singer"],
     [/(?:ماجد عبدالله|ماجد عبد الله|majed abdullah|majed abdullah)/i, "اللاعب ماجد عبدالله", "Majed Abdullah Saudi football legend"],
     [/(?:الاتحاد السعودي|نادي الاتحاد|شعار الاتحاد|ittihad|al.?ittihad)/i, "شعار نادي الاتحاد السعودي", "Al Ittihad Saudi football club official crest logo"],
