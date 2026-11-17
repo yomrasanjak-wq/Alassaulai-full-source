@@ -302,7 +302,12 @@ describe("adaptive brain response strategy", () => {
     expect(getTribalGenealogyInstruction("ما حالة الطقس في طرابزون؟")).toBe("");
   });
 
-  it("recognizes ASR variants of Aramco in industrial competency questions", () => {\n    expect(getAdaptiveTaskInstruction("ما هي الأدوات التي تستخدمها رام كل في تقييم مهارات الميكانيكا؟")).toContain("لا تنسب إليها نموذج تقييم أو اختباراً داخلياً دون مصدر رسمي منشور");\n    expect(isGoogleGroundingQuestion("رام كل تقييم مهارات الميكانيكا")).toBe(true);\n  });\n\n  it("selects evidence-led industrial competency guidance for Aramco mechanical assessment questions", () => {
+  it("recognizes ASR variants of Aramco in industrial competency questions", () => {
+    expect(getAdaptiveTaskInstruction("ما هي الأدوات التي تستخدمها رام كل في تقييم مهارات الميكانيكا؟")).toContain("لا تنسب إليها نموذج تقييم أو اختباراً داخلياً دون مصدر رسمي منشور");
+    expect(isGoogleGroundingQuestion("رام كل تقييم مهارات الميكانيكا")).toBe(true);
+  });
+
+  it("selects evidence-led industrial competency guidance for Aramco mechanical assessment questions", () => {
     const instruction = getAdaptiveTaskInstruction("ماذا تستخدم أرامكو في تقييم مهارات الميكانيكا للـ Competency Assessment؟");
     expect(instruction).toContain("لا تنسب إليها نموذج تقييم أو اختباراً داخلياً دون مصدر رسمي منشور");
     expect(instruction).toContain("الممارسات الصناعية الشائعة");
