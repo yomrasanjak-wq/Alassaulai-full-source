@@ -680,12 +680,13 @@ type SpeechRecognitionLike = {
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function renderChatText(text: string) {
-  return text.split(/(!\[[^\]]*\]\((?:\/images\/[^\s)]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[^\s)]+)\)|https?:\/\/[^\s]+)/g).map((part, index) => {
-    const imageMatch = part.match(/^!\[([^\]]*)\]\(((?:\/images\/[A-Za-z0-9._/%?=&-]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%?=&-]+))\)$/);
+  return text.split(/(!\[[^\]]*\]\((?:\/images\/[^\s)]+|https:\/\/(?:upload\.wikimedia\.org\/wikipedia\/commons|api\.openverse\.org\/v1\/images\/[^\s)]+)\/[^\s)]+)\)|https?:\/\/[^\s]+)/g).map((part, index) => {
+    const imageMatch = part.match(/^!\[([^\]]*)\]\(((?:\/images\/[A-Za-z0-9._/%?=&-]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%?=&-]+|https:\/\/api\.openverse\.org\/v1\/images\/[A-Fa-f0-9-]+\/thumb\/))\)$/);
     const imageUrl = imageMatch?.[2];
     const safeLocalImage = Boolean(imageUrl && imageUrl.startsWith("/images/") && !imageUrl.split(/[?#]/, 1)[0].split("/").includes(".."));
     const safeCommonsImage = Boolean(imageUrl && /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%-]+(?:\?[A-Za-z0-9._%=&-]*)?$/.test(imageUrl));
-    if (imageMatch && (safeLocalImage || safeCommonsImage)) {
+    const safeOpenverseImage = Boolean(imageUrl && /^https:\/\/api\.openverse\.org\/v1\/images\/[A-Fa-f0-9-]+\/thumb\/$/.test(imageUrl));
+    if (imageMatch && (safeLocalImage || safeCommonsImage || safeOpenverseImage)) {
       return <img
         key={"chat-image-" + index}
         src={imageUrl}
