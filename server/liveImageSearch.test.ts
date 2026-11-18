@@ -121,7 +121,7 @@ describe("context-aware live image search", () => {
     vi.stubGlobal("fetch", fetchMock);
     const answer = await getWikimediaImageAnswer("اعرض لي صوره عن طرابزون");
     expect(answer).not.toContain("old-map.jpg");
-    expect(answer).toContain("صور Google الحديثة");
+    expect(answer).toContain("لم أجد صورة مناسبة الآن.");
   });
 
   it("shows a Commons image with a clean title and source link", async () => {
@@ -225,8 +225,7 @@ describe("context-aware live image search", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [] }) });
     vi.stubGlobal("fetch", fetchMock);
     const answer = await getWikimediaImageAnswer("صوره للاعب المعتزل ماجد عبدالله");
-    expect(answer).toContain("google.com/search?tbm=isch");
-    expect(answer).toContain("ماجد عبدالله");
+    expect(answer).toBe("لم أجد صورة مناسبة الآن.");
     expect(answer).not.toContain("![");
   });
 });
