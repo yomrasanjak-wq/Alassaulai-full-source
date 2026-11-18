@@ -25,6 +25,16 @@ export function hashEmailOtp(email: string, code: string): string {
     .digest("hex");
 }
 
+export function hashRequestIp(ip: string): string {
+  if (ENV.cookieSecret.length < 32) {
+    throw new Error("JWT_SECRET must contain at least 32 characters for email verification.");
+  }
+  return createHmac("sha256", ENV.cookieSecret)
+    .update("alassaul-email-otp-ip:v1:")
+    .update(ip || "unknown")
+    .digest("hex");
+}
+
 export function verifyEmailOtpHash(email: string, code: string, storedHash: string): boolean {
   const expected = Buffer.from(hashEmailOtp(email, code), "hex");
   const actual = Buffer.from(storedHash, "hex");
