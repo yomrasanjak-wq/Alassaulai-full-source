@@ -1,50 +1,51 @@
 # ALASSAUL-AI — Manus Independence Audit
 
-Status: source audit only; no production configuration, database, secrets, or deployment changed.
+Status: active migration on an isolated feature branch. No production configuration, database, secrets, domains, or deployment changed.
 
-## Goal
+## Completed in this branch
 
-Remove operational dependence on Manus while preserving ALASSAUL-AI content, existing media URLs, owner permissions, and working visitor features. Migrate one capability at a time and keep compatibility until its replacement is verified.
+- Replaced the browser-facing Manus OAuth sign-in with first-party email OTP and Saudi mobile SMS OTP.
+- Local sessions are signed by the application; a verified owner email or phone is mapped server-side to the local owner identity.
+- Added hashed OTP storage, expiry, bounded verification attempts, non-enumerating responses, and phone send throttling.
+- Configured email delivery through Resend and Saudi SMS verification through Unifonic Authenticate. Real delivery still requires provider account credentials, sender approval, and a controlled device test.
+- Removed the Manus Vite runtime plugin, its development debug collector, the old Manus login dialog, and the plugin dependency from package metadata/lockfile importer.
+- Removed unused Forge adapters for data search, heartbeat, map proxy, voice transcription, and image generation after confirming no application call sites.
+- Removed Manus/Forge as language-model provider fallbacks. The model client and offline preflight now use explicit ALASSAUL/OpenAI/Gemini/OpenRouter/Groq configuration only.
+- Replaced owner notifications through the Manus Notification Service with Resend email delivery.
 
-## Confirmed dependencies in the reviewed source
+## Remaining dependency — legacy media only
 
-| Area | Current dependency | Safe migration direction |
-| --- | --- | --- |
-| Sign-in | `client/src/const.ts`, `server/_core/oauth.ts`, `server/_core/sdk.ts` use Manus OAuth and user-info exchange | First-party email OTP, server-verified owner email, locally signed session, no OAuth fallback |
-| User bootstrap | `sdk.authenticateRequest` calls Manus when a session user is missing | Local session must create/read its user record before issuing cookie; then remove remote user sync |
-| Owner authorization | `OWNER_OPEN_ID` and `openId` are used by admin middleware, audit logs, and assistant memory | Preserve stable internal subject IDs; migrate owner identity to a server-side verified email allowlist without trusting browser input |
-| Scheduled jobs | Cron session branch in `sdk.ts` calls Manus `GetUserInfoWithJwt`; heartbeat routes call Forge | Inventory whether any live jobs exist; replace scheduler before removing this path |
-| New uploads | `server/storage.ts` already writes new uploads to Vercel Blob | Keep this path; verify all new media URLs use Blob |
-| Legacy media | `/manus-storage/*` proxy and signed-URL lookup still serve historical Manus objects | Preserve read compatibility until assets are copied and every stored reference is verified |
-| Maps / search proxy | `server/_core/map.ts` and `dataApi.ts` use Forge credentials | Replace with direct supported provider calls or keyless public sources; preserve rate limits and attribution |
-| Voice transcription | `server/_core/voiceTranscription.ts` uses Forge | Select independent speech provider or disable only after an explicit feature decision |
-| Image generation | `server/_core/imageGeneration.ts` uses Forge | Replace with independent provider and server-only credentials |
-| AI provider fallback | `env.ts` and brain preflight scripts still accept Manus/Forge variables | Prefer explicit ALASSAUL/OpenAI/Gemini/OpenRouter settings; remove Manus fallback after validating live configuration |
-| Development runtime | `vite.config.ts` imports `vite-plugin-manus-runtime` and debug collector | Remove plugin and debug-only Manus middleware after confirming local dev/build behavior |
+New uploads already go to Vercel Blob. Historical media can still be referenced by existing database rows and served through:
 
-## Authentication invariants
+- `server/storage.ts` legacy key lookup and signed-URL compatibility
+- `server/_core/storageProxy.ts`
+- `/manus-storage/*` rewrite in `vercel.json`
+- `BUILT_IN_FORGE_API_URL` and `BUILT_IN_FORGE_API_KEY`, used only by the legacy media bridge
 
-- Email is normalized server-side.
-- A one-time code is stored only as a cryptographic hash, expires quickly, has bounded attempts, and is single-use.
-- Request and verification responses must not reveal whether an email has an account.
-- Email delivery uses a non-Manus provider; API keys remain server-side.
-- The owner role is granted only after a successful code verification for the configured owner email.
-- The browser cannot choose or submit its own role or owner identifier.
-- Session cookies remain HTTP-only, secure in production, and same-site protected.
-- No production database migration is run by this source change.
+Do not remove this bridge until a read-only inventory identifies every legacy media reference, the objects are copied to Vercel Blob, database URLs are updated, and all resulting image URLs pass a verification check. This is the final data-preservation step before removing the last runtime Manus/Forge dependency.
 
-## Migration order
+## Authentication and security invariants
 
-1. Implement and test independent email OTP and local session creation on an isolated branch.
-2. Verify owner bootstrap and all protected procedures with tests.
-3. Replace Manus-backed map/search, voice, image-generation, heartbeat, and legacy media dependencies individually.
-4. Remove Manus runtime/plugin and obsolete environment fallbacks.
-5. Run typecheck, full tests, production build, and preview smoke tests.
-6. Only then prepare a deployment/environment checklist for explicit owner approval.
+- Email and Saudi mobile input are normalized server-side.
+- OTP values are never stored in plaintext; verification is bounded, expires, and must not disclose whether an account exists.
+- Email/SMS provider credentials remain server-side and must never use a `VITE_` prefix.
+- Owner privileges are granted only after successful verification against the configured server-side owner allowlist.
+- The browser cannot submit a role or owner identifier.
+- Sessions use HTTP-only cookies with production secure and same-site protections.
+- No live database migration is run by this source change.
+
+## Validation and rollout
+
+- GitHub Actions typecheck has passed on an intermediate commit before the latest provider cleanup.
+- The full test suite currently reports multiple failures in existing AI prompt assertions, live external-source fixtures, and UI assertions; these must be separated from regressions introduced by this branch.
+- Re-run typecheck, targeted auth/provider tests, full tests, and production build on the latest commit.
+- The automatic Vercel preview observed earlier belonged to the separate `alassaul-full-source` project, not the canonical `alassaulai` project. Do not treat it as the platform preview.
+- The PR remains draft and unmerged.
 
 ## Explicitly not done
 
 - No Vercel settings or secrets changed.
 - No live database writes or schema migrations run.
-- No domains, repositories, branches, or production deployments deleted or modified.
+- No production deployment started.
+- No domains, repositories, branches, or Vercel projects deleted or modified.
 - No legacy media or visitor data deleted.
