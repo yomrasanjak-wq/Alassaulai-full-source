@@ -116,6 +116,7 @@ export type AssistantMemory = typeof assistantMemories.$inferSelect;
 export const emailLoginChallenges = pgTable("emailLoginChallenges", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 320 }).notNull(),
+  requestIpHash: varchar("requestIpHash", { length: 64 }).notNull(),
   codeHash: varchar("codeHash", { length: 64 }).notNull(),
   expiresAt: timestamp("expiresAt", { withTimezone: true, mode: "date" }).notNull(),
   attempts: integer("attempts").notNull().default(0),
