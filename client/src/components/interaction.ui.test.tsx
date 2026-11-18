@@ -6,7 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const { mutateAsyncMock, auxiliaryMutationMock } = vi.hoisted(() => ({ mutateAsyncMock: vi.fn(), auxiliaryMutationMock: vi.fn() }));
 vi.mock("@/lib/trpc", () => ({
   trpc: {
+    useUtils: () => ({ auth: { me: { invalidate: vi.fn() } } }),
     auth: {
+      requestEmailCode: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
+      verifyEmailCode: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
       me: { useQuery: () => ({ data: { id: 1, openId: "owner", role: "admin", name: "Owner" }, isLoading: false, refetch: vi.fn() }) },
       visitorCount: { useQuery: () => ({ data: 0, isLoading: false, refetch: vi.fn() }) },
       logout: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock }) },
@@ -525,13 +528,12 @@ describe("Guestbook studio upload", () => {
 });
 
 describe("Account, live modal, and place details", () => {
-  it("offers email and phone as optional account methods without a fake password flow", () => {
+  it("offers independent email verification without redirecting to a hosted login portal", () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: /دخول الحساب/ }));
-    expect(screen.getByRole("tab", { name: /البريد الإلكتروني/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("tab", { name: /رقم الجوال/ }));
-    expect(screen.getByText(/سيتم فتح بوابة الدخول/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: /متابعة الدخول الآمن/ })).toBeTruthy();
+    expect(screen.getByLabelText("البريد الإلكتروني")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /إرسال رمز التحقق/ })).toBeTruthy();
+    expect(screen.queryByRole("tab", { name: /رقم الجوال/ })).toBeNull();
   });
 
   it("opens a city-guide destination directly on the in-app map", async () => {
