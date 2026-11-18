@@ -205,8 +205,8 @@ async function searchOpenverse(request: ImageRequest, signal: AbortSignal): Prom
     const title = cleanMetadata(item.title);
     const normalizedTitle = normalizeImageText(title);
     const relevance = terms.filter((term) => normalizedTitle.includes(term)).length;
-    // Never choose an unrelated image merely because it was indexed most recently.
-    if (terms.length > 0 && relevance === 0) return [];
+    // Openverse already ranks by the query; keep safe candidates even when titles
+    // use a different language, while preferring any exact subject-word matches.
     return [{ ...item, title, relevance }];
   });
   if (!results.length) return undefined;
