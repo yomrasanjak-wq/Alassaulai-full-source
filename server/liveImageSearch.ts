@@ -226,41 +226,44 @@ export async function getWikimediaImageAnswer(
   if (!request) return undefined;
   const googleUrl = googleImagesUrl(request.googleQuery);
   try {
-    // Each provider gets its own timeout so a slow Commons request cannot abort Openverse.
-    if (!request.modern) {
-      const commonsController = new AbortController();
-      const commonsTimer = setTimeout(() => commonsController.abort(), 3800);
-      try {
-        const selected = await searchCommons(request, commonsController.signal);
-        if (selected) {
-          const source = "[المصدر](" + selected.descriptionUrl + ")";
-          return "![" + request.title + "](" + selected.imageUrl + ")\n\n**" + request.title + "** · " + source;
-        }
-      } catch (error) {
-        console.warn("[ALASSAUL image search] Wikimedia Commons unavailable", error);
-      } finally {
-        clearTimeout(commonsTimer);
-      }
+    // Run providers concurrently: sequential waits consumed nearly the whole server
+    // request budget before Openverse could finish. Prefer Commons when it returns
+    // a valid match; otherwise use Openverse as the fallback.
+    const commonsController = new AbortController();
+    const openverseController = new AbortController();
+    const commonsTimer = setTimeout(() => commonsController.abort(), 6500);
+    const openverseTimer = setTimeout(() => openverseController.abort(), 6500);
+    const [commonsResult, openverseResult] = await Promise.allSettled([
+      request.modern
+        ? Promise.resolve(undefined)
+        : searchCommons(request, commonsController.signal),
+      searchOpenverse(request, openverseController.signal),
+    ]);
+    clearTimeout(commonsTimer);
+    clearTimeout(openverseTimer);
+
+    if (commonsResult.status === "fulfilled" && commonsResult.value) {
+      const selected = commonsResult.value;
+      const source = "[المصدر](" + selected.descriptionUrl + ")";
+      return "![" + request.title + "](" + selected.imageUrl + ")\n\n**" + request.title + "** · " + source;
+    }
+    if (commonsResult.status === "rejected") {
+      console.warn("[ALASSAUL image search] Wikimedia Commons unavailable", commonsResult.reason);
     }
 
-    const openverseController = new AbortController();
-    const openverseTimer = setTimeout(() => openverseController.abort(), 4800);
-    try {
-      const selected = await searchOpenverse(request, openverseController.signal);
-      if (selected) {
-        const source = "[المصدر](" + selected.foreign_landing_url + ")";
-        const freshnessNote = request.modern
-          ? "\nملاحظة: تاريخ الفهرسة لا يثبت تاريخ التقاط الصورة؛ لا أصفها بأنها ملتقطة حديثاً دون تاريخ موثوق."
-          : "";
-        return "![" + request.title + "](" + selected.thumbnail + ")\n\n**"
-          + request.title + "** · " + source
-          + (request.modern ? "\n\n[صور Google الحديثة]" + "(" + googleUrl + ")" : "")
-          + freshnessNote;
-      }
-    } catch (error) {
-      console.warn("[ALASSAUL image search] Openverse unavailable", error);
-    } finally {
-      clearTimeout(openverseTimer);
+    if (openverseResult.status === "fulfilled" && openverseResult.value) {
+      const selected = openverseResult.value;
+      const source = "[المصدر](" + selected.foreign_landing_url + ")";
+      const freshnessNote = request.modern
+        ? "\nملاحظة: تاريخ الفهرسة لا يثبت تاريخ التقاط الصورة؛ لا أصفها بأنها ملتقطة حديثاً دون تاريخ موثوق."
+        : "";
+      return "![" + request.title + "](" + selected.thumbnail + ")\n\n**"
+        + request.title + "** · " + source
+        + (request.modern ? "\n\n[صور Google الحديثة]" + "(" + googleUrl + ")" : "")
+        + freshnessNote;
+    }
+    if (openverseResult.status === "rejected") {
+      console.warn("[ALASSAUL image search] Openverse unavailable", openverseResult.reason);
     }
 
     return language === "AR"
