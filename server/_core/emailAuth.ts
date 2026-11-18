@@ -41,27 +41,52 @@ function normalizeSaudiPhone(value: unknown): string | null {
   return /^\+9665\d{8}$/.test(phone) ? phone : null;
 }
 
-async function twilioVerifyRequest(phone: string, code?: string): Promise<boolean> {
-  const { twilioAccountSid, twilioAuthToken, twilioVerifyServiceSid } = ENV;
-  if (!twilioAccountSid || !twilioAuthToken || !twilioVerifyServiceSid) {
-    throw new Error("Independent SMS verification is not configured");
+async function unifonicVerify(phone: string, code?: string): Promise<boolean> {
+  const { unifonicAuthenticateAppId, unifonicAuthenticateToken } = ENV;
+  if (!unifonicAuthenticateAppId || !unifonicAuthenticateToken) {
+    throw new Error("Independent Saudi SMS verification is not configured");
   }
+
   const endpoint = code
-    ? `https://verify.twilio.com/v2/Services/${twilioVerifyServiceSid}/VerificationCheck`
-    : `https://verify.twilio.com/v2/Services/${twilioVerifyServiceSid}/Verifications`;
-  const body = new URLSearchParams(code ? { To: phone, Code: code } : { To: phone, Channel: "sms" });
-  const auth = Buffer.from(`${twilioAccountSid}:${twilioAuthToken}`).toString("base64");
+    ? "https://authenticate.cloud.api.unifonic.com/services/api/v2/verifications/check"
+    : "https://authenticate.cloud.api.unifonic.com/services/api/v2/verifications/start";
+  const body = new URLSearchParams(code
+    ? { to: phone, channel: "sms", code }
+    : { to: phone, channel: "sms", locale: "ar", length: "6" });
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "X-Authenticate-App-Id": unifonicAuthenticateAppId,
+      Authorization: unifonicAuthenticateToken,
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
     body,
   });
-  const result = await response.json().catch(() => ({})) as { status?: string };
+  const result = await response.json().catch(() => ({})) as {
+    response_status?: string;
+    error_code?: number;
+    message?: string;
+  };
+
+  if (code) {
+    if (result.error_code === 107 || result.error_code === 108 ||
+        result.error_code === 109 || result.error_code === 110 ||
+        result.response_status === "incorrect" || result.response_status === "expired") {
+      return false;
+    }
+    if (!response.ok) {
+      console.error("[PhoneAuth] Verification provider rejected check", response.status);
+      throw new Error("SMS verification provider failed");
+    }
+    return result.error_code === 101 || result.response_status === "correct";
+  }
+
   if (!response.ok) {
-    console.error("[PhoneAuth] SMS verification provider rejected request", response.status);
+    console.error("[PhoneAuth] Verification provider rejected send", response.status);
     throw new Error("SMS verification provider failed");
   }
-  return result.status === "approved";
+  return true;
 }
 
 function safeOrigin(req: any): boolean {
@@ -238,7 +263,7 @@ export function registerEmailAuthRoutes(app: any) {
       return;
     }
     try {
-      await twilioVerifyRequest(phone);
+      await unifonicVerify(phone);
       res.json({ success: true, message: "إذا كان الرقم صالحًا، فسيصلك رمز التحقق برسالة SMS." });
     } catch (error) {
       console.error("[PhoneAuth] Could not issue SMS verification", error);
@@ -259,7 +284,7 @@ export function registerEmailAuthRoutes(app: any) {
       return;
     }
     try {
-      const approved = await twilioVerifyRequest(phone, code);
+      const approved = await unifonicVerify(phone, code);
       if (!approved) {
         res.status(400).json({ error: "رمز التحقق غير صحيح أو انتهت صلاحيته." });
         return;
