@@ -181,6 +181,38 @@ async function searchCommons(request: ImageRequest, signal: AbortSignal) {
   return candidates.sort((left, right) => right.score - left.score)[0];
 }
 
+async function searchWikipedia(request: ImageRequest, signal: AbortSignal): Promise<{ title: string; imageUrl: string; pageUrl: string } | undefined> {
+  const params = new URLSearchParams({
+    action: "query",
+    generator: "search",
+    gsrsearch: request.query,
+    gsrnamespace: "0",
+    gsrlimit: "8",
+    prop: "pageimages|info",
+    piprop: "thumbnail",
+    pithumbsize: "960",
+    inprop: "url",
+    format: "json",
+    formatversion: "2",
+  });
+  const response = await fetch("https://en.wikipedia.org/w/api.php?" + params.toString(), {
+    headers: { accept: "application/json", "user-agent": "ALASSAUL-AI/1.0 (https://alassaul.com; image lookup)" },
+    signal,
+  });
+  if (!response.ok) throw new Error("Wikipedia image search HTTP " + response.status);
+  const data = await response.json() as { query?: { pages?: Array<{ title?: string; fullurl?: string; thumbnail?: { source?: string } }> } };
+  const pages = data.query?.pages ?? [];
+  const candidates = pages.flatMap((page) => {
+    const imageUrl = page.thumbnail?.source ?? "";
+    const pageUrl = page.fullurl ?? "";
+    if (!/^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/thumb\//i.test(imageUrl)) return [];
+    if (!/\.(?:jpe?g|png|webp)$/i.test(imageUrl.split(/[?#]/, 1)[0])) return [];
+    if (!/^https:\/\/en\.wikipedia\.org\/wiki\//i.test(pageUrl)) return [];
+    return [{ title: page.title ?? request.title, imageUrl, pageUrl }];
+  });
+  return candidates[0];
+}
+
 async function searchOpenverse(request: ImageRequest, signal: AbortSignal): Promise<OpenverseImage | undefined> {
   const params = new URLSearchParams({ q: request.query, page_size: "12", mature: "false" });
   const response = await fetch("https://api.openverse.org/v1/images/?" + params.toString(), {
@@ -226,21 +258,24 @@ export async function getWikimediaImageAnswer(
   if (!request) return undefined;
   const googleUrl = googleImagesUrl(request.googleQuery);
   try {
-    // Run providers concurrently: sequential waits consumed nearly the whole server
-    // request budget before Openverse could finish. Prefer Commons when it returns
-    // a valid match; otherwise use Openverse as the fallback.
+    // Search three independent image indexes at the same time. A slow provider
+    // must not consume the time budget of the others.
     const commonsController = new AbortController();
     const openverseController = new AbortController();
+    const wikipediaController = new AbortController();
     const commonsTimer = setTimeout(() => commonsController.abort(), 6500);
     const openverseTimer = setTimeout(() => openverseController.abort(), 6500);
-    const [commonsResult, openverseResult] = await Promise.allSettled([
+    const wikipediaTimer = setTimeout(() => wikipediaController.abort(), 6500);
+    const [commonsResult, openverseResult, wikipediaResult] = await Promise.allSettled([
       request.modern
         ? Promise.resolve(undefined)
         : searchCommons(request, commonsController.signal),
       searchOpenverse(request, openverseController.signal),
+      searchWikipedia(request, wikipediaController.signal),
     ]);
     clearTimeout(commonsTimer);
     clearTimeout(openverseTimer);
+    clearTimeout(wikipediaTimer);
 
     if (commonsResult.status === "fulfilled" && commonsResult.value) {
       const selected = commonsResult.value;
@@ -264,6 +299,15 @@ export async function getWikimediaImageAnswer(
     }
     if (openverseResult.status === "rejected") {
       console.warn("[ALASSAUL image search] Openverse unavailable", openverseResult.reason);
+    }
+
+    if (wikipediaResult.status === "fulfilled" && wikipediaResult.value) {
+      const selected = wikipediaResult.value;
+      return "![" + request.title + "](" + selected.imageUrl + ")\n\n**"
+        + request.title + "** · [المصدر](" + selected.pageUrl + ")";
+    }
+    if (wikipediaResult.status === "rejected") {
+      console.warn("[ALASSAUL image search] Wikipedia unavailable", wikipediaResult.reason);
     }
 
     return language === "AR"
