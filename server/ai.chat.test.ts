@@ -34,9 +34,9 @@ function createPublicContext(): TrpcContext {
   };
 }
 
-function createUserContext(openId: string, role: "user" | "admin" | "secretary" | "assistant" | "it" = "user"): TrpcContext {
+function createUserContext(openId: string, role: "user" | "admin" | "secretary" | "assistant" | "it" = "user", email?: string): TrpcContext {
   return {
-    user: { id: 1, openId, role } as NonNullable<TrpcContext["user"]>,
+    user: { id: 1, openId, role, email: email ?? null } as NonNullable<TrpcContext["user"]>,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
     res: {} as TrpcContext["res"],
   };
@@ -65,12 +65,13 @@ describe("brain governance", () => {
   });
 
   it("denies regular and admin accounts owner-only control actions", async () => {
-    const previousOwnerId = ENV.ownerOpenId;
-    ENV.ownerOpenId = "platform-owner-open-id";
+    const previousOwnerEmail = ENV.ownerEmail;
+    ENV.ownerEmail = "owner@example.com";
     try {
       for (const context of [
         createUserContext("ordinary-user-open-id", "user"),
         createUserContext("admin-user-open-id", "admin"),
+        createUserContext("platform-owner-open-id", "user"),
       ]) {
         const caller = appRouter.createCaller(context);
         await expect(caller.control.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -81,7 +82,7 @@ describe("brain governance", () => {
         await expect(caller.discovery.delete({ id: 1 })).rejects.toMatchObject({ code: "FORBIDDEN" });
       }
     } finally {
-      ENV.ownerOpenId = previousOwnerId;
+      ENV.ownerEmail = previousOwnerEmail;
     }
   });
 
@@ -102,21 +103,21 @@ describe("brain governance", () => {
   });
 
   it("allows only the configured owner identity into the control room", async () => {
-    const previousOwnerId = ENV.ownerOpenId;
-    ENV.ownerOpenId = "platform-owner-open-id";
+    const previousOwnerEmail = ENV.ownerEmail;
+    ENV.ownerEmail = "owner@example.com";
     try {
-      const caller = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      const caller = appRouter.createCaller(createUserContext("local-owner-id", "user", "OWNER@example.com"));
       await expect(caller.control.list()).resolves.toEqual([]);
     } finally {
-      ENV.ownerOpenId = previousOwnerId;
+      ENV.ownerEmail = previousOwnerEmail;
     }
   });
 
   it("allows only the CEO owner to create assigned department tasks", async () => {
-    const previousOwnerId = ENV.ownerOpenId;
-    ENV.ownerOpenId = "platform-owner-open-id";
+    const previousOwnerEmail = ENV.ownerEmail;
+    ENV.ownerEmail = "owner@example.com";
     try {
-      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      const owner = appRouter.createCaller(createUserContext("local-owner-id", "user", "OWNER@example.com"));
       await owner.control.createTask({
         title: "متابعة صور الدليل",
         command: "راجع الصور المضافة وتأكد من ظهورها على الهاتف.",
@@ -135,7 +136,7 @@ describe("brain governance", () => {
         assignee: "IT",
       })).rejects.toMatchObject({ code: "FORBIDDEN" });
     } finally {
-      ENV.ownerOpenId = previousOwnerId;
+      ENV.ownerEmail = previousOwnerEmail;
     }
   });
 
@@ -159,40 +160,40 @@ describe("brain governance", () => {
   });
 
   it("prevents the CEO from completing a task that has not entered review", async () => {
-    const previousOwnerId = ENV.ownerOpenId;
-    ENV.ownerOpenId = "platform-owner-open-id";
+    const previousOwnerEmail = ENV.ownerEmail;
+    ENV.ownerEmail = "owner@example.com";
     vi.mocked(listControlRequests).mockResolvedValue([{ id: 101, status: "in_progress" } as never]);
     try {
-      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      const owner = appRouter.createCaller(createUserContext("local-owner-id", "user", "OWNER@example.com"));
       await expect(owner.control.update({ id: 101, status: "completed" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     } finally {
-      ENV.ownerOpenId = previousOwnerId;
+      ENV.ownerEmail = previousOwnerEmail;
     }
   });
 
   it("applies the additive control-room schema only through the owner team view", async () => {
-    const previousOwnerId = ENV.ownerOpenId;
-    ENV.ownerOpenId = "platform-owner-open-id";
+    const previousOwnerEmail = ENV.ownerEmail;
+    ENV.ownerEmail = "owner@example.com";
     try {
-      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      const owner = appRouter.createCaller(createUserContext("local-owner-id", "user", "OWNER@example.com"));
       await expect(owner.team.list()).resolves.toEqual([]);
       expect(vi.mocked(ensureControlRoomSchema)).toHaveBeenCalledOnce();
     } finally {
-      ENV.ownerOpenId = previousOwnerId;
+      ENV.ownerEmail = previousOwnerEmail;
     }
   });
 
   it("allows only the owner to assign staff roles", async () => {
-    const previousOwnerId = ENV.ownerOpenId;
-    ENV.ownerOpenId = "platform-owner-open-id";
+    const previousOwnerEmail = ENV.ownerEmail;
+    ENV.ownerEmail = "owner@example.com";
     try {
-      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      const owner = appRouter.createCaller(createUserContext("local-owner-id", "user", "OWNER@example.com"));
       await owner.team.assignRole({ email: "staff@example.com", role: "secretary" });
       expect(vi.mocked(updateUserRoleByEmail)).toHaveBeenCalledWith("staff@example.com", "secretary");
       const ordinaryUser = appRouter.createCaller(createUserContext("ordinary-user", "user"));
       await expect(ordinaryUser.team.assignRole({ email: "staff@example.com", role: "it" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     } finally {
-      ENV.ownerOpenId = previousOwnerId;
+      ENV.ownerEmail = previousOwnerEmail;
     }
   });
 
