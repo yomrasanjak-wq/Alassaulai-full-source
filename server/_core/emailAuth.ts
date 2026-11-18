@@ -296,7 +296,7 @@ export function registerEmailAuthRoutes(app: any) {
       await db.upsertUser({
         openId,
         email,
-        name: isOwner ? "Yousef Assaul" : phone,
+        name: isOwner ? "Yousef Assaul" : "زائر",
         loginMethod: "phone_sms",
         lastSignedIn: new Date(),
         ...(isOwner ? { role: "admin" as const } : {}),
