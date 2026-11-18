@@ -7,7 +7,7 @@ type Method = "email" | "phone";
 export function EmailOtpLogin({ onClose }: Props) {
   const [method, setMethod] = useState<Method>("email");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("0592901010");
+  const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"destination" | "code">("destination");
   const [busy, setBusy] = useState(false);
