@@ -71,3 +71,4 @@ export async function sendEmailOtp(email: string, code: string): Promise<void> {
 export const EMAIL_OTP_TTL_MS = OTP_TTL_MINUTES * 60 * 1000;
 export const EMAIL_OTP_MAX_ATTEMPTS = 5;
 export const EMAIL_OTP_MAX_REQUESTS_PER_15_MINUTES = 3;
+export const EMAIL_OTP_MAX_IP_REQUESTS_PER_15_MINUTES = 12;
