@@ -53,7 +53,7 @@ export const controlStaffProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
     const allowedRoles = ["secretary", "assistant", "it"];
-    const isOwner = Boolean(ctx.user && ((ENV.ownerEmail && ctx.user.email?.trim().toLowerCase() === ENV.ownerEmail) || (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId)));
+    const isOwner = isConfiguredOwner(ctx.user);
     if (!ctx.user || (!isOwner && !allowedRoles.includes(ctx.user.role))) {
       throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة مخصصة لفريق غرفة التحكم." });
     }
