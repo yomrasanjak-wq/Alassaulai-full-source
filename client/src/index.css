@@ -4032,7 +4032,7 @@ img { display: block; max-width: 100%; }
 @media (max-width: 560px) { .partner-ad-popup { inset-inline: 10px; bottom: 76px; width: auto; grid-template-columns: 88px minmax(0,1fr); gap: 10px; padding: 10px; } .partner-ad-popup > img { width: 88px; height: 96px; } .partner-ad-copy strong { font-size: 13px; } .partner-ad-copy p { font-size: 10px; } }
 
 
-/* Control room: spacious desktop workspace and phone-first full-screen layout. */
+/* Control room: centered, balanced dialog on desktop and phones. */
 .modal-card-control { width: min(980px, 100%); max-height: min(860px, calc(100dvh - 32px)); }
 .modal-card-control .control-modal { padding: 42px clamp(20px, 4vw, 42px); }
 .modal-card-control .control-kpis { gap: 12px; }
@@ -4042,10 +4042,30 @@ img { display: block; max-width: 100%; }
 .modal-card-control .control-task-actions .button { min-height: 38px; font-size: 11px; }
 .modal-card-control .discovery-admin-panel { border-radius: 16px; }
 @media (max-width: 740px) {
-  .modal-backdrop-control { padding: 0; place-items: stretch; }
-  .modal-card-control { width: 100%; min-height: 100dvh; max-height: 100dvh; border-radius: 0; box-shadow: none; }
-  .modal-card-control .control-modal { padding: calc(64px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); }
-  .modal-card-control .modal-close { position: fixed; top: calc(10px + env(safe-area-inset-top)); inset-inline-end: 12px; width: 40px; height: 40px; border-radius: 50%; }
+  .modal-backdrop-control {
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    place-items: center;
+    overflow-y: auto;
+  }
+  .modal-card-control {
+    position: relative;
+    width: min(980px, calc(100vw - 24px));
+    min-height: 0;
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    border-radius: 18px;
+    box-shadow: 0 20px 54px rgb(0 0 0 / 32%);
+  }
+  .modal-card-control .control-modal {
+    padding: calc(58px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .modal-card-control .modal-close {
+    position: absolute;
+    top: 12px;
+    inset-inline-end: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
   .modal-card-control .control-modal > h2 { font-size: 22px; line-height: 1.5; }
   .modal-card-control .control-modal > p { font-size: 13px; }
   .modal-card-control .control-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
