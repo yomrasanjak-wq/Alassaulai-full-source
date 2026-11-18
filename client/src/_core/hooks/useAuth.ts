@@ -1,5 +1,4 @@
 import { trpc } from "@/lib/trpc";
-import { startLogin } from "@/const";
 
 export function useAuth() {
   const me = trpc.auth.me.useQuery();
@@ -12,6 +11,5 @@ export function useAuth() {
       await logoutMutation.mutateAsync();
       await me.refetch();
     },
-    login: startLogin,
   };
 }
