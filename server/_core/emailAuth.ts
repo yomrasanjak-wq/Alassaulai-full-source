@@ -292,7 +292,7 @@ export function registerEmailAuthRoutes(app: any) {
       const email = isOwner ? ENV.ownerEmail : null;
       const openId = isOwner
         ? `email_${digest(`alassaul-subject:${ENV.ownerEmail}`).slice(0, 48)}`
-        : `phone_${digest(`alassaul-phone:${phone}`).slice(0, 48)}`;
+        : `phone_${createHmac("sha256", ENV.cookieSecret).update(`alassaul-phone:${phone}`).digest("hex").slice(0, 48)}`;
       await db.upsertUser({
         openId,
         email,
