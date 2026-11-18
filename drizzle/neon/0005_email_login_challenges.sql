@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS public."emailLoginChallenges" (
   id serial PRIMARY KEY,
   email varchar(320) NOT NULL,
+  "requestIpHash" varchar(64) NOT NULL,
   "codeHash" varchar(64) NOT NULL,
   "expiresAt" timestamptz NOT NULL,
   attempts integer NOT NULL DEFAULT 0,
