@@ -35,7 +35,7 @@ export function EmailLoginPanel({ onSuccess }: EmailLoginPanelProps) {
     requestCode.mutate({ email: email.trim() });
   }
 
-  function submitCode(event: React.FormEvent<HTMLFormElement>) {
+  function submitCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     verifyCode.mutate({ email: email.trim(), code: code.trim() });
