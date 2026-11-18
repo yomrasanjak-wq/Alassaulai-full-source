@@ -1228,7 +1228,7 @@ export const appRouter = router({
     verifyEmailCode: publicProcedure
       .input(z.object({
         email: z.string().trim().email().max(320),
-        code: z.string().regex(/^\\d{6}$/),
+        code: z.string().regex(/^\d{6}$/),
       }))
       .mutation(async ({ ctx, input }) => {
         const email = normalizeLoginEmail(input.email);
