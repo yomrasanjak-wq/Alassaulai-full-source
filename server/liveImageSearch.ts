@@ -54,7 +54,9 @@ function knownSubject(text: string): { title: string; query: string } | undefine
   }
   const rules: Array<[RegExp, string, string]> = [
     [/(?:الميدان|ميدان طرابزون|trabzon meydan|meydan square)/i, "ميدان طرابزون", "Trabzon Meydan Square city center Turkey"],
-    [/(?:ال)?همس[يه]\s*كوي|(?:ال)?همس[يه]كوي|hamsik[oö]y|hamse\s*koy/i, "همسي كوي", "Hamsikoy Trabzon Turkey village mountain landscape"],
+    [/(?:ال)?همس(?:ي|ه)?\s*كوي|(?:ال)?همس(?:ي|ه)?كوي|hamsik[oö]y|hamse\s*koy/i, "همسي كوي", "Hamsikoy Trabzon Turkey village mountain landscape"],
+    [/(?:ساكويا|ساكيويا|سيكويا|sequoia|toyota sequoia)/i, "تويوتا ساكويا 2010", "2010 Toyota Sequoia SUV exterior"],
+    [/(?:باقة ورد|باقه ورد|ورد جميل|bouquet|flower bouquet)/i, "باقة ورد جميلة", "beautiful fresh flower bouquet roses colorful flowers"],
     [/(?:طرابزون|ترابزون|trabzon)/i, "طرابزون – مشاهد المدينة والساحل", "Trabzon Turkey Black Sea coast city skyline modern scenic view"],
     [/(?:مطار\s*ريزا|ريزا\s*مطار|مطار\s*ريزه|rize(?:-artvin)?\s*airport|rize\s*havalimani)/i, "مطار ريزا-أرتفين", "Rize Artvin Airport Turkey terminal aerial sea runway"],
     [/(?:حيدر\s*نبي|حيدرنبى|هيدر\s*نبي|هيدرنبى|hidirnebi|hıdırnebi|hidirnebi\s*yaylasi)/i, "مرتفعات حيدر نبي", "Hidirnebi Plateau Trabzon Turkey mountain landscape"],
@@ -187,9 +189,11 @@ async function searchOpenverse(request: ImageRequest, signal: AbortSignal): Prom
   });
   if (!response.ok) throw new Error("Openverse HTTP " + response.status);
   const data = await response.json() as { results?: OpenverseImage[] };
-  const stopWords = new Set(["turkey", "saudi", "arabia", "the", "and", "for", "with", "view", "photo", "photos", "image", "images", "modern", "recent", "latest", "scenic", "city", "landscape"]);
-  const terms = normalizeImageText(request.query)
-    .split(/[^a-z0-9\u0600-\u06FF]+/i)
+  const stopWords = new Set(["turkey", "saudi", "arabia", "the", "and", "for", "with", "view", "photo", "photos", "image", "images", "modern", "recent", "latest", "scenic", "city", "landscape", "trabzon", "hamsikoy", "mecca", "madinah", "sequoia", "toyota", "bouquet", "beautiful", "flowers", "flower"]);
+  // Openverse titles are commonly English. Never compare Arabic query tokens with English titles.
+  const terms = request.query
+    .split(/[^a-z0-9]+/i)
+    .map((word) => word.toLowerCase())
     .filter((word) => word.length > 2 && !stopWords.has(word));
   const results = (data.results ?? []).flatMap((item) => {
     if (typeof item.thumbnail !== "string"
@@ -221,24 +225,28 @@ export async function getWikimediaImageAnswer(
   const request = imageRequest(message, history);
   if (!request) return undefined;
   const googleUrl = googleImagesUrl(request.googleQuery);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4200);
   try {
-    // A "modern/recent" request skips the older Commons-first path and uses the broader catalogue.
+    // Each provider gets its own timeout so a slow Commons request cannot abort Openverse.
     if (!request.modern) {
+      const commonsController = new AbortController();
+      const commonsTimer = setTimeout(() => commonsController.abort(), 3800);
       try {
-        const selected = await searchCommons(request, controller.signal);
+        const selected = await searchCommons(request, commonsController.signal);
         if (selected) {
           const source = "[المصدر](" + selected.descriptionUrl + ")";
           return "![" + request.title + "](" + selected.imageUrl + ")\n\n**" + request.title + "** · " + source;
         }
       } catch (error) {
         console.warn("[ALASSAUL image search] Wikimedia Commons unavailable", error);
+      } finally {
+        clearTimeout(commonsTimer);
       }
     }
 
+    const openverseController = new AbortController();
+    const openverseTimer = setTimeout(() => openverseController.abort(), 4800);
     try {
-      const selected = await searchOpenverse(request, controller.signal);
+      const selected = await searchOpenverse(request, openverseController.signal);
       if (selected) {
         const source = "[المصدر](" + selected.foreign_landing_url + ")";
         const freshnessNote = request.modern
@@ -254,14 +262,15 @@ export async function getWikimediaImageAnswer(
     }
 
     return language === "AR"
-      ? "لم أجد صورة يمكنني عرضها بثقة الآن لـ **" + request.title + "**. فتحت لك طريقاً مباشراً إلى [صور Google الحديثة خلال السنة الماضية](" + googleUrl + ") لتظهر لك نتائج أحدث، بدلاً من عرض صورة قديمة على أنها حديثة."
+      ? "لم أجد صورة مناسبة الآن. جرّب بعد قليل."
       : "I couldn't verify an image for " + request.title + ". See [recent Google Images results](" + googleUrl + ").";
   } catch (error) {
     console.warn("[ALASSAUL image search] Image providers unavailable", error);
     return language === "AR"
-      ? "تعذر جلب الصورة الآن. يمكنك مراجعة [صور Google الحديثة](" + googleUrl + ")، ولن أعرض صورة غير متأكد من صلتها بالطلب."
+      ? "تعذر جلب الصورة الآن. حاول بعد قليل."
       : "Image search is temporarily unavailable. See [recent Google Images results](" + googleUrl + ").";
-  } finally {
-    clearTimeout(timer);
+    } finally {
+      clearTimeout(openverseTimer);
+    }
   }
 }
