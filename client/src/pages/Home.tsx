@@ -841,6 +841,15 @@ export default function Home() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const t = copy[language];
   const auth = useAuth();
+  useEffect(() => {
+    const openLogin = () => setModal("login");
+    window.addEventListener("alassaul:open-login", openLogin);
+    if (new URLSearchParams(window.location.search).get("login") === "1") {
+      setModal("login");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    return () => window.removeEventListener("alassaul:open-login", openLogin);
+  }, []);
   const prayerTicker = language === "AR"
     ? ["اللهم صل وسلم على نبينا محمد", "سبحان الله وبحمده، سبحان الله العظيم", "اللهم افتح لنا أبواب رحمتك", "رب اشرح لي صدري ويسر لي أمري", "اللهم احفظ المسافرين وردهم سالمين"]
     : language === "TR"
