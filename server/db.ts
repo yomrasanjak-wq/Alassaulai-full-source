@@ -139,19 +139,21 @@ export async function countRecentEmailLoginChallenges(
   email: string,
   requestIpHash: string,
   since: Date,
-): Promise<number> {
+): Promise<{ emailCount: number; ipCount: number }> {
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
-  const rows = await db.select({ total: count() }).from(emailLoginChallenges).where(
-    and(
-      gt(emailLoginChallenges.createdAt, since),
-      or(
-        eq(emailLoginChallenges.email, email),
-        eq(emailLoginChallenges.requestIpHash, requestIpHash),
-      ),
+  const [emailRows, ipRows] = await Promise.all([
+    db.select({ total: count() }).from(emailLoginChallenges).where(
+      and(eq(emailLoginChallenges.email, email), gt(emailLoginChallenges.createdAt, since)),
     ),
-  );
-  return Number(rows[0]?.total ?? 0);
+    db.select({ total: count() }).from(emailLoginChallenges).where(
+      and(eq(emailLoginChallenges.requestIpHash, requestIpHash), gt(emailLoginChallenges.createdAt, since)),
+    ),
+  ]);
+  return {
+    emailCount: Number(emailRows[0]?.total ?? 0),
+    ipCount: Number(ipRows[0]?.total ?? 0),
+  };
 }
 
 export async function getLatestEmailLoginChallenge(email: string) {
