@@ -187,16 +187,30 @@ async function searchOpenverse(request: ImageRequest, signal: AbortSignal): Prom
   });
   if (!response.ok) throw new Error("Openverse HTTP " + response.status);
   const data = await response.json() as { results?: OpenverseImage[] };
-  const results = (data.results ?? []).filter((item) =>
-    typeof item.thumbnail === "string"
-    && /^https:\/\/api\.openverse\.org\/v1\/images\/[a-f0-9-]+\/thumb\//i.test(item.thumbnail)
-    && typeof item.foreign_landing_url === "string"
-    && /^https:\/\//i.test(item.foreign_landing_url)
-    && typeof item.license === "string"
-  );
+  const stopWords = new Set(["turkey", "saudi", "arabia", "the", "and", "for", "with", "view", "photo", "photos", "image", "images", "modern", "recent", "latest", "scenic", "city", "landscape"]);
+  const terms = normalizeImageText(request.query)
+    .split(/[^a-z0-9\u0600-\u06FF]+/i)
+    .filter((word) => word.length > 2 && !stopWords.has(word));
+  const results = (data.results ?? []).flatMap((item) => {
+    if (typeof item.thumbnail !== "string"
+      || !/^https:\/\/api\.openverse\.org\/v1\/images\/[a-f0-9-]+\/thumb\//i.test(item.thumbnail)
+      || typeof item.foreign_landing_url !== "string"
+      || !/^https:\/\//i.test(item.foreign_landing_url)
+      || typeof item.license !== "string"
+      || typeof item.title !== "string") return [];
+    const title = cleanMetadata(item.title);
+    const normalizedTitle = normalizeImageText(title);
+    const relevance = terms.filter((term) => normalizedTitle.includes(term)).length;
+    // Never choose an unrelated image merely because it was indexed most recently.
+    if (terms.length > 0 && relevance === 0) return [];
+    return [{ ...item, title, relevance }];
+  });
   if (!results.length) return undefined;
-  // Prefer the most recently indexed result, without claiming that its capture date is recent.
-  return results.sort((a, b) => Date.parse(b.indexed_on ?? "") - Date.parse(a.indexed_on ?? ""))[0];
+  // Relevance comes first; indexing date is only a tie-breaker, not proof of capture date.
+  return results.sort((a, b) =>
+    b.relevance - a.relevance
+    || Date.parse(b.indexed_on ?? "") - Date.parse(a.indexed_on ?? "")
+  )[0];
 }
 
 export async function getWikimediaImageAnswer(
