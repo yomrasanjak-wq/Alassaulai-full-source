@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ArrowLeft, Mail, Phone, ShieldCheck } from "lucide-react";
 
 type Props = { onClose: () => void };
