@@ -16,7 +16,7 @@ export function EmailLoginPanel({ onSuccess }: EmailLoginPanelProps) {
   const requestCode = trpc.auth.requestEmailCode.useMutation({
     onSuccess: () => {
       setCodeSent(true);
-      setMessage("إذا كان البريد صحيحاً، سيصلك رمز تحقق صالح لمدة 10 دقائق.");
+      setMessage("إذا كان البريد صحيحاً ولم تتجاوز حد الإرسال، سيصلك رمز تحقق صالح لمدة 10 دقائق.");
     },
     onError: (error) => setMessage(error.message || "تعذر إرسال الرمز. حاول لاحقاً."),
   });
