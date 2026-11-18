@@ -2,6 +2,8 @@ import {
   pgEnum,
   pgTable,
   serial,
+  bigserial,
+  integer,
   text,
   timestamp,
   varchar,
@@ -33,6 +35,17 @@ export const users = pgTable("users", {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   lastSignedIn: timestamp("lastSignedIn", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+});
+
+export const emailLoginCodes = pgTable("email_login_codes", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  codeHash: varchar("codeHash", { length: 64 }).notNull(),
+  ipHash: varchar("ipHash", { length: 64 }).notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  expiresAt: timestamp("expiresAt", { withTimezone: true, mode: "date" }).notNull(),
+  consumedAt: timestamp("consumedAt", { withTimezone: true, mode: "date" }),
+  createdAt: createdAt(),
 });
 
 export type User = typeof users.$inferSelect;
