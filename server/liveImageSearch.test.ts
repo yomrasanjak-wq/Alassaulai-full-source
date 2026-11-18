@@ -146,6 +146,35 @@ describe("context-aware live image search", () => {
     expect(answer).toContain("تاريخ التقاط الصورة");
   });
 
+  it("prefers a relevant Openverse image over a newer unrelated result", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        results: [
+          {
+            title: "Unrelated mountain festival",
+            thumbnail: "https://api.openverse.org/v1/images/11111111-1111-4111-8111-111111111111/thumb/",
+            foreign_landing_url: "https://example.org/unrelated",
+            license: "cc-by",
+            indexed_on: "2026-11-17T10:00:00Z",
+          },
+          {
+            title: "Trabzon Black Sea city view",
+            thumbnail: "https://api.openverse.org/v1/images/22222222-2222-4222-8222-222222222222/thumb/",
+            foreign_landing_url: "https://example.org/trabzon",
+            license: "cc-by",
+            indexed_on: "2025-01-01T10:00:00Z",
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const answer = await getWikimediaImageAnswer("اعرض لي صوره عن طرابزون");
+    expect(answer).toContain("Trabzon Black Sea city view");
+    expect(answer).toContain("22222222-2222-4222-8222-222222222222");
+    expect(answer).not.toContain("11111111-1111-4111-8111-111111111111");
+  });
+
   it("recognizes Saudi singer Mohammed Ali Sindi", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [] }) });
     vi.stubGlobal("fetch", fetchMock);
