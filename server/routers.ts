@@ -5,7 +5,7 @@ import { countRegisteredVisitors, createEmailLoginChallenge, countRecentEmailLog
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { sdk } from "./_core/sdk";
-import { createEmailOtp, EMAIL_OTP_MAX_ATTEMPTS, EMAIL_OTP_MAX_REQUESTS_PER_15_MINUTES, EMAIL_OTP_TTL_MS, hashEmailOtp, hashRequestIp, normalizeLoginEmail, sendEmailOtp, verifyEmailOtpHash } from "./_core/emailOtp";
+import { createEmailOtp, EMAIL_OTP_MAX_ATTEMPTS, EMAIL_OTP_MAX_IP_REQUESTS_PER_15_MINUTES, EMAIL_OTP_MAX_REQUESTS_PER_15_MINUTES, EMAIL_OTP_TTL_MS, hashEmailOtp, hashRequestIp, normalizeLoginEmail, sendEmailOtp, verifyEmailOtpHash } from "./_core/emailOtp";
 import { invokeLLM } from "./_core/llm";
 import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
 import { getWikipediaSearchContext } from "./_core/wikipediaSearch";
@@ -1205,7 +1205,7 @@ export const appRouter = router({
           new Date(Date.now() - 15 * 60 * 1000),
         );
         // The same generic response avoids revealing whether an account exists.
-        if (recentCount >= EMAIL_OTP_MAX_REQUESTS_PER_15_MINUTES) return { success: true as const };
+        if (recentCount.emailCount >= EMAIL_OTP_MAX_REQUESTS_PER_15_MINUTES || recentCount.ipCount >= EMAIL_OTP_MAX_IP_REQUESTS_PER_15_MINUTES) return { success: true as const };
 
         const code = createEmailOtp();
         const challenge = await createEmailLoginChallenge({
