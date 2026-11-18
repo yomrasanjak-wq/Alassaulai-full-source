@@ -42,4 +42,5 @@ jobs:
       - name: Application tests
         run: pnpm test
       - name: Production build verification
+        if: always()
         run: pnpm build
