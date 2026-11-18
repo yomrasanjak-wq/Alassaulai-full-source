@@ -170,7 +170,7 @@ class SDKServer {
     return this.signSession(
       {
         openId,
-        appId: ENV.appId,
+        appId: ENV.appId || "alassaul-ai",
         name: options.name || "",
       },
       options
@@ -291,7 +291,12 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
+    // Local email identities must never fall back to the legacy Manus identity service.
+    if (!user && sessionUserId.startsWith("local_")) {
+      throw ForbiddenError("Local account not found");
+    }
+
+    // If user not in DB, sync legacy OAuth users from the OAuth server automatically.
     if (!user) {
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionToken ?? "");
