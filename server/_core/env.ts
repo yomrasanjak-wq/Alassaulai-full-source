@@ -46,7 +46,6 @@ const resolvedLlmApiKey = firstConfigured("ALASSAUL_LLM_API_KEY") ||
 export const ENV = {
   cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
-  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   ownerEmail: (firstConfigured("ALASSAUL_OWNER_EMAIL", "OWNER_EMAIL") || "alassaulzon@gmail.com").toLowerCase(),
   resendApiKey: firstConfigured("RESEND_API_KEY"),
   authEmailFrom: firstConfigured("ALASSAUL_AUTH_EMAIL_FROM", "AUTH_EMAIL_FROM"),
