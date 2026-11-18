@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "migration/**"
+      - "auth/**"
   pull_request:
     branches:
       - main
