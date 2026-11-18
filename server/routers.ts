@@ -1,8 +1,11 @@
 import { ENV } from "./_core/env";
-import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { randomUUID } from "node:crypto";
+import { countRegisteredVisitors, createEmailLoginChallenge, countRecentEmailLoginChallenges, consumeEmailLoginChallenge, getLatestEmailLoginChallenge, getUsersByNormalizedEmail, getUserByOpenId, invalidateEmailLoginChallenge, incrementEmailLoginChallengeAttempts, upsertUser, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { sdk } from "./_core/sdk";
+import { createEmailOtp, EMAIL_OTP_MAX_ATTEMPTS, EMAIL_OTP_MAX_REQUESTS_PER_15_MINUTES, EMAIL_OTP_TTL_MS, hashEmailOtp, hashRequestIp, normalizeLoginEmail, sendEmailOtp, verifyEmailOtpHash } from "./_core/emailOtp";
 import { invokeLLM } from "./_core/llm";
 import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
 import { getWikipediaSearchContext } from "./_core/wikipediaSearch";
@@ -1189,6 +1192,108 @@ export const appRouter = router({
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     visitorCount: publicProcedure.query(() => countRegisteredVisitors()),
+    requestEmailCode: publicProcedure
+      .input(z.object({ email: z.string().trim().email().max(320) }))
+      .mutation(async ({ ctx, input }) => {
+        const email = normalizeLoginEmail(input.email);
+        const ip = ctx.req.ip || ctx.req.socket.remoteAddress || "unknown";
+        const requestIpHash = hashRequestIp(ip);
+        const recentCount = await countRecentEmailLoginChallenges(
+          email,
+          requestIpHash,
+          new Date(Date.now() - 15 * 60 * 1000),
+        );
+        // The same generic response avoids revealing whether an account exists.
+        if (recentCount >= EMAIL_OTP_MAX_REQUESTS_PER_15_MINUTES) return { success: true as const };
+
+        const code = createEmailOtp();
+        const challenge = await createEmailLoginChallenge({
+          email,
+          requestIpHash,
+          codeHash: hashEmailOtp(email, code),
+          expiresAt: new Date(Date.now() + EMAIL_OTP_TTL_MS),
+        });
+        try {
+          await sendEmailOtp(email, code);
+        } catch (error) {
+          await invalidateEmailLoginChallenge(challenge.id);
+          console.error("[Auth] Email verification delivery failed.");
+          throw new TRPCError({
+            code: "SERVICE_UNAVAILABLE",
+            message: "خدمة إرسال رمز الدخول غير جاهزة حالياً. حاول لاحقاً.",
+          });
+        }
+        return { success: true as const };
+      }),
+    verifyEmailCode: publicProcedure
+      .input(z.object({
+        email: z.string().trim().email().max(320),
+        code: z.string().regex(/^\\d{6}$/),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const email = normalizeLoginEmail(input.email);
+        const now = new Date();
+        const challenge = await getLatestEmailLoginChallenge(email);
+        if (
+          !challenge ||
+          challenge.consumedAt ||
+          challenge.expiresAt <= now ||
+          challenge.attempts >= EMAIL_OTP_MAX_ATTEMPTS
+        ) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "رمز التحقق غير صالح أو انتهت صلاحيته." });
+        }
+
+        if (!verifyEmailOtpHash(email, input.code, challenge.codeHash)) {
+          await incrementEmailLoginChallengeAttempts(challenge.id, EMAIL_OTP_MAX_ATTEMPTS);
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "رمز التحقق غير صحيح." });
+        }
+
+        const consumed = await consumeEmailLoginChallenge(challenge.id, now, EMAIL_OTP_MAX_ATTEMPTS);
+        if (!consumed) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "انتهت صلاحية الرمز أو سبق استخدامه." });
+        }
+
+        const matches = await getUsersByNormalizedEmail(email);
+        if (matches.length > 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "يوجد أكثر من حساب مرتبط بهذا البريد. يلزم توحيد الحسابات قبل تسجيل الدخول.",
+          });
+        }
+
+        let user = matches[0];
+        if (!user) {
+          const openId = `local_${randomUUID().replace(/-/g, "")}`;
+          await upsertUser({
+            openId,
+            email,
+            loginMethod: "email",
+            lastSignedIn: now,
+          });
+          user = await getUserByOpenId(openId);
+        } else {
+          await upsertUser({
+            openId: user.openId,
+            lastSignedIn: now,
+            loginMethod: "email",
+          });
+          user = await getUserByOpenId(user.openId);
+        }
+
+        if (!user) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "تعذر إنشاء جلسة الحساب." });
+        }
+
+        const sessionToken = await sdk.createSessionToken(user.openId, {
+          name: user.name || "",
+          expiresInMs: ONE_YEAR_MS,
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        (ctx.res as unknown as { cookie: (name: string, value: string, options: Record<string, unknown>) => void })
+          .cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+        return { success: true as const, user: { name: user.name, email: user.email, role: user.role } };
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       (ctx.res as unknown as { clearCookie: (name: string, options: Record<string, unknown>) => void }).clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
