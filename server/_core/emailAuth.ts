@@ -27,6 +27,43 @@ function codeDigest(email: string, code: string): string {
   return createHmac("sha256", ENV.cookieSecret).update(`alassaul-email-otp:${email}:${code}`).digest("hex");
 }
 
+
+function normalizeSaudiPhone(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const compact = value.trim().replace(/[\\s()-]/g, "");
+  const phone = compact.startsWith("05")
+    ? `+966${compact.slice(1)}`
+    : compact.startsWith("5") && compact.length === 9
+      ? `+966${compact}`
+      : compact.startsWith("00966")
+        ? `+${compact.slice(2)}`
+        : compact;
+  return /^\\+9665\\d{8}$/.test(phone) ? phone : null;
+}
+
+async function twilioVerifyRequest(phone: string, code?: string): Promise<boolean> {
+  const { twilioAccountSid, twilioAuthToken, twilioVerifyServiceSid } = ENV;
+  if (!twilioAccountSid || !twilioAuthToken || !twilioVerifyServiceSid) {
+    throw new Error("Independent SMS verification is not configured");
+  }
+  const endpoint = code
+    ? `https://verify.twilio.com/v2/Services/${twilioVerifyServiceSid}/VerificationCheck`
+    : `https://verify.twilio.com/v2/Services/${twilioVerifyServiceSid}/Verifications`;
+  const body = new URLSearchParams(code ? { To: phone, Code: code } : { To: phone, Channel: "sms" });
+  const auth = Buffer.from(`${twilioAccountSid}:${twilioAuthToken}`).toString("base64");
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  const result = await response.json().catch(() => ({})) as { status?: string };
+  if (!response.ok) {
+    console.error("[PhoneAuth] SMS verification provider rejected request", response.status);
+    throw new Error("SMS verification provider failed");
+  }
+  return result.status === "approved";
+}
+
 function safeOrigin(req: any): boolean {
   const origin = req.headers.origin;
   if (!origin) return true;
@@ -188,4 +225,75 @@ export function registerEmailAuthRoutes(app: any) {
       res.status(503).json({ error: "تعذر إكمال تسجيل الدخول الآن. حاول مرة أخرى لاحقًا." });
     }
   });
+
+  app.post("/api/auth/phone/request", async (req: any, res: any) => {
+    noStore(res);
+    if (!safeOrigin(req)) {
+      res.status(403).json({ error: "تعذر إتمام الطلب." });
+      return;
+    }
+    const phone = normalizeSaudiPhone(req.body?.phone);
+    if (!phone) {
+      res.status(400).json({ error: "أدخل رقم جوال سعودي صحيحًا يبدأ بـ 05." });
+      return;
+    }
+    try {
+      await twilioVerifyRequest(phone);
+      res.json({ success: true, message: "إذا كان الرقم صالحًا، فسيصلك رمز التحقق برسالة SMS." });
+    } catch (error) {
+      console.error("[PhoneAuth] Could not issue SMS verification", error);
+      res.status(503).json({ error: "خدمة الرسائل النصية غير مهيأة حاليًا." });
+    }
+  });
+
+  app.post("/api/auth/phone/verify", async (req: any, res: any) => {
+    noStore(res);
+    if (!safeOrigin(req)) {
+      res.status(403).json({ error: "تعذر إتمام الطلب." });
+      return;
+    }
+    const phone = normalizeSaudiPhone(req.body?.phone);
+    const code = typeof req.body?.code === "string" ? req.body.code.trim() : "";
+    if (!phone || !/^\\d{6}$/.test(code)) {
+      res.status(400).json({ error: "رقم الجوال أو رمز التحقق غير صحيح." });
+      return;
+    }
+    try {
+      const approved = await twilioVerifyRequest(phone, code);
+      if (!approved) {
+        res.status(400).json({ error: "رمز التحقق غير صحيح أو انتهت صلاحيته." });
+        return;
+      }
+      const ownerPhone = normalizeSaudiPhone(ENV.ownerPhone);
+      const isOwner = Boolean(ownerPhone && phone === ownerPhone);
+      const email = isOwner ? ENV.ownerEmail : null;
+      const openId = isOwner
+        ? `email_${digest(`alassaul-subject:${ENV.ownerEmail}`).slice(0, 48)}`
+        : `phone_${digest(`alassaul-phone:${phone}`).slice(0, 48)}`;
+      await db.upsertUser({
+        openId,
+        email,
+        name: isOwner ? "Yousef Assaul" : phone,
+        loginMethod: "phone_sms",
+        lastSignedIn: new Date(),
+        ...(isOwner ? { role: "admin" as const } : {}),
+      });
+      const user = await db.getUserByOpenId(openId);
+      if (!user) throw new Error("User record could not be confirmed");
+      const sessionToken = await sdk.createSessionToken(openId, {
+        name: user.name || (email ?? phone),
+        expiresInMs: EMAIL_SESSION_MS,
+      });
+      res.cookie(COOKIE_NAME, sessionToken, {
+        ...getSessionCookieOptions(req),
+        sameSite: "lax",
+        maxAge: EMAIL_SESSION_MS,
+      });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[PhoneAuth] Verification could not complete", error);
+      res.status(503).json({ error: "تعذر إكمال تسجيل الدخول الآن." });
+    }
+  });
+
 }
