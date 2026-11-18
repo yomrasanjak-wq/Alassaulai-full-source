@@ -1337,7 +1337,7 @@ export const appRouter = router({
     reportIncident: controlStaffProcedure
       .input(z.object({ title: z.string().trim().min(4).max(180), description: z.string().trim().min(10).max(2000), severity: z.enum(["normal", "high", "urgent"]).default("high") }))
       .mutation(async ({ ctx, input }) => {
-        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        const isOwner = isConfiguredOwner(ctx.user);
         if (ctx.user.role !== "it" && !isOwner) throw new TRPCError({ code: "FORBIDDEN", message: "تسجيل الحوادث التقنية متاح لفريق IT فقط." });
         const request = await createControlRequest({ title: input.title, command: input.description, requesterType: "it", category: "security", priority: input.severity, assignee: "CEO" });
         if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_reported", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ severity: input.severity }) });
