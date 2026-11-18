@@ -86,6 +86,9 @@ export const ENV = {
         : usesOpenRouter
           ? "openai/gpt-oss-20b"
           : "openai/gpt-oss-20b"),
+  // Transactional email credentials are server-only and intentionally not VITE_* variables.
+  emailApiKey: firstConfigured("RESEND_API_KEY"),
+  emailFrom: firstConfigured("ALASSAUL_EMAIL_FROM"),
   googleTtsApiKey: firstConfigured(
     "GOOGLE_TTS_API_KEY",
     "GOOGLE_CLOUD_TTS_API_KEY",
