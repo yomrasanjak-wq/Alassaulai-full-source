@@ -66,7 +66,7 @@ export const ENV = {
   twilioAccountSid: firstConfigured("TWILIO_ACCOUNT_SID"),
   twilioAuthToken: firstConfigured("TWILIO_AUTH_TOKEN"),
   twilioVerifyServiceSid: firstConfigured("TWILIO_VERIFY_SERVICE_SID"),
-  ownerPhone: firstConfigured("ALASSAUL_OWNER_PHONE").replace(/\\s/g, ""),
+  ownerPhone: firstConfigured("ALASSAUL_OWNER_PHONE").replace(/\s/g, ""),
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: configuredBaseUrl || "",
   forgeApiKey: explicitProviderKey,
