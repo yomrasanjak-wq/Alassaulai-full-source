@@ -7,6 +7,8 @@ import {
   varchar,
   jsonb,
   boolean,
+  integer,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["user", "admin", "secretary", "assistant", "it"]);
@@ -108,3 +110,19 @@ export const assistantMemories = pgTable("assistantMemories", {
 });
 
 export type AssistantMemory = typeof assistantMemories.$inferSelect;
+
+
+/** Short-lived, single-use email verification challenges. Only keyed hashes are stored. */
+export const emailLoginChallenges = pgTable("emailLoginChallenges", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  codeHash: varchar("codeHash", { length: 64 }).notNull(),
+  expiresAt: timestamp("expiresAt", { withTimezone: true, mode: "date" }).notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  consumedAt: timestamp("consumedAt", { withTimezone: true, mode: "date" }),
+  createdAt: createdAt(),
+}, (table) => ({
+  emailCreatedIdx: index("email_login_challenges_email_created_idx").on(table.email, table.createdAt),
+}));
+
+export type EmailLoginChallenge = typeof emailLoginChallenges.$inferSelect;
