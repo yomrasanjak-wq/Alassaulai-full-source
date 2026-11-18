@@ -47,6 +47,26 @@ describe("independent email authentication routes", () => {
     expect(response.statusCode).toBe(403);
   });
 
+  it("rejects malformed Saudi phone numbers before contacting the SMS provider", async () => {
+    const { routes, response } = setup();
+    await routes.get("/api/auth/phone/request")!(
+      request({ phone: "0112345678" }),
+      response as unknown as Response,
+    );
+    expect(response.statusCode).toBe(400);
+    expect(response.headers["Cache-Control"]).toContain("no-store");
+  });
+
+  it("rejects malformed phone verification codes without issuing a session", async () => {
+    const { routes, response } = setup();
+    await routes.get("/api/auth/phone/verify")!(
+      request({ phone: "0592901010", code: "123" }),
+      response as unknown as Response,
+    );
+    expect(response.statusCode).toBe(400);
+    expect(response.cookie).not.toHaveBeenCalled();
+  });
+
   it("rejects malformed verification codes without issuing a session", async () => {
     const { routes, response } = setup();
     await routes.get("/api/auth/email/verify")!(
