@@ -54,7 +54,9 @@ function knownSubject(text: string): { title: string; query: string } | undefine
   }
   const rules: Array<[RegExp, string, string]> = [
     [/(?:الميدان|ميدان طرابزون|trabzon meydan|meydan square)/i, "ميدان طرابزون", "Trabzon Meydan Square city center Turkey"],
-    [/(?:ال)?همس[يه]\s*كوي|(?:ال)?همس[يه]كوي|hamsik[oö]y|hamse\s*koy/i, "همسي كوي", "Hamsikoy Trabzon Turkey village mountain landscape"],
+    [/(?:ال)?همس(?:ي|ه)?\s*كوي|(?:ال)?همس(?:ي|ه)?كوي|hamsik[oö]y|hamse\s*koy/i, "همسي كوي", "Hamsikoy Trabzon Turkey village mountain landscape"],
+    [/(?:ساكويا|ساكيويا|سيكويا|sequoia|toyota sequoia)/i, "تويوتا ساكويا 2010", "2010 Toyota Sequoia SUV exterior"],
+    [/(?:باقة ورد|باقه ورد|ورد جميل|bouquet|flower bouquet)/i, "باقة ورد جميلة", "beautiful fresh flower bouquet roses colorful flowers"],
     [/(?:طرابزون|ترابزون|trabzon)/i, "طرابزون – مشاهد المدينة والساحل", "Trabzon Turkey Black Sea coast city skyline modern scenic view"],
     [/(?:مطار\s*ريزا|ريزا\s*مطار|مطار\s*ريزه|rize(?:-artvin)?\s*airport|rize\s*havalimani)/i, "مطار ريزا-أرتفين", "Rize Artvin Airport Turkey terminal aerial sea runway"],
     [/(?:حيدر\s*نبي|حيدرنبى|هيدر\s*نبي|هيدرنبى|hidirnebi|hıdırnebi|hidirnebi\s*yaylasi)/i, "مرتفعات حيدر نبي", "Hidirnebi Plateau Trabzon Turkey mountain landscape"],
@@ -179,6 +181,38 @@ async function searchCommons(request: ImageRequest, signal: AbortSignal) {
   return candidates.sort((left, right) => right.score - left.score)[0];
 }
 
+async function searchWikipedia(request: ImageRequest, signal: AbortSignal): Promise<{ title: string; imageUrl: string; pageUrl: string } | undefined> {
+  const params = new URLSearchParams({
+    action: "query",
+    generator: "search",
+    gsrsearch: request.query,
+    gsrnamespace: "0",
+    gsrlimit: "8",
+    prop: "pageimages|info",
+    piprop: "thumbnail",
+    pithumbsize: "960",
+    inprop: "url",
+    format: "json",
+    formatversion: "2",
+  });
+  const response = await fetch("https://en.wikipedia.org/w/api.php?" + params.toString(), {
+    headers: { accept: "application/json", "user-agent": "ALASSAUL-AI/1.0 (https://alassaul.com; image lookup)" },
+    signal,
+  });
+  if (!response.ok) throw new Error("Wikipedia image search HTTP " + response.status);
+  const data = await response.json() as { query?: { pages?: Array<{ title?: string; fullurl?: string; thumbnail?: { source?: string } }> } };
+  const pages = data.query?.pages ?? [];
+  const candidates = pages.flatMap((page) => {
+    const imageUrl = page.thumbnail?.source ?? "";
+    const pageUrl = page.fullurl ?? "";
+    if (!/^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/thumb\//i.test(imageUrl)) return [];
+    if (!/\.(?:jpe?g|png|webp)$/i.test(imageUrl.split(/[?#]/, 1)[0])) return [];
+    if (!/^https:\/\/en\.wikipedia\.org\/wiki\//i.test(pageUrl)) return [];
+    return [{ title: page.title ?? request.title, imageUrl, pageUrl }];
+  });
+  return candidates[0];
+}
+
 async function searchOpenverse(request: ImageRequest, signal: AbortSignal): Promise<OpenverseImage | undefined> {
   const params = new URLSearchParams({ q: request.query, page_size: "12", mature: "false" });
   const response = await fetch("https://api.openverse.org/v1/images/?" + params.toString(), {
@@ -187,16 +221,32 @@ async function searchOpenverse(request: ImageRequest, signal: AbortSignal): Prom
   });
   if (!response.ok) throw new Error("Openverse HTTP " + response.status);
   const data = await response.json() as { results?: OpenverseImage[] };
-  const results = (data.results ?? []).filter((item) =>
-    typeof item.thumbnail === "string"
-    && /^https:\/\/api\.openverse\.org\/v1\/images\/[a-f0-9-]+\/thumb\//i.test(item.thumbnail)
-    && typeof item.foreign_landing_url === "string"
-    && /^https:\/\//i.test(item.foreign_landing_url)
-    && typeof item.license === "string"
-  );
+  const stopWords = new Set(["turkey", "saudi", "arabia", "the", "and", "for", "with", "view", "photo", "photos", "image", "images", "modern", "recent", "latest", "scenic", "city", "landscape", "trabzon", "hamsikoy", "mecca", "madinah", "sequoia", "toyota", "bouquet", "beautiful", "flowers", "flower"]);
+  // Openverse titles are commonly English. Never compare Arabic query tokens with English titles.
+  const terms = request.query
+    .split(/[^a-z0-9]+/i)
+    .map((word) => word.toLowerCase())
+    .filter((word) => word.length > 2 && !stopWords.has(word));
+  const results = (data.results ?? []).flatMap((item) => {
+    if (typeof item.thumbnail !== "string"
+      || !/^https:\/\/api\.openverse\.org\/v1\/images\/[a-f0-9-]+\/thumb\//i.test(item.thumbnail)
+      || typeof item.foreign_landing_url !== "string"
+      || !/^https:\/\//i.test(item.foreign_landing_url)
+      || typeof item.license !== "string"
+      || typeof item.title !== "string") return [];
+    const title = cleanMetadata(item.title);
+    const normalizedTitle = normalizeImageText(title);
+    const relevance = terms.filter((term) => normalizedTitle.includes(term)).length;
+    // Openverse already ranks by the query; keep safe candidates even when titles
+    // use a different language, while preferring any exact subject-word matches.
+    return [{ ...item, title, relevance }];
+  });
   if (!results.length) return undefined;
-  // Prefer the most recently indexed result, without claiming that its capture date is recent.
-  return results.sort((a, b) => Date.parse(b.indexed_on ?? "") - Date.parse(a.indexed_on ?? ""))[0];
+  // Relevance comes first; indexing date is only a tie-breaker, not proof of capture date.
+  return results.sort((a, b) =>
+    b.relevance - a.relevance
+    || Date.parse(b.indexed_on ?? "") - Date.parse(a.indexed_on ?? "")
+  )[0];
 }
 
 export async function getWikimediaImageAnswer(
@@ -207,47 +257,66 @@ export async function getWikimediaImageAnswer(
   const request = imageRequest(message, history);
   if (!request) return undefined;
   const googleUrl = googleImagesUrl(request.googleQuery);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4200);
   try {
-    // A "modern/recent" request skips the older Commons-first path and uses the broader catalogue.
-    if (!request.modern) {
-      try {
-        const selected = await searchCommons(request, controller.signal);
-        if (selected) {
-          const source = "[المصدر](" + selected.descriptionUrl + ")";
-          return "![" + request.title + "](" + selected.imageUrl + ")\n\n**" + request.title + "** · " + source;
-        }
-      } catch (error) {
-        console.warn("[ALASSAUL image search] Wikimedia Commons unavailable", error);
-      }
+    // Search three independent image indexes at the same time. A slow provider
+    // must not consume the time budget of the others.
+    const commonsController = new AbortController();
+    const openverseController = new AbortController();
+    const wikipediaController = new AbortController();
+    const commonsTimer = setTimeout(() => commonsController.abort(), 6500);
+    const openverseTimer = setTimeout(() => openverseController.abort(), 6500);
+    const wikipediaTimer = setTimeout(() => wikipediaController.abort(), 6500);
+    const [commonsResult, openverseResult, wikipediaResult] = await Promise.allSettled([
+      request.modern
+        ? Promise.resolve(undefined)
+        : searchCommons(request, commonsController.signal),
+      searchOpenverse(request, openverseController.signal),
+      searchWikipedia(request, wikipediaController.signal),
+    ]);
+    clearTimeout(commonsTimer);
+    clearTimeout(openverseTimer);
+    clearTimeout(wikipediaTimer);
+
+    if (commonsResult.status === "fulfilled" && commonsResult.value) {
+      const selected = commonsResult.value;
+      const source = "[المصدر](" + selected.descriptionUrl + ")";
+      return "![" + request.title + "](" + selected.imageUrl + ")\n\n**" + request.title + "** · " + source;
+    }
+    if (commonsResult.status === "rejected") {
+      console.warn("[ALASSAUL image search] Wikimedia Commons unavailable", commonsResult.reason);
     }
 
-    try {
-      const selected = await searchOpenverse(request, controller.signal);
-      if (selected) {
-        const source = "[المصدر](" + selected.foreign_landing_url + ")";
-        const freshnessNote = request.modern
-          ? "\nملاحظة: تاريخ الفهرسة لا يثبت تاريخ التقاط الصورة؛ لا أصفها بأنها ملتقطة حديثاً دون تاريخ موثوق."
-          : "";
-        return "![" + request.title + "](" + selected.thumbnail + ")\n\n**"
-          + request.title + "** · " + source
-          + (request.modern ? "\n\n[صور Google الحديثة]" + "(" + googleUrl + ")" : "")
-          + freshnessNote;
-      }
-    } catch (error) {
-      console.warn("[ALASSAUL image search] Openverse unavailable", error);
+    if (openverseResult.status === "fulfilled" && openverseResult.value) {
+      const selected = openverseResult.value;
+      const source = "[المصدر](" + selected.foreign_landing_url + ")";
+      const freshnessNote = request.modern
+        ? "\nملاحظة: تاريخ الفهرسة لا يثبت تاريخ التقاط الصورة؛ لا أصفها بأنها ملتقطة حديثاً دون تاريخ موثوق."
+        : "";
+      return "![" + request.title + "](" + selected.thumbnail + ")\n\n**"
+        + request.title + "** · " + source
+        + (request.modern ? "\n\n[صور Google الحديثة]" + "(" + googleUrl + ")" : "")
+        + freshnessNote;
+    }
+    if (openverseResult.status === "rejected") {
+      console.warn("[ALASSAUL image search] Openverse unavailable", openverseResult.reason);
+    }
+
+    if (wikipediaResult.status === "fulfilled" && wikipediaResult.value) {
+      const selected = wikipediaResult.value;
+      return "![" + request.title + "](" + selected.imageUrl + ")\n\n**"
+        + request.title + "** · [المصدر](" + selected.pageUrl + ")";
+    }
+    if (wikipediaResult.status === "rejected") {
+      console.warn("[ALASSAUL image search] Wikipedia unavailable", wikipediaResult.reason);
     }
 
     return language === "AR"
-      ? "لم أجد صورة يمكنني عرضها بثقة الآن لـ **" + request.title + "**. فتحت لك طريقاً مباشراً إلى [صور Google الحديثة خلال السنة الماضية](" + googleUrl + ") لتظهر لك نتائج أحدث، بدلاً من عرض صورة قديمة على أنها حديثة."
+      ? "لم أجد صورة مناسبة الآن. جرّب بعد قليل."
       : "I couldn't verify an image for " + request.title + ". See [recent Google Images results](" + googleUrl + ").";
   } catch (error) {
     console.warn("[ALASSAUL image search] Image providers unavailable", error);
     return language === "AR"
-      ? "تعذر جلب الصورة الآن. يمكنك مراجعة [صور Google الحديثة](" + googleUrl + ")، ولن أعرض صورة غير متأكد من صلتها بالطلب."
+      ? "تعذر جلب الصورة الآن. حاول بعد قليل."
       : "Image search is temporarily unavailable. See [recent Google Images results](" + googleUrl + ").";
-  } finally {
-    clearTimeout(timer);
   }
 }
