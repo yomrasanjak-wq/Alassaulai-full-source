@@ -1,4 +1,5 @@
 import { ENV } from "./_core/env";
+import { isConfiguredOwner } from "./_core/owner";
 import { COOKIE_NAME } from "@shared/const";
 import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
@@ -1306,14 +1307,14 @@ export const appRouter = router({
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
       }),
     list: controlStaffProcedure.query(async ({ ctx }) => {
-      if ((ENV.ownerEmail && ctx.user.email?.trim().toLowerCase() === ENV.ownerEmail) || (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId)) return listControlRequests();
+      if (isConfiguredOwner(ctx.user)) return listControlRequests();
       const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : "IT";
       return listControlRequestsForAssignee(assignee);
     }),
     update: controlStaffProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "ready_for_review", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
       .mutation(async ({ ctx, input }) => {
-        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        const isOwner = isConfiguredOwner(ctx.user);
         if (!isOwner) {
           const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : ctx.user.role === "it" ? "IT" : null;
           if (!assignee || input.assignee !== undefined || input.decisionNote !== undefined || !["in_progress", "ready_for_review"].includes(input.status ?? "")) {
