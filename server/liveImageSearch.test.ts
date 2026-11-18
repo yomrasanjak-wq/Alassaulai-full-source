@@ -6,6 +6,31 @@ afterEach(() => vi.unstubAllGlobals());
 const historyForMakkah = [{ role: "user" as const, content: "ابغى صوره لمكه المكرمه" }];
 
 describe("context-aware live image search", () => {
+  it("recognizes Hamsikoy spellings, Toyota Sequoia, and flower bouquet requests", () => {
+    expect(isWikimediaImageRequest("اريد صوره لهمسكوي")).toBe(true);
+    expect(isWikimediaImageRequest("اعرض لي صوره لسياره ساكويا 2010")).toBe(true);
+    expect(isWikimediaImageRequest("ابغى صوره لباقه ورد جميله")).toBe(true);
+  });
+
+  it("does not reject English Openverse titles for an Arabic free-text request", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        results: [{
+          title: "Beautiful fresh flower bouquet",
+          thumbnail: "https://api.openverse.org/v1/images/33333333-3333-4333-8333-333333333333/thumb/",
+          foreign_landing_url: "https://example.org/flowers",
+          license: "cc-by",
+          indexed_on: "2026-11-17T10:00:00Z",
+        }],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const answer = await getWikimediaImageAnswer("ابغى صوره لباقه ورد جميله");
+    expect(answer).toContain("![باقة ورد جميلة]");
+    expect(answer).toContain("33333333-3333-4333-8333-333333333333");
+  });
+
   it("recognizes common Arabic image requests and ignores image display complaints without context", () => {
     expect(isWikimediaImageRequest("طيب صوره لمكه المكرمه")).toBe(true);
     expect(isWikimediaImageRequest("صوره للفنان محمد عبده")).toBe(true);
