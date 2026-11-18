@@ -1,5 +1,4 @@
 import { createHash, createHmac, randomInt } from "node:crypto";
-import type { Express, Request, Response } from "express";
 import { neon } from "@neondatabase/serverless";
 import { COOKIE_NAME } from "@shared/const";
 import * as db from "../db";
@@ -28,7 +27,7 @@ function codeDigest(email: string, code: string): string {
   return createHmac("sha256", ENV.cookieSecret).update(`alassaul-email-otp:${email}:${code}`).digest("hex");
 }
 
-function safeOrigin(req: Request): boolean {
+function safeOrigin(req: any): boolean {
   const origin = req.headers.origin;
   if (!origin) return true;
   try {
@@ -41,7 +40,7 @@ function safeOrigin(req: Request): boolean {
   }
 }
 
-function noStore(res: Response) {
+function noStore(res: any) {
   res.setHeader("Cache-Control", "no-store, max-age=0");
   res.setHeader("Pragma", "no-cache");
 }
@@ -76,8 +75,8 @@ function getSql() {
   return neon(ENV.databaseUrl);
 }
 
-export function registerEmailAuthRoutes(app: Express) {
-  app.post("/api/auth/email/request", async (req: Request, res: Response) => {
+export function registerEmailAuthRoutes(app: any) {
+  app.post("/api/auth/email/request", async (req: any, res: any) => {
     noStore(res);
     if (!safeOrigin(req)) {
       res.status(403).json({ error: "تعذر إتمام الطلب." });
