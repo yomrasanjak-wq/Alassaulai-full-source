@@ -1,7 +1,7 @@
-import { createHash, randomInt } from "node:crypto";
+import { createHash, createHmac, randomInt } from "node:crypto";
 import type { Express, Request, Response } from "express";
 import { neon } from "@neondatabase/serverless";
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { COOKIE_NAME } from "@shared/const";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
@@ -11,6 +11,7 @@ const CODE_TTL_MINUTES = 10;
 const MAX_EMAIL_SENDS_PER_15_MIN = 3;
 const MAX_IP_SENDS_PER_15_MIN = 10;
 const MAX_VERIFY_ATTEMPTS = 5;
+const EMAIL_SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 
 function normalizeEmail(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -24,7 +25,7 @@ function digest(value: string): string {
 }
 
 function codeDigest(email: string, code: string): string {
-  return digest(`${ENV.cookieSecret}:alassaul-email-otp:${email}:${code}`);
+  return createHmac("sha256", ENV.cookieSecret).update(`alassaul-email-otp:${email}:${code}`).digest("hex");
 }
 
 function safeOrigin(req: Request): boolean {
@@ -92,7 +93,7 @@ export function registerEmailAuthRoutes(app: Express) {
     let codeId: number | undefined;
     try {
       const sql = getSql();
-      const ipHash = digest(`${ENV.cookieSecret}:ip:${req.ip || "unknown"}`);
+      const ipHash = createHmac("sha256", ENV.cookieSecret).update(`ip:${req.ip || "unknown"}`).digest("hex");
       const [emailRate] = await sql.query(
         "SELECT count(*)::int AS count FROM public.email_login_codes WHERE email = $1 AND \"createdAt\" > now() - interval '15 minutes'",
         [email],
@@ -176,11 +177,12 @@ export function registerEmailAuthRoutes(app: Express) {
 
       const sessionToken = await sdk.createSessionToken(openId, {
         name: user.name || email,
-        expiresInMs: ONE_YEAR_MS,
+        expiresInMs: EMAIL_SESSION_MS,
       });
       res.cookie(COOKIE_NAME, sessionToken, {
         ...getSessionCookieOptions(req),
-        maxAge: ONE_YEAR_MS,
+        sameSite: "lax",
+        maxAge: EMAIL_SESSION_MS,
       });
       res.json({ success: true });
     } catch (error) {
