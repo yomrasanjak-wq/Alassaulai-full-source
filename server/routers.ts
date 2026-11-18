@@ -1285,7 +1285,7 @@ export const appRouter = router({
         }
 
         const sessionToken = await sdk.createSessionToken(user.openId, {
-          name: user.name || "",
+          name: user.name || "ALASSAUL Visitor",
           expiresInMs: ONE_YEAR_MS,
         });
         const cookieOptions = getSessionCookieOptions(ctx.req);
