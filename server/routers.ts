@@ -1225,7 +1225,7 @@ export const appRouter = router({
   // deployment, deletion, billing, permission, or secret changes automatically.
   brain: router({
     status: adminProcedure.query(() => ({
-      configured: Boolean(ENV.llmApiUrl && (ENV.llmApiKey || ENV.forgeApiKey)),
+      configured: Boolean(ENV.llmApiUrl && ENV.llmApiKey),
       primaryModel: ENV.primaryModel,
       backupModel: ENV.backupModel,
       permissions: {
