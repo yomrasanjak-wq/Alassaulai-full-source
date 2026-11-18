@@ -75,13 +75,13 @@ export function EmailOtpLogin({ onClose }: Props) {
       <h2>دخول مستقل وآمن</h2>
       <p>اختر الدخول بالبريد الإلكتروني أو برسالة تحقق على جوالك.</p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "18px 0" }}>
-        <button type="button" onClick={() => changeMethod("email")} aria-pressed={method === "email"}
+      <div role="tablist" aria-label="طريقة الدخول" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "18px 0" }}>
+        <button type="button" role="tab" aria-selected={method === "email"} onClick={() => changeMethod("email")} aria-pressed={method === "email"}
           className={method === "email" ? "button button-primary" : "button"}
           style={{ minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <Mail size={17} /> البريد الإلكتروني
         </button>
-        <button type="button" onClick={() => changeMethod("phone")} aria-pressed={method === "phone"}
+        <button type="button" role="tab" aria-selected={method === "phone"} onClick={() => changeMethod("phone")} aria-pressed={method === "phone"}
           className={method === "phone" ? "button button-primary" : "button"}
           style={{ minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <Phone size={17} /> رقم الجوال
