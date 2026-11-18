@@ -4012,3 +4012,53 @@ img { display: block; max-width: 100%; }
 }
 
 .assistant-memory-pause { padding: 8px 10px; border: 1px solid #d5c69f; border-radius: 999px; background: #fffdf5; color: #79643c; font-size: 10px; font-weight: 700; }
+
+
+/* Independent email verification form */
+.email-login-panel {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  margin-top: 14px;
+}
+.email-login-form {
+  display: grid;
+  gap: 10px;
+}
+.email-login-form label {
+  color: var(--foreground, #183b32);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+.email-login-form input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(31, 76, 62, 0.2);
+  border-radius: 12px;
+  padding: 11px 14px;
+  background: #fff;
+  color: #183b32;
+  font: inherit;
+  direction: ltr;
+  text-align: left;
+}
+.email-login-form input:focus-visible {
+  outline: 3px solid rgba(45, 130, 104, 0.2);
+  border-color: #2d8268;
+}
+.email-login-form input#alassaul-login-code {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.42em;
+  text-align: center;
+}
+.email-login-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+.auth-login-message {
+  margin: 0;
+  color: #315f50;
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
