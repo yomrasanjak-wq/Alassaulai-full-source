@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Mail, ShieldCheck } from "lucide-react";
 
@@ -29,7 +29,7 @@ export function EmailLoginPanel({ onSuccess }: EmailLoginPanelProps) {
     onError: (error) => setMessage(error.message || "تعذر التحقق من الرمز."),
   });
 
-  function submitEmail(event: React.FormEvent<HTMLFormElement>) {
+  function submitEmail(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     requestCode.mutate({ email: email.trim() });
