@@ -96,7 +96,7 @@ describe("context-aware live image search", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [] }) });
     vi.stubGlobal("fetch", fetchMock);
     const answer = await getWikimediaImageAnswer("ابغى منظر الهمسه كوي", "AR", oldHistory);
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[0][0]).toContain("Hamsikoy");
     expect(answer).toContain("همسي كوي");
     expect(answer).not.toContain("ساكويا");
@@ -143,7 +143,7 @@ describe("context-aware live image search", () => {
     expect(answer).toContain("![مكة المكرمة والمسجد الحرام](https://upload.wikimedia.org/wikipedia/commons/a/ab/Masjid.jpg)");
     expect(answer).toContain("**مكة المكرمة والمسجد الحرام**");
     expect(answer).toContain("[المصدر](https://commons.wikimedia.org/wiki/File:Masjid_al-Haram.jpg)");
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("uses Openverse for modern requests and links to recent Google Images results", async () => {
@@ -164,7 +164,7 @@ describe("context-aware live image search", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     const answer = await getWikimediaImageAnswer("ابغى صوره ملونه حديثه يا اخي", "AR", historyForMakkah);
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[0][0]).toContain("api.openverse.org/v1/images/");
     expect(answer).toContain("![Masjid al-Haram recent view](https://api.openverse.org/");
     expect(answer).toContain("صور Google الحديثة");
@@ -219,6 +219,23 @@ describe("context-aware live image search", () => {
     const noor = await getWikimediaImageAnswer("صورة اللاعب الاتحاد المعتزل محمد نور");
     expect(noor).toContain("اللاعب محمد نور");
     expect(noor).toContain("Mohammed%20Noor%20Saudi%20footballer");
+  });
+
+
+  it("uses a Wikipedia page image when Commons and Openverse have no match", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ query: { pages: [] } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ query: { pages: [{
+        title: "Al Madinah",
+        fullurl: "https://en.wikipedia.org/wiki/Medina",
+        thumbnail: { source: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Medina.jpg/960px-Medina.jpg" },
+      }] } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const answer = await getWikimediaImageAnswer("اعرض لي صوره للمدينه المنوره");
+    expect(answer).toContain("![المدينة المنورة]");
+    expect(answer).toContain("960px-Medina.jpg");
+    expect(answer).toContain("en.wikipedia.org/wiki/Medina");
   });
 
   it("falls back to Google Images rather than inventing a result", async () => {
