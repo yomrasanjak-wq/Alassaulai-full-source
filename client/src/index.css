@@ -4030,3 +4030,39 @@ img { display: block; max-width: 100%; }
 .partner-ad-admin input,.partner-ad-admin textarea,.partner-ad-admin select { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #d4d9ce; border-radius: 10px; background: #fffefa; color: #203d35; font: inherit; font-size: 13px; }
 .partner-ad-admin textarea { min-height: 74px; resize: vertical; }
 @media (max-width: 560px) { .partner-ad-popup { inset-inline: 10px; bottom: 76px; width: auto; grid-template-columns: 88px minmax(0,1fr); gap: 10px; padding: 10px; } .partner-ad-popup > img { width: 88px; height: 96px; } .partner-ad-copy strong { font-size: 13px; } .partner-ad-copy p { font-size: 10px; } }
+
+
+/* Control room: spacious desktop workspace and phone-first full-screen layout. */
+.modal-card-control { width: min(980px, 100%); max-height: min(860px, calc(100dvh - 32px)); }
+.modal-card-control .control-modal { padding: 42px clamp(20px, 4vw, 42px); }
+.modal-card-control .control-kpis { gap: 12px; }
+.modal-card-control .control-kpis span { min-width: 0; }
+.modal-card-control .control-inbox { max-height: 420px; }
+.modal-card-control .control-task { border-radius: 12px; }
+.modal-card-control .control-task-actions .button { min-height: 38px; font-size: 11px; }
+.modal-card-control .discovery-admin-panel { border-radius: 16px; }
+@media (max-width: 740px) {
+  .modal-backdrop-control { padding: 0; place-items: stretch; }
+  .modal-card-control { width: 100%; min-height: 100dvh; max-height: 100dvh; border-radius: 0; box-shadow: none; }
+  .modal-card-control .control-modal { padding: calc(64px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); }
+  .modal-card-control .modal-close { position: fixed; top: calc(10px + env(safe-area-inset-top)); inset-inline-end: 12px; width: 40px; height: 40px; border-radius: 50%; }
+  .modal-card-control .control-modal > h2 { font-size: 22px; line-height: 1.5; }
+  .modal-card-control .control-modal > p { font-size: 13px; }
+  .modal-card-control .control-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .modal-card-control .control-kpis span { padding: 10px 4px; }
+  .modal-card-control .control-kpis strong { font-size: clamp(16px, 5vw, 22px); overflow-wrap: anywhere; }
+  .modal-card-control .control-kpis small { font-size: 9px; line-height: 1.5; }
+  .modal-card-control .discovery-admin-panel { margin: 18px 0; padding: 13px; }
+  .modal-card-control .control-select-row { grid-template-columns: minmax(0, 1fr); }
+  .modal-card-control .control-task-head { flex-direction: column; align-items: stretch; }
+  .modal-card-control .control-task-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .modal-card-control .control-task-actions .button { min-width: 0; min-height: 42px; padding: 8px 6px; font-size: 10px; }
+  .modal-card-control .control-title-input,
+  .modal-card-control .control-command-input,
+  .modal-card-control .control-select-row select,
+  .modal-card-control .control-select-row input,
+  .modal-card-control .partner-ad-admin input,
+  .modal-card-control .partner-ad-admin textarea,
+  .modal-card-control .partner-ad-admin select { min-width: 0; width: 100%; font-size: 14px; }
+  .modal-card-control .control-inbox { max-height: none; overflow: visible; }
+}
