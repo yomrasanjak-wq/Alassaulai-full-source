@@ -166,7 +166,7 @@ export function registerEmailAuthRoutes(app: any) {
     }
   });
 
-  app.post("/api/auth/email/verify", async (req: Request, res: Response) => {
+  app.post("/api/auth/email/verify", async (req: any, res: any) => {
     noStore(res);
     if (!safeOrigin(req)) {
       res.status(403).json({ error: "تعذر إتمام الطلب." });
