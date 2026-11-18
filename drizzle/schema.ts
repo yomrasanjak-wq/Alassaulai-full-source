@@ -48,6 +48,13 @@ export const emailLoginCodes = pgTable("email_login_codes", {
   createdAt: createdAt(),
 });
 
+export const phoneLoginRequests = pgTable("phone_login_requests", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  phoneHash: varchar("phoneHash", { length: 64 }).notNull(),
+  createdAt: createdAt(),
+});
+
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
