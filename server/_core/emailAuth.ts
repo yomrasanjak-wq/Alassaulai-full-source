@@ -5,6 +5,7 @@ import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 import { ENV } from "./env";
+import { normalizeSaudiPhone } from "./phoneNumber";
 
 const CODE_TTL_MINUTES = 10;
 const MAX_EMAIL_SENDS_PER_15_MIN = 3;
@@ -27,19 +28,6 @@ function codeDigest(email: string, code: string): string {
   return createHmac("sha256", ENV.cookieSecret).update(`alassaul-email-otp:${email}:${code}`).digest("hex");
 }
 
-
-function normalizeSaudiPhone(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const compact = value.trim().replace(/[\s()-]/g, "");
-  const phone = compact.startsWith("05")
-    ? `+966${compact.slice(1)}`
-    : compact.startsWith("5") && compact.length === 9
-      ? `+966${compact}`
-      : compact.startsWith("00966")
-        ? `+${compact.slice(2)}`
-        : compact;
-  return /^\+9665\d{8}$/.test(phone) ? phone : null;
-}
 
 async function unifonicVerify(phone: string, code?: string): Promise<boolean> {
   const { unifonicAuthenticateAppId, unifonicAuthenticateToken } = ENV;
