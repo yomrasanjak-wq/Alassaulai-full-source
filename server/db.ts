@@ -1,4 +1,4 @@
-import { count, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, ilike, isNull, lt, or, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
@@ -9,6 +9,7 @@ import {
   User,
   MediaItem,
   assistantMemories,
+  emailLoginChallenges,
   controlRequests,
   controlAuditLogs,
   guestMemories,
@@ -119,6 +120,93 @@ export async function getUserByOpenId(openId: string) {
   }
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result[0];
+}
+
+/** Email login helpers. OTP values are never stored; only HMAC hashes are persisted. */
+export async function createEmailLoginChallenge(input: {
+  email: string;
+  requestIpHash: string;
+  codeHash: string;
+  expiresAt: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const rows = await db.insert(emailLoginChallenges).values(input).returning();
+  return rows[0];
+}
+
+export async function countRecentEmailLoginChallenges(
+  email: string,
+  requestIpHash: string,
+  since: Date,
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const rows = await db.select({ total: count() }).from(emailLoginChallenges).where(
+    and(
+      gt(emailLoginChallenges.createdAt, since),
+      or(
+        eq(emailLoginChallenges.email, email),
+        eq(emailLoginChallenges.requestIpHash, requestIpHash),
+      ),
+    ),
+  );
+  return Number(rows[0]?.total ?? 0);
+}
+
+export async function getLatestEmailLoginChallenge(email: string) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const rows = await db.select().from(emailLoginChallenges)
+    .where(eq(emailLoginChallenges.email, email))
+    .orderBy(desc(emailLoginChallenges.createdAt))
+    .limit(1);
+  return rows[0];
+}
+
+export async function incrementEmailLoginChallengeAttempts(id: number, maxAttempts: number) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const rows = await db.update(emailLoginChallenges)
+    .set({ attempts: sql`${emailLoginChallenges.attempts} + 1` })
+    .where(and(
+      eq(emailLoginChallenges.id, id),
+      isNull(emailLoginChallenges.consumedAt),
+      lt(emailLoginChallenges.attempts, maxAttempts),
+    ))
+    .returning({ id: emailLoginChallenges.id });
+  return rows.length === 1;
+}
+
+export async function consumeEmailLoginChallenge(id: number, now: Date, maxAttempts: number) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const rows = await db.update(emailLoginChallenges)
+    .set({ consumedAt: now })
+    .where(and(
+      eq(emailLoginChallenges.id, id),
+      isNull(emailLoginChallenges.consumedAt),
+      gt(emailLoginChallenges.expiresAt, now),
+      lt(emailLoginChallenges.attempts, maxAttempts),
+    ))
+    .returning({ id: emailLoginChallenges.id });
+  return rows.length === 1;
+}
+
+export async function invalidateEmailLoginChallenge(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(emailLoginChallenges)
+    .set({ consumedAt: new Date() })
+    .where(and(eq(emailLoginChallenges.id, id), isNull(emailLoginChallenges.consumedAt)));
+}
+
+export async function getUsersByNormalizedEmail(email: string): Promise<User[]> {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  return db.select().from(users)
+    .where(sql`lower(${users.email}) = ${email}`)
+    .limit(2);
 }
 
 export async function listControlRequestsForAssignee(assignee: string): Promise<ControlRequest[]> {
