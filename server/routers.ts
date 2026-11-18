@@ -18,6 +18,7 @@ import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
 import { parseOfficialSaudiLeagueFixturesHtml } from "./liveFixtures";
 import { getWikimediaNearbyAttractions } from "./liveTourismFallback";
 import { DESTINATION_GALLERY } from "@shared/tourismCatalog";
+import type { User } from "../drizzle/schema";
 
 const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -1261,7 +1262,7 @@ export const appRouter = router({
           });
         }
 
-        let user = matches[0];
+        let user: User | undefined = matches[0];
         if (!user) {
           const openId = `local_${randomUUID().replace(/-/g, "")}`;
           await upsertUser({
