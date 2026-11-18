@@ -30,7 +30,7 @@ function codeDigest(email: string, code: string): string {
 
 function normalizeSaudiPhone(value: unknown): string | null {
   if (typeof value !== "string") return null;
-  const compact = value.trim().replace(/[\\s()-]/g, "");
+  const compact = value.trim().replace(/[\s()-]/g, "");
   const phone = compact.startsWith("05")
     ? `+966${compact.slice(1)}`
     : compact.startsWith("5") && compact.length === 9
@@ -38,7 +38,7 @@ function normalizeSaudiPhone(value: unknown): string | null {
       : compact.startsWith("00966")
         ? `+${compact.slice(2)}`
         : compact;
-  return /^\\+9665\\d{8}$/.test(phone) ? phone : null;
+  return /^\+9665\d{8}$/.test(phone) ? phone : null;
 }
 
 async function twilioVerifyRequest(phone: string, code?: string): Promise<boolean> {
@@ -254,7 +254,7 @@ export function registerEmailAuthRoutes(app: any) {
     }
     const phone = normalizeSaudiPhone(req.body?.phone);
     const code = typeof req.body?.code === "string" ? req.body.code.trim() : "";
-    if (!phone || !/^\\d{6}$/.test(code)) {
+    if (!phone || !/^\d{6}$/.test(code)) {
       res.status(400).json({ error: "رقم الجوال أو رمز التحقق غير صحيح." });
       return;
     }
