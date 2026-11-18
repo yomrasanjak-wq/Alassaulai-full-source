@@ -1219,7 +1219,7 @@ export const appRouter = router({
           await invalidateEmailLoginChallenge(challenge.id);
           console.error("[Auth] Email verification delivery failed.");
           throw new TRPCError({
-            code: "SERVICE_UNAVAILABLE",
+            code: "PRECONDITION_FAILED",
             message: "خدمة إرسال رمز الدخول غير جاهزة حالياً. حاول لاحقاً.",
           });
         }
