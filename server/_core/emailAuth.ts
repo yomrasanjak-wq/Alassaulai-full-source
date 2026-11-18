@@ -263,6 +263,16 @@ export function registerEmailAuthRoutes(app: any) {
       return;
     }
     try {
+      const sql = getSql();
+      const phoneHash = createHmac("sha256", ENV.cookieSecret).update(`phone:${phone}`).digest("hex");
+      const issued = await sql.query(
+        'WITH lock AS MATERIALIZED (SELECT pg_advisory_xact_lock(hashtextextended($1, 0))), rate AS MATERIALIZED (SELECT count(*) FILTER (WHERE "createdAt" > now() - interval \'15 minutes\')::int AS recent, count(*) FILTER (WHERE "createdAt" > now() - interval \'24 hours\')::int AS daily FROM public.phone_login_requests, lock WHERE "phoneHash" = $1), inserted AS (INSERT INTO public.phone_login_requests ("phoneHash") SELECT $1 WHERE (SELECT recent FROM rate) < 3 AND (SELECT daily FROM rate) < 10 RETURNING id) SELECT id FROM inserted',
+        [phoneHash],
+      ) as Array<{ id: number }>;
+      if (!issued.length) {
+        res.json({ success: true, message: "إذا كان الرقم صالحًا، فسيصلك رمز التحقق برسالة SMS." });
+        return;
+      }
       await unifonicVerify(phone);
       res.json({ success: true, message: "إذا كان الرقم صالحًا، فسيصلك رمز التحقق برسالة SMS." });
     } catch (error) {
