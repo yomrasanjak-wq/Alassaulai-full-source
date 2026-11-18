@@ -65,8 +65,7 @@ async function sendCode(email: string, code: string): Promise<void> {
     }),
   });
   if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    console.error("[EmailAuth] Delivery provider rejected request", response.status, detail.slice(0, 300));
+    console.error("[EmailAuth] Delivery provider rejected request", response.status);
     throw new Error("Email delivery failed");
   }
 }
@@ -167,7 +166,7 @@ export function registerEmailAuthRoutes(app: Express) {
       await db.upsertUser({
         openId,
         email,
-        name: isOwner ? "Yousef Assaul" : email.split("@")[0],
+        name: isOwner ? "Yousef Assaul" : (email.split("@")[0] || "زائر"),
         loginMethod: "email_otp",
         lastSignedIn: new Date(),
         ...(isOwner ? { role: "admin" as const } : {}),
