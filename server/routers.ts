@@ -1306,7 +1306,7 @@ export const appRouter = router({
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
       }),
     list: controlStaffProcedure.query(async ({ ctx }) => {
-      if (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) return listControlRequests();
+      if ((ENV.ownerEmail && ctx.user.email?.trim().toLowerCase() === ENV.ownerEmail) || (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId)) return listControlRequests();
       const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : "IT";
       return listControlRequestsForAssignee(assignee);
     }),
