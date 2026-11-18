@@ -259,6 +259,8 @@ export async function getWikimediaImageAnswer(
       }
     } catch (error) {
       console.warn("[ALASSAUL image search] Openverse unavailable", error);
+    } finally {
+      clearTimeout(openverseTimer);
     }
 
     return language === "AR"
@@ -269,8 +271,5 @@ export async function getWikimediaImageAnswer(
     return language === "AR"
       ? "تعذر جلب الصورة الآن. حاول بعد قليل."
       : "Image search is temporarily unavailable. See [recent Google Images results](" + googleUrl + ").";
-    } finally {
-      clearTimeout(openverseTimer);
-    }
   }
 }
