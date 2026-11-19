@@ -52,7 +52,7 @@ export async function ensureControlRoomSchema(): Promise<void> {
 }
 
 /** Additive, idempotent migration required before the Google identity column is queried. */
-async function ensureGoogleIdentitySchema(): Promise<void> {
+export async function ensureGoogleIdentitySchema(): Promise<void> {
   if (_googleIdentitySchemaReady) return _googleIdentitySchemaReady;
   _googleIdentitySchemaReady = (async () => {
     if (!ENV.databaseUrl) throw new Error("قاعدة البيانات غير مهيأة على الخادم.");
