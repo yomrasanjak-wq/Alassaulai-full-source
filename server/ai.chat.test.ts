@@ -1253,6 +1253,9 @@ describe("ai.chat", () => {
     const compacted = compactChatHistory(messages);
     expect(compacted).toHaveLength(14);
     expect(compacted[0]?.content.length).toBe(1200);
-    expect(compacted[13]?.content).toBe("x".repeat(1200));
+    expect(compacted[13]?.content.length).toBe(1200);
+    expect(compacted[13]?.content.startsWith("13-")).toBe(true);
+    expect(compacted[13]?.content).toContain("تم اختصار وسط الرسالة");
+    expect(compacted[13]?.content.endsWith("x".repeat(20))).toBe(true);
   });
 });
