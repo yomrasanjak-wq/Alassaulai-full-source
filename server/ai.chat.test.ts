@@ -17,6 +17,7 @@ vi.mock("./db", async importOriginal => {
     createControlAuditLog: vi.fn().mockResolvedValue({ id: 1 }),
     ensureControlRoomSchema: vi.fn().mockResolvedValue(undefined),
     listControlRequests: vi.fn().mockResolvedValue([]),
+    listControlAuditLogs: vi.fn().mockResolvedValue([]),
     listControlRequestsForAssignee: vi.fn().mockResolvedValue([]),
     listControlTeamMembers: vi.fn().mockResolvedValue([]),
     updateUserRoleByEmail: vi.fn().mockResolvedValue({ id: 2, email: "staff@example.com", role: "secretary" }),
@@ -24,7 +25,7 @@ vi.mock("./db", async importOriginal => {
   };
 });
 
-import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, updateControlRequest, updateUserRoleByEmail } from "./db";
+import { createControlAuditLog, createControlRequest, ensureControlRoomSchema, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, updateControlRequest, updateUserRoleByEmail } from "./db";
 
 function createPublicContext(): TrpcContext {
   return {
@@ -246,6 +247,44 @@ describe("brain governance", () => {
       assignee: "CEO",
       priority: "high",
     }));
+  });
+
+  it("shows emergency incidents to IT independently of normal personal task assignment", async () => {
+    const incident = { id: 81, requesterType: "it", category: "security", status: "pending" };
+    const ordinaryTask = { id: 82, requesterType: "owner", category: "general", status: "pending" };
+    vi.mocked(listControlRequests).mockResolvedValue([incident, ordinaryTask] as never);
+    vi.mocked(listControlAuditLogs).mockResolvedValue([{ id: 1, targetType: "control_request", targetId: "81", action: "security.incident_reported" }] as never);
+    const caller = appRouter.createCaller(createUserContext("it-open-id", "it"));
+    const incidents = await caller.control.incidentList();
+    expect(incidents).toHaveLength(1);
+    expect(incidents[0].id).toBe(81);
+    expect(incidents[0].timeline).toHaveLength(1);
+  });
+
+  it("lets IT acknowledge and escalate an open incident without waiting for CEO task approval", async () => {
+    vi.mocked(listControlRequests).mockResolvedValue([{ id: 83, requesterType: "it", category: "security", status: "pending", priority: "high" }] as never);
+    const caller = appRouter.createCaller(createUserContext("it-open-id", "it"));
+    await caller.control.acknowledgeIncident({ id: 83 });
+    expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(83, { status: "in_progress" });
+    vi.mocked(updateControlRequest).mockClear();
+    await caller.control.escalateIncident({ id: 83, note: "الخطر ما زال قائماً ويتطلب استجابة عاجلة." });
+    expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(83, { priority: "urgent", status: "in_progress" });
+    expect(vi.mocked(createControlAuditLog)).toHaveBeenCalledWith(expect.objectContaining({ action: "security.incident_escalated", targetId: "83" }));
+  });
+
+  it("restricts incident closure to the configured CEO owner", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    vi.mocked(listControlRequests).mockResolvedValue([{ id: 84, requesterType: "it", category: "security", status: "in_progress" }] as never);
+    try {
+      const itCaller = appRouter.createCaller(createUserContext("it-open-id", "it"));
+      await expect(itCaller.control.closeIncident({ id: 84, resolution: "تم احتواء المشكلة والتحقق من سلامة الدخول." })).rejects.toMatchObject({ code: "FORBIDDEN" });
+      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      await owner.control.closeIncident({ id: 84, resolution: "تم احتواء المشكلة والتحقق من سلامة الدخول." });
+      expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(84, { status: "completed", decisionNote: "تم احتواء المشكلة والتحقق من سلامة الدخول." });
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
   });
 
   it("does not allow the secretary role to submit IT security incidents", async () => {
