@@ -1924,11 +1924,11 @@ ${newsContext}`);
     activeAds: publicProcedure.query(async () => {
       const requests = await listControlRequests();
       return requests
-        .filter((item) => item.category === "partner" && item.status === "reviewed" && item.command.startsWith("ALASSAUL_AD_V1\\n"))
+        .filter((item) => item.category === "partner" && item.status === "reviewed" && item.command.startsWith("ALASSAUL_AD_V1\n"))
         .slice(0, 3)
         .flatMap((item) => {
           try {
-            const ad = JSON.parse(item.command.slice("ALASSAUL_AD_V1\\n".length)) as {
+            const ad = JSON.parse(item.command.slice("ALASSAUL_AD_V1\n".length)) as {
               title?: string; description?: string; country?: string; imageUrl?: string; targetUrl?: string;
             };
             if (!ad.title || !ad.description || !ad.targetUrl) return [];
