@@ -1912,7 +1912,7 @@ ${newsContext}`);
       if (ctx.user.role !== "partner") throw new TRPCError({ code: "FORBIDDEN", message: "هذه الصفحة مخصصة لحسابات الشركاء المعتمدة." });
       const requests = await listControlRequestsForRequester(ctx.user.openId);
       return requests
-        .filter((item) => item.requesterType === "partner")
+        .filter((item) => item.requesterType === "partner" && item.requesterOpenId === ctx.user.openId)
         .map(({ id, title, status, priority, createdAt, updatedAt }) => ({ id, title, status, priority, createdAt, updatedAt }));
     }),
     // Only CEO-approved campaigns are visible to visitors. Drafts remain in the control inbox.
