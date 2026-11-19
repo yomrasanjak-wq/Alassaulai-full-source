@@ -593,7 +593,7 @@ describe("Official live channel actions", () => {
     fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
     const iframe = screen.getByTitle("مكة المكرمة") as HTMLIFrameElement;
     expect(iframe).toBeTruthy();
-    expect(iframe.src).toContain("youtube-nocookie.com/embed/eC4LfEVxvKg");
+    expect(iframe.src).toContain("youtube-nocookie.com/embed/kYqGbBqmp8g");
     expect(document.querySelector(".video-shell")).toBeNull();
   });
 
@@ -686,8 +686,8 @@ it("keeps the assistant panel physically centered in RTL layouts", () => {
   fireEvent.click(screen.getByRole("button", { name: "chat" }));
   const panel = document.querySelector(".chat-panel");
   expect(panel).toBeTruthy();
-  expect(getComputedStyle(panel as HTMLElement).left).toBe("12px");
-  expect(getComputedStyle(panel as HTMLElement).right).toBe("12px");
+  expect(getComputedStyle(panel as HTMLElement).left).toBe("16px");
+  expect(getComputedStyle(panel as HTMLElement).right).toBe("16px");
   expect(getComputedStyle(panel as HTMLElement).transform).toBe("none");
 });
 
