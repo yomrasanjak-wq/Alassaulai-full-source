@@ -1913,7 +1913,7 @@ ${newsContext}`);
       const requests = await listControlRequestsForRequester(ctx.user.openId);
       return requests
         .filter((item) => item.requesterType === "partner")
-        .map(({ id, title, status, priority, createdAt, updatedAt, decisionNote }) => ({ id, title, status, priority, createdAt, updatedAt, decisionNote }));
+        .map(({ id, title, status, priority, createdAt, updatedAt }) => ({ id, title, status, priority, createdAt, updatedAt }));
     }),
     // Only CEO-approved campaigns are visible to visitors. Drafts remain in the control inbox.
     activeAds: publicProcedure.query(async () => {
