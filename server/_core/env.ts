@@ -60,6 +60,8 @@ export const ENV = {
   databaseUrl: process.env.DATABASE_URL ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: configuredBaseUrl || "",
   forgeApiKey: explicitProviderKey,
