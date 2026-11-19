@@ -143,17 +143,27 @@ export function getConversationContinuityInstruction(messages: Array<{ role: "us
   if (/(?:لا،?\s*(?:أقصد|اقصد)|قصدي|الصحيح|بل\s|عدّل|عدل|غيّر|غير|بدلًا من|بدلا من)/i.test(latest)) {
     return "هذه رسالة تصحيح أو تعديل: اعتمد أحدث تصحيح للجزء الذي حدده الزائر فقط، واحتفظ ببقية سياق الطلب السابق وشروطه.";
   }
-  if (latest.split(/\s+/).length <= 12 && /^(?:(?:طيب|تمام|حسنًا|حسنا|وبالنسبة|وبخصوص|وماذا|وكم|كم|وهل|وإذا|واذا|وكيف|وأيضًا|وايضا|بعدها|ثم|هذا|هذه|وهذا|وهذه)[،,؟?\s]*)/i.test(latest)) {
-    return "هذه متابعة قصيرة على الأرجح: اربطها بأقرب موضوع سابق ذي صلة، واستعمل تفاصيله وقيوده، وأجب عن النقطة الجديدة فقط. لا تطلب إعادة السياق.";
+  if (latest.split(/\s+/).length <= 12 && /^(?:(?:طيب|تمام|حسنًا|حسنا|ممتاز|أحسنت|احسنت|نواصل|نكمل|كمل|استمر|تابع|وبالنسبة|وبخصوص|وماذا|وكم|كم|وهل|وإذا|واذا|وكيف|وأيضًا|وايضا|بعدها|ثم|هذا|هذه|وهذا|وهذه)[،,؟?\s]*)/i.test(latest)) {
+    return "هذه متابعة قصيرة أو إشارة للاستمرار: اربطها بأقرب موضوع سابق ذي صلة، واستعمل تفاصيله وقيوده، وأجب عن النقطة الجديدة فقط. إذا كانت الرسالة موافقة أو طلب استمرار فقط، فتابع الخطوة التالية دون إعادة الشرح أو طلب إعادة السياق.";
   }
   return "استعمل سجل الحوار لفهم الإشارات والضمائر والقيود السابقة، مع إعطاء الأولوية لأحدث تصحيح أو تغيير صريح من الزائر.";
 }
 
 export function compactChatHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
-  return messages.slice(-MAX_CHAT_HISTORY).map((message) => ({
-    role: message.role,
-    content: message.content.slice(-MAX_CHAT_MESSAGE_CHARS),
-  }));
+  return messages.slice(-MAX_CHAT_HISTORY).map((message) => {
+    const content = message.content;
+    if (content.length <= MAX_CHAT_MESSAGE_CHARS) return { role: message.role, content };
+    // Preserve the opening request and latest details; trimming only the tail can
+    // erase the destination, budget, or constraints stated at the start.
+    const marker = "\n[… تم اختصار وسط الرسالة للحفاظ على بدايتها وآخر تفاصيلها …]\n";
+    const available = MAX_CHAT_MESSAGE_CHARS - marker.length;
+    const headLength = Math.ceil(available / 2);
+    const tailLength = available - headLength;
+    return {
+      role: message.role,
+      content: content.slice(0, headLength) + marker + content.slice(-tailLength),
+    };
+  });
 }
 
 
