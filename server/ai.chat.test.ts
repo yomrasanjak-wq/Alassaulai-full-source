@@ -33,10 +33,11 @@ vi.mock("./db", async importOriginal => {
     listControlTeamMembers: vi.fn().mockResolvedValue([]),
     updateUserRoleByEmail: vi.fn().mockResolvedValue({ id: 2, email: "staff@example.com", role: "secretary" }),
     updateControlRequest: vi.fn().mockResolvedValue({ id: 1, status: "reviewed" }),
+    updateAssignedControlRequest: vi.fn().mockResolvedValue({ id: 1, status: "in_progress" }),
   };
 });
 
-import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, updateControlRequest, updateUserRoleByEmail } from "./db";
+import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, updateAssignedControlRequest, updateControlRequest, updateUserRoleByEmail } from "./db";
 
 function createPublicContext(): TrpcContext {
   return {
@@ -205,7 +206,7 @@ describe("brain governance", () => {
     await expect(caller.control.list()).resolves.toEqual([task]);
     expect(vi.mocked(listControlRequestsForAssignee)).toHaveBeenCalledWith("executor:9");
     await caller.control.update({ id: 106, status: "in_progress" });
-    expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(106, expect.objectContaining({ status: "in_progress" }));
+    expect(vi.mocked(updateAssignedControlRequest)).toHaveBeenCalledWith(106, "executor:9", "reviewed", "in_progress");
   });
 
   it("blocks an executor from updating a task assigned to another executor account", async () => {
@@ -217,6 +218,19 @@ describe("brain governance", () => {
     });
     await expect(executor.control.update({ id: 206, status: "in_progress" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(vi.mocked(listControlRequestsForAssignee)).toHaveBeenCalledWith("executor:9");
+    expect(vi.mocked(updateControlRequest)).not.toHaveBeenCalled();
+  });
+
+  it("rejects a staff task update if ownership or status changes before the atomic write", async () => {
+    const task = { id: 306, assignee: "executor:9", status: "reviewed" };
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
+    vi.mocked(updateAssignedControlRequest).mockResolvedValue(undefined);
+    const executor = appRouter.createCaller({
+      ...createUserContext("executor-nine-open-id", "executor"),
+      user: { ...createUserContext("executor-nine-open-id", "executor").user!, id: 9 } as never,
+    });
+    await expect(executor.control.update({ id: 306, status: "in_progress" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(vi.mocked(updateAssignedControlRequest)).toHaveBeenCalledWith(306, "executor:9", "reviewed", "in_progress");
     expect(vi.mocked(updateControlRequest)).not.toHaveBeenCalled();
   });
 
