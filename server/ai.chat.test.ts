@@ -839,10 +839,19 @@ describe("ai.chat", () => {
   });
 
   it("does not replace an unavailable Saudi Pro League fixture list with news articles", async () => {
+    let scoreboardCalls = 0;
+    let officialFixtureCalls = 0;
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = new URL(String(input));
-      expect(url.hostname).toBe("site.api.espn.com");
-      expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      if (url.hostname === "site.api.espn.com") {
+        scoreboardCalls += 1;
+        expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      } else if (url.hostname === "www.spl.com.sa") {
+        officialFixtureCalls += 1;
+        expect(url.pathname).toContain("/fixtures-results");
+      } else {
+        throw new Error("Unexpected source for Saudi Pro League fixtures: " + url.hostname);
+      }
       return new Response("temporarily unavailable", { status: 503 });
     });
     try {
@@ -853,7 +862,8 @@ describe("ai.chat", () => {
       expect(result.text).toContain("تعذر جلب جدول مباريات دوري روشن");
       expect(result.text).not.toContain("أحدث أخبار دوري روشن");
       expect(result.text).not.toContain("روابط تقارير حديثة");
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(scoreboardCalls).toBe(1);
+      expect(officialFixtureCalls).toBeGreaterThan(0);
       expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
