@@ -313,6 +313,7 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
         && Number.isFinite(Number(coords?.[1])) && (!isKnownTurkishDestination || isInTurkey);
     };
     let geocodeFeatures: TourismPhotonFeature[] = [];
+    let photonUnavailable = false;
     try {
       const geocodeResponse = await fetch(geocodeUrl.toString(), {
         headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
@@ -322,10 +323,14 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
       const geocode = await geocodeResponse.json() as { features?: TourismPhotonFeature[] };
       geocodeFeatures = geocode.features ?? [];
     } catch (photonError) {
+      photonUnavailable = true;
       console.warn("[ALASSAUL tourism] Photon geocoding failed; trying Nominatim", safeProviderDiagnostic(photonError));
     }
     let resolved = geocodeFeatures.find(isAcceptableGeocode);
-    if (!resolved) {
+    // A successful empty Photon result is a verified "no match", not a transport failure.
+    // Only call the secondary geocoder when Photon is unavailable or returned candidates
+    // that could not pass the country/coordinate validation.
+    if (!resolved && (photonUnavailable || geocodeFeatures.length > 0)) {
       const nominatimUrl = new URL("https://nominatim.openstreetmap.org/search");
       nominatimUrl.search = new URLSearchParams({
         q: geocodeQuery,
