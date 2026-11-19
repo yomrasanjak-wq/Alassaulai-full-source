@@ -1363,8 +1363,54 @@ export const appRouter = router({
         const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
         if (ctx.user.role !== "it" && !isOwner) throw new TRPCError({ code: "FORBIDDEN", message: "تسجيل الحوادث التقنية متاح لفريق IT فقط." });
         const request = await createControlRequest({ title: input.title, command: input.description, requesterType: "it", category: "security", priority: input.severity, assignee: "CEO" });
-        if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_reported", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ severity: input.severity }) });
-        return { success: Boolean(request), id: request?.id ?? null };
+        if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_reported", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ severity: input.severity, status: request.status }) });
+        return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
+      }),
+    // Emergency incidents are visible to CEO and IT independently of normal task assignment.
+    // The existing request and audit tables are reused; no database migration is needed.
+    incidentList: controlStaffProcedure.query(async ({ ctx }) => {
+      const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+      if (!isOwner && ctx.user.role !== "it") throw new TRPCError({ code: "FORBIDDEN", message: "متابعة الحوادث متاحة لفريق IT وCEO فقط." });
+      const incidents = (await listControlRequests()).filter((item) => item.requesterType === "it" && item.category === "security");
+      const audit = await listControlAuditLogs();
+      return incidents.map((incident) => ({
+        ...incident,
+        timeline: audit.filter((entry) => entry.targetType === "control_request" && entry.targetId === String(incident.id)),
+      }));
+    }),
+    acknowledgeIncident: controlStaffProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        if (!isOwner && ctx.user.role !== "it") throw new TRPCError({ code: "FORBIDDEN", message: "تأكيد استلام الحادث متاح لفريق IT وCEO فقط." });
+        const incident = (await listControlRequests()).find((item) => item.id === input.id && item.requesterType === "it" && item.category === "security");
+        if (!incident) throw new TRPCError({ code: "NOT_FOUND", message: "لم يتم العثور على البلاغ." });
+        if (incident.status === "completed" || incident.status === "rejected") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "هذا البلاغ مغلق بالفعل." });
+        const updated = incident.status === "in_progress" ? incident : await updateControlRequest(input.id, { status: "in_progress" });
+        await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_acknowledged", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ previousStatus: incident.status, status: updated?.status ?? "in_progress" }) });
+        return { success: Boolean(updated), status: updated?.status ?? "in_progress" };
+      }),
+    escalateIncident: controlStaffProcedure
+      .input(z.object({ id: z.number().int().positive(), note: z.string().trim().min(3).max(1000) }))
+      .mutation(async ({ ctx, input }) => {
+        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        if (!isOwner && ctx.user.role !== "it") throw new TRPCError({ code: "FORBIDDEN", message: "تصعيد الحوادث متاح لفريق IT وCEO فقط." });
+        const incident = (await listControlRequests()).find((item) => item.id === input.id && item.requesterType === "it" && item.category === "security");
+        if (!incident) throw new TRPCError({ code: "NOT_FOUND", message: "لم يتم العثور على البلاغ." });
+        if (incident.status === "completed" || incident.status === "rejected") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكن تصعيد بلاغ مغلق." });
+        const updated = await updateControlRequest(input.id, { priority: "urgent" as never, status: "in_progress" });
+        await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_escalated", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ note: input.note, priority: "urgent", status: "in_progress" }) });
+        return { success: Boolean(updated), status: updated?.status ?? "in_progress", priority: updated?.priority ?? "urgent" };
+      }),
+    closeIncident: ownerProcedure
+      .input(z.object({ id: z.number().int().positive(), resolution: z.string().trim().min(5).max(1500) }))
+      .mutation(async ({ ctx, input }) => {
+        const incident = (await listControlRequests()).find((item) => item.id === input.id && item.requesterType === "it" && item.category === "security");
+        if (!incident) throw new TRPCError({ code: "NOT_FOUND", message: "لم يتم العثور على البلاغ." });
+        if (incident.status === "completed" || incident.status === "rejected") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "هذا البلاغ مغلق بالفعل." });
+        const updated = await updateControlRequest(input.id, { status: "completed", decisionNote: input.resolution });
+        await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_closed", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ resolution: input.resolution }) });
+        return { success: Boolean(updated), status: updated?.status ?? "completed" };
       }),
     health: controlStaffProcedure.query(() => getSystemHealth()),
     auditList: ownerProcedure.query(() => listControlAuditLogs()),
