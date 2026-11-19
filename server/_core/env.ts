@@ -7,24 +7,13 @@ const firstConfigured = (...names: string[]) => {
 };
 
 const explicitProviderKey = firstConfigured(
-  "FORGE_API_KEY",
-  "MANUS_API_KEY",
   "GROQ_API_KEY",
-  "VITE_GROQ_API_KEY",
-  "BUILT_IN_FORGE_API_KEY",
-  "VITE_FRONTEND_FORGE_API_KEY",
-  "VITE_FORGE_API_KEY"
+  "VITE_GROQ_API_KEY"
 );
 const openAiKey = firstConfigured("OPENAI_API_KEY", "AI_API_KEY");
 const openRouterKey = firstConfigured("OPENROUTER_API_KEY");
 const geminiKey = firstConfigured("GEMINI_API_KEY");
-const configuredBaseUrl = firstConfigured(
-  "FORGE_API_URL",
-  "MANUS_API_URL",
-  "GROQ_API_URL",
-  "BUILT_IN_FORGE_API_URL",
-  "VITE_FRONTEND_FORGE_API_URL"
-);
+const configuredBaseUrl = firstConfigured("GROQ_API_URL");
 
 // Keep platform storage/maps credentials separate from the language model.
 // An explicit ALASSAUL provider override always wins. Otherwise a dedicated
@@ -55,15 +44,16 @@ const resolvedLlmApiKey = firstConfigured("ALASSAUL_LLM_API_KEY") ||
           : explicitProviderKey || openAiKey);
 
 export const ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
   cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
-  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
-  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  ownerEmail: (firstConfigured("ALASSAUL_OWNER_EMAIL", "OWNER_EMAIL") || "alassaulzon@gmail.com").toLowerCase(),
+  resendApiKey: firstConfigured("RESEND_API_KEY"),
+  authEmailFrom: firstConfigured("ALASSAUL_AUTH_EMAIL_FROM", "AUTH_EMAIL_FROM"),
+  unifonicAuthenticateAppId: firstConfigured("UNIFONIC_AUTHENTICATE_APP_ID"),
+  unifonicAuthenticateToken: firstConfigured("UNIFONIC_AUTHENTICATE_TOKEN"),
+  ownerPhone: firstConfigured("ALASSAUL_OWNER_PHONE").replace(/\s/g, ""),
   isProduction: process.env.NODE_ENV === "production",
-  forgeApiUrl: configuredBaseUrl || "",
-  forgeApiKey: explicitProviderKey,
-  // Dedicated Manus Forge credentials for object storage; never reuse LLM provider credentials.
+  // Temporary read-only bridge for legacy media; remove after verified Vercel Blob migration.
   storageApiUrl: firstConfigured("BUILT_IN_FORGE_API_URL"),
   storageApiKey: firstConfigured("BUILT_IN_FORGE_API_KEY"),
   llmApiUrl: resolvedLlmBaseUrl,

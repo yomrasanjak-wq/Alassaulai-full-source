@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const isolatedEnvNames = [
   "ALASSAUL_LLM_API_URL", "ALASSAUL_LLM_API_KEY", "OPENAI_BASE_URL", "OPENAI_API_KEY",
-  "FORGE_API_URL", "FORGE_API_KEY", "MANUS_API_URL", "MANUS_API_KEY",
-  "GROQ_API_URL", "GROQ_API_KEY", "VITE_FRONTEND_FORGE_API_URL", "VITE_FRONTEND_FORGE_API_KEY",
+  "GROQ_API_URL", "GROQ_API_KEY", "VITE_GROQ_API_KEY",
 ] as const;
 const originalEnv = Object.fromEntries(isolatedEnvNames.map((name) => [name, process.env[name]]));
 
@@ -24,7 +23,7 @@ afterEach(() => {
 
 describe("Groq-compatible LLM transport", () => {
   it("does not duplicate /v1 in the chat completions URL", async () => {
-    process.env.FORGE_API_URL = "https://api.groq.com/openai/v1";
+    process.env.GROQ_API_URL = "https://api.groq.com/openai/v1";
     process.env.GROQ_API_KEY = "test-key";
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
@@ -37,7 +36,7 @@ describe("Groq-compatible LLM transport", () => {
   });
 
   it("omits unsupported reasoning options for Groq chat completions", async () => {
-    process.env.FORGE_API_URL = "https://api.groq.com/openai/v1";
+    process.env.GROQ_API_URL = "https://api.groq.com/openai/v1";
     process.env.GROQ_API_KEY = "test-key";
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
@@ -53,7 +52,7 @@ describe("Groq-compatible LLM transport", () => {
   });
 
   it("does not retry a non-transient client error", async () => {
-    process.env.FORGE_API_URL = "https://api.groq.com/openai/v1";
+    process.env.GROQ_API_URL = "https://api.groq.com/openai/v1";
     process.env.GROQ_API_KEY = "test-key";
     const fetchMock = vi.fn().mockResolvedValue(new Response("bad request", { status: 400 }));
     vi.stubGlobal("fetch", fetchMock);

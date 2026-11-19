@@ -217,7 +217,7 @@ const normalizeToolChoice = (
 };
 
 const resolveOpenAiEndpoint = (path: "chat/completions" | "models") => {
-  const base = (ENV.llmApiUrl || ENV.forgeApiUrl || "https://forge.manus.ai").replace(/\/+$/, "");
+  const base = (ENV.llmApiUrl || "https://api.groq.com/openai/v1").replace(/\/+$/, "");
   // Gemini's OpenAI-compatible endpoint already includes /v1beta/openai;
   // unlike the other providers, it must not receive an extra /v1 segment.
   if (/\/v1beta\/openai$/i.test(base)) return `${base}/${path}`;
@@ -233,11 +233,11 @@ const resolveApiUrl = () => resolveOpenAiEndpoint("chat/completions");
 
 /** Netlify's AI gateway exposes the Responses API, not the legacy chat-completions route. */
 const isResponsesGateway = () => {
-  const base = ENV.llmApiUrl || ENV.forgeApiUrl || "";
+  const base = ENV.llmApiUrl || "";
   return /\/\.netlify\/ai(?:\/|$)/i.test(base) || /\/v1\/responses$/i.test(base);
 };
 const resolveResponsesEndpoint = () => {
-  const base = (ENV.llmApiUrl || ENV.forgeApiUrl || "").replace(/\/+$/, "");
+  const base = (ENV.llmApiUrl || "").replace(/\/+$/, "");
   if (/\/v1\/responses$/i.test(base)) return base;
   if (/\/v1$/i.test(base)) return `${base}/responses`;
   if (/\/\.netlify\/ai$/i.test(base)) return `${base}/v1/responses`;
@@ -245,7 +245,7 @@ const resolveResponsesEndpoint = () => {
 };
 
 const assertApiKey = () => {
-  if (!(ENV.llmApiKey || ENV.forgeApiKey)) {
+  if (!ENV.llmApiKey) {
     throw new Error("No language-model API key is configured");
   }
 };
@@ -562,7 +562,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.llmApiKey || ENV.forgeApiKey}`,
+      authorization: `Bearer ${ENV.llmApiKey}`,
     },
     body: JSON.stringify(payload),
   }, (isGeminiProvider || useResponsesApi)
@@ -648,7 +648,7 @@ export async function listLLMModels(): Promise<ModelsResponse> {
   const url = resolveOpenAiEndpoint("models");
 
   const response = await fetchWithBackoff(url, {
-    headers: { authorization: `Bearer ${ENV.llmApiKey || ENV.forgeApiKey}` },
+    headers: { authorization: `Bearer ${ENV.llmApiKey}` },
   });
 
   if (!response.ok) {

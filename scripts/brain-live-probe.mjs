@@ -15,10 +15,10 @@ if (existsSync(envPath)) {
 const first = (...names) => names.map(name => process.env[name]?.trim()).find(Boolean) ?? '';
 const keyExplicit = first('ALASSAUL_LLM_API_KEY');
 const openAiKey = first('OPENAI_API_KEY', 'AI_API_KEY');
-const providerKey = first('FORGE_API_KEY', 'MANUS_API_KEY', 'GROQ_API_KEY', 'VITE_GROQ_API_KEY', 'BUILT_IN_FORGE_API_KEY', 'VITE_FRONTEND_FORGE_API_KEY', 'VITE_FORGE_API_KEY');
+const providerKey = first('GROQ_API_KEY', 'VITE_GROQ_API_KEY');
 const openRouterKey = first('OPENROUTER_API_KEY');
 const geminiKey = first('GEMINI_API_KEY');
-const configuredEndpoint = first('FORGE_API_URL', 'MANUS_API_URL', 'GROQ_API_URL', 'BUILT_IN_FORGE_API_URL', 'VITE_FRONTEND_FORGE_API_URL');
+const configuredEndpoint = first('GROQ_API_URL');
 const endpoint = (first('ALASSAUL_LLM_API_URL', 'OPENAI_BASE_URL') || (openAiKey
   ? 'https://api.openai.com/v1/responses'
   : geminiKey

@@ -1,4 +1,5 @@
 import { ENV } from "./_core/env";
+import { isConfiguredOwner } from "./_core/owner";
 import { COOKIE_NAME } from "@shared/const";
 import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
@@ -88,7 +89,7 @@ export function getDistinctBackupModel(primaryModel: string | undefined, backupM
 export function getAdaptiveTaskInstruction(message: string): string {
   const text = message.normalize("NFKC").toLowerCase();
   if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|أخبار السعودية|اخبار السعودية|السعودية اليوم|أخبار اليمن|اخبار اليمن|اليمن اليوم|latest news|world news|breaking news)/i.test(text)) {
-    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. التزم بالعدد الذي يطلبه المستخدم حرفياً؛ إذا طلب ثلاثة أخبار فاعرض ثلاثة فقط، وإذا لم يحدد عدداً فاعرض ثلاثة أخبار كحد افتراضي. في موجز أخبار العالم نوّع التغطية جغرافياً وموضوعياً، وفضّل ثلاثة ناشرين موثوقين مختلفين متى توفرت تغطية حديثة قابلة للتحقق؛ لا تضحِّ بالدقة لمجرد التنويع. لكل خبر عنوان دقيق يعكس محتوى صفحة الناشر، وملخص موجز وتاريخ النشر واسم الناشر. ميّز بوضوح بين الوقائع المؤكدة والادعاءات والتقارير الأولية، ولا تكرر الخبر نفسه بصيغ مختلفة. لا تكتب روابط Markdown داخل متن الإجابة ولا تنشئ قائمة مصادر يدوياً؛ ستُرفق روابط المصادر الموثقة تلقائياً بعد الإجابة. لا تعرض روابط Google News أو RSS أو صفحات تجميع الأخبار على أنها مصادر أصلية، ولا تنسب خبراً إلى ناشر لمجرد ظهوره في نتيجة بحث. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. إذا لم تتوفر أداة بحث حي أو روابط ناشر أصلية، صرّح بذلك ولا تختلق عناوين أو مصادر.";
+    return "نمط الأخبار: لا تعرض معلومة على أنها حدث اليوم إلا بعد التحقق من مصدر حديث. افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. التزم بالعدد الذي يطلبه المستخدم حرفياً؛ إذا طلب ثلاثة أخبار فاعرض ثلاثة فقط، وإذا لم يحدد عدداً فاعرض ثلاثة أخبار كحد افتراضي. في موجز أخبار العالم نوّع التغطية جغرافياً وموضوعياً، وفضّل ثلاثة ناشرين موثوقين مختلفين متى توفرت تغطية حديثة قابلة للتحقق؛ لا تضحِّ بالدقة لمجرد التنويع. لكل خبر عنوان دقيق يعكس محتوى صفحة الناشر، وملخص موجز وتاريخ النشر واسم الناشر. ميّز بوضوح بين الوقائع المؤكدة والادعاءات والتقارير الأولية، ولا تكرر الخبر نفسه بصيغ مختلفة. لا تكتب روابط Markdown داخل متن الإجابة ولا تنشئ قائمة مصادر يدوياً؛ ستُرفق روابط المصادر الموثقة تلقائياً بعد الإجابة. لا تعرض روابط Google News أو RSS أو صفحات تجميع الأخبار على أنها مصادر أصلية، ولا تنسب خبراً إلى ناشر لمجرد ظهوره في نتيجة بحث. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. إذا لم تتوفر أداة بحث حي أو روابط ناشر أصلية، صرّح بذلك ولا تختلق عناوين أو مصادر.";
   }
   if (/(كيف أصلح|كيف اصلح|متعطل|عطل|لا يعمل|ما يشتغل|ما يفتح|خطأ|مشكلة|حل المشكلة|تشخيص)/i.test(text)) {
     return "نمط معالجة مشكلة: حدّد الاحتمال الأقرب دون الجزم، ثم أعطِ خطوات تشخيص مرتبة من الأبسط والأكثر أماناً إلى المتقدم. اذكر ما ينبغي عدم فعله، واسأل عن معلومة واحدة فقط إذا كانت ضرورية.";
@@ -97,7 +98,7 @@ export function getAdaptiveTaskInstruction(message: string): string {
     return "نمط الرياضة الحية: حدّد البطولة والتاريخ المقصود، واستخدم أحدث بيانات موثوقة متاحة. عند طلب مباريات اليوم أو جدول دوري روشن، اعرض جدولاً واضحاً بأعمدة: المباراة | الساعة بتوقيت السعودية | القناة الناقلة. حوّل الأوقات إلى توقيت Asia/Riyadh وتحقق من التاريخ وحالة المباراة. لا تذكر قناة إلا إذا أكدها مصدر موثوق؛ وإلا اكتب «غير معلنة في المصدر المتاح». أدرج تاريخ ووقت آخر تحديث والمصدر عند توفرهما. لا تخلط الأخبار بجدول المباريات ولا تخمّن مباراة أو نتيجة أو موعداً؛ إذا فشل المصدر فقل ذلك صراحة.";
   }
   if (/(رتب لي|برنامج|خطة|جدول|خطط|نظم|نظّم|رحلة|بكج|ميزانية|خلال \d+ أيام)/i.test(text)) {
-    const itinerary = "نمط التخطيط: لا تكتفِ بالقول إنك تستطيع التخطيط؛ أنشئ البرنامج مباشرة عندما تكون الوجهة والمدة واضحتين. قسّم الرحلة يوماً بيوم، وبترتيب صباحي ومسائي مع أوقات تقريبية، وأسماء الوجهات والأنشطة، واقتراح مطاعم أو استراحات عند ملاءمة المسار، ومدة التنقل الواقعية بين المحطات. اجمع المواقع المتقاربة جغرافياً ولا تحشر وجهات بعيدة في يوم واحد. أضف ميزانية تقريبية ونصائح توفير عندما تفيد، واذكر افتراضاتك بوضوح. إذا ذكر المستخدم أشخاصاً أو مدناً أو ترتيباً أو محطات محددة فالتزم بها. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، ولا تخترع ساعات عمل أو أنشطة موسمية.";
+    const itinerary = "نمط التخطيط: أنشئ خطة قابلة للتنفيذ، ولا تكتفِ بالقول إنك تستطيع التخطيط؛ أنشئ البرنامج مباشرة عندما تكون الوجهة والمدة واضحتين. قسّم الرحلة يوماً بيوم، وبترتيب صباحي ومسائي مع أوقات تقريبية، وأسماء الوجهات والأنشطة، واقتراح مطاعم أو استراحات عند ملاءمة المسار، ومدة التنقل الواقعية بين المحطات. اجمع المواقع المتقاربة جغرافياً ولا تحشر وجهات بعيدة في يوم واحد. أضف ميزانية تقريبية ونصائح توفير عندما تفيد، واذكر افتراضاتك بوضوح. إذا ذكر المستخدم أشخاصاً أو مدناً أو ترتيباً أو محطات محددة فالتزم بها. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، ولا تخترع ساعات عمل أو أنشطة موسمية.";
     if (/(طرابزون|ترابزون|أوزنجول|اوزنجول|أيدر|ايدر|ريزه|سامسون|أوردو|جيرسون|إسطنبول|اسطنبول|شمال تركيا|سورميني|أراكلي)/i.test(text)) {
       return `${itinerary} خصّص الخطة لشمال تركيا: اجمع الوجهات المتقاربة في اليوم نفسه، وراعِ وقت القيادة والطقس الجبلي، وضمّن عند ملاءمة المسار سامسون وأوردو وجيرسون وأرسين وسورميني وأراكلي وإسطنبول، ولا تضعها كلها في مسار واحد إن كان الوقت لا يسمح.`;
     }
@@ -295,8 +296,20 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
     await waitForTourismRequestSlot();
     const geocodeUrl = new URL("https://photon.komoot.io/api/");
     const isKnownTurkishDestination = /(?:طرابزون|ترابزون|trabzon|أوزنجول|اوزنجول|uzung[oö]l|أيدر|ايدر|ayder|ريزه|ريزة|rize|سامسون|samsun|أوردو|ordu|جيرسون|giresun|سورميني|sürmene|surmene|أراكلي|araklı|arakli)/i.test(destination);
+    // Normalize common Arabic spellings to the canonical Turkish place name
+    // before geocoding; appending Türkiye to Arabic-only text is less reliable.
+    const canonicalTurkishPlace = /(?:طرابزون|ترابزون)/i.test(destination) ? "Trabzon"
+      : /(?:أوزنجول|اوزنجول)/i.test(destination) ? "Uzungöl"
+      : /(?:أيدر|ايدر)/i.test(destination) ? "Ayder"
+      : /(?:ريزه|ريزة)/i.test(destination) ? "Rize"
+      : /(?:سامسون)/i.test(destination) ? "Samsun"
+      : /(?:أوردو|اوردو)/i.test(destination) ? "Ordu"
+      : /(?:جيرسون|قيرسون|غيرسون)/i.test(destination) ? "Giresun"
+      : /(?:سورميني)/i.test(destination) ? "Sürmene"
+      : /(?:أراكلي|اراكلي)/i.test(destination) ? "Araklı"
+      : destination;
     const geocodeQuery = isKnownTurkishDestination && !/(?:تركيا|turkey|türkiye)/i.test(destination)
-      ? destination + ", Türkiye"
+      ? canonicalTurkishPlace + ", Türkiye"
       : destination;
     // Photon can reject unsupported language codes (notably Arabic) with HTTP 400.
     // Keep geocoding language-neutral; OSM name:ar/name:tr tags are selected below.
@@ -312,6 +325,7 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
         && Number.isFinite(Number(coords?.[1])) && (!isKnownTurkishDestination || isInTurkey);
     };
     let geocodeFeatures: TourismPhotonFeature[] = [];
+    let photonUnavailable = false;
     try {
       const geocodeResponse = await fetch(geocodeUrl.toString(), {
         headers: { Accept: "application/geo+json, application/json", "User-Agent": "ALASSAUL-AI/1.0 (+https://alassaul.com)" },
@@ -321,10 +335,14 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
       const geocode = await geocodeResponse.json() as { features?: TourismPhotonFeature[] };
       geocodeFeatures = geocode.features ?? [];
     } catch (photonError) {
+      photonUnavailable = true;
       console.warn("[ALASSAUL tourism] Photon geocoding failed; trying Nominatim", safeProviderDiagnostic(photonError));
     }
     let resolved = geocodeFeatures.find(isAcceptableGeocode);
-    if (!resolved) {
+    // A successful empty Photon result is a verified "no match", not a transport failure.
+    // Only call the secondary geocoder when Photon is unavailable or returned candidates
+    // that could not pass the country/coordinate validation.
+    if (!resolved && (photonUnavailable || geocodeFeatures.length > 0)) {
       const nominatimUrl = new URL("https://nominatim.openstreetmap.org/search");
       nominatimUrl.search = new URLSearchParams({
         q: geocodeQuery,
@@ -364,10 +382,9 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
       ? [configuredOverpass]
       : ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
     let placesData: { elements?: TourismOverpassElement[] } | undefined;
-    // Start the independent Wikipedia fallback alongside Overpass so a slow map server
-    // does not add another full network timeout before a useful answer can be returned.
-    const wikimediaFallback = getWikimediaNearbyAttractions(lat, lon, language);
-    const attempts = await Promise.all(overpassEndpoints.map(async (endpoint) => {
+    const overpassFailures: string[] = [];
+    // Query public Overpass instances sequentially and stop at the first valid response.
+    for (const endpoint of overpassEndpoints) {
       try {
         const placesResponse = await fetch(endpoint, {
           method: "POST",
@@ -378,21 +395,16 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
         if (!placesResponse.ok) throw new Error("HTTP " + placesResponse.status);
         const candidate = await placesResponse.json() as { elements?: TourismOverpassElement[] };
         if (!Array.isArray(candidate.elements)) throw new Error("Invalid Overpass response");
-        return { endpoint, data: candidate };
+        placesData = candidate;
+        break;
       } catch (endpointError) {
         const diagnostic = safeProviderDiagnostic(endpointError);
         console.warn("[ALASSAUL tourism] Overpass endpoint failed", endpoint, diagnostic);
-        return { endpoint, error: diagnostic };
+        overpassFailures.push(endpoint + ": " + (diagnostic.diagnostic ?? "unknown error"));
       }
-    }));
-    const successfulAttempt = attempts.find((attempt): attempt is { endpoint: string; data: { elements?: TourismOverpassElement[] } } => "data" in attempt);
-    placesData = successfulAttempt?.data;
-    const overpassFailures = attempts.filter((attempt) => "error" in attempt).map((attempt) => {
-      const failure = attempt as { endpoint: string; error: { diagnostic?: string } };
-      return failure.endpoint + ": " + (failure.error.diagnostic ?? "unknown error");
-    });
+    }
     if (!placesData) {
-      const wikimediaPlaces = await wikimediaFallback;
+      const wikimediaPlaces = await getWikimediaNearbyAttractions(lat, lon, language);
       if (wikimediaPlaces.length) {
         const items = wikimediaPlaces.map((place, index) => {
           const directions = "https://www.google.com/maps/dir/?api=1&destination=" + place.lat + "," + place.lon;
@@ -962,7 +974,44 @@ function getContextualFallback(
     && /(?:طرابزون|ترابزون|trabzon|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i.test(latest);
   if (asksItinerary) {
     const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
-    const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
+    const arabicDayCount = /(?:أربعة|اربعة|أربع|اربع)\s*(?:أيام|ايام)/i.test(latest) ? 4
+      : /(?:ثلاثة|ثلاث|ثلاثه)\s*(?:أيام|ايام)/i.test(latest) ? 3
+      : /(?:يومان|يومين)/i.test(latest) ? 2
+      : /(?:خمسة|خمسه|خمس)\s*(?:أيام|ايام)/i.test(latest) ? 5
+      : undefined;
+    const requestedDays = durationMatch ? Number(durationMatch[1]) : arabicDayCount;
+    const isTrabzon = /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
+    if (isTrabzon) {
+      const find = (pattern: RegExp) => DESTINATION_GALLERY.find((place) => pattern.test(place.name));
+      const days = [
+        [find(/قصر أتاتورك/), find(/الميدان/), find(/بوزتبه/), find(/قانيتا/)],
+        [find(/دير صوميلا/), find(/هامسي كوي/)],
+        [find(/أوزنجول/), find(/ديمركابي/)],
+        [find(/بحيرة سيرا/), find(/حيدر نبي/)],
+      ].map((places) => places.filter((place): place is NonNullable<typeof place> => Boolean(place)));
+      const count = Math.min(5, Math.max(1, requestedDays ?? 4));
+      const plan = days.slice(0, count).map((places, index) => {
+        const stops = places.map((place) => {
+          const map = new URL("https://www.google.com/maps/search/");
+          map.searchParams.set("api", "1");
+          map.searchParams.set("query", place.query);
+          const displayName = /قانيتا/.test(place.name) ? "غانيتا (شاطئ قانيتا)" : place.name;
+          return "- **" + displayName + "** (" + place.region + ") — [الموقع على الخريطة](" + map.toString() + ")";
+        });
+        return "**اليوم " + (index + 1) + "**\n" + stops.join("\n");
+      });
+      const extraDays = count > days.length
+        ? "\n\nلإكمال الأيام الإضافية، اختر وجهات أخرى من دليل ALASSAUL بدلاً من تكرار المحطات أو اختراعها."
+        : "";
+      return language === "AR"
+        ? "هذا برنامج مبدئي مبني على الوجهات المسجلة في دليل ALASSAUL، مع تجميع المحطات بحسب المنطقة:\n\n" + plan.join("\n\n") + extraDays
+          + "\n\nملاحظة: هذا البرنامج ليس تحققاً من الطقس أو ساعات العمل أو حالة الطرق؛ افتح روابط الخرائط للتحقق من المسار قبل الانطلاق."
+        : language === "TR"
+          ? "Bu, ALASSAUL rehberinde kayıtlı destinasyonlara dayalı ön gezi planıdır:\n\n" + plan.join("\n\n")
+            + "\n\nHava durumu, açılış saatleri ve yol koşulları canlı olarak doğrulanmamıştır."
+          : "This is a preliminary itinerary based on destinations listed in the ALASSAUL guide:\n\n" + plan.join("\n\n")
+            + "\n\nWeather, opening hours, and road conditions have not been verified live.";
+    }
     const durationNote = requestedDays && requestedDays > 1
       ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
       : "";
@@ -1225,7 +1274,7 @@ export const appRouter = router({
   // deployment, deletion, billing, permission, or secret changes automatically.
   brain: router({
     status: adminProcedure.query(() => ({
-      configured: Boolean(ENV.llmApiUrl && (ENV.llmApiKey || ENV.forgeApiKey)),
+      configured: Boolean(ENV.llmApiUrl && ENV.llmApiKey),
       primaryModel: ENV.primaryModel,
       backupModel: ENV.backupModel,
       permissions: {
@@ -1306,14 +1355,14 @@ export const appRouter = router({
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
       }),
     list: controlStaffProcedure.query(async ({ ctx }) => {
-      if (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) return listControlRequests();
+      if (isConfiguredOwner(ctx.user)) return listControlRequests();
       const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : "IT";
       return listControlRequestsForAssignee(assignee);
     }),
     update: controlStaffProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "ready_for_review", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
       .mutation(async ({ ctx, input }) => {
-        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        const isOwner = isConfiguredOwner(ctx.user);
         if (!isOwner) {
           const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : ctx.user.role === "it" ? "IT" : null;
           if (!assignee || input.assignee !== undefined || input.decisionNote !== undefined || !["in_progress", "ready_for_review"].includes(input.status ?? "")) {
@@ -1336,7 +1385,7 @@ export const appRouter = router({
     reportIncident: controlStaffProcedure
       .input(z.object({ title: z.string().trim().min(4).max(180), description: z.string().trim().min(10).max(2000), severity: z.enum(["normal", "high", "urgent"]).default("high") }))
       .mutation(async ({ ctx, input }) => {
-        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        const isOwner = isConfiguredOwner(ctx.user);
         if (ctx.user.role !== "it" && !isOwner) throw new TRPCError({ code: "FORBIDDEN", message: "تسجيل الحوادث التقنية متاح لفريق IT فقط." });
         const request = await createControlRequest({ title: input.title, command: input.description, requesterType: "it", category: "security", priority: input.severity, assignee: "CEO" });
         if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_reported", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ severity: input.severity }) });
@@ -1515,10 +1564,6 @@ export const appRouter = router({
         // Keep simple identity and supported live-data questions available even
         // when the external language-model provider is temporarily unavailable.
         if (latestMessage?.role === "user" && !latestMessage.imageDataUrl) {
-          if (/^(?:السلام عليكم(?: ورحمة الله وبركاته)?|مرحبا|مرحباً|هلا|أهلاً وسهلاً|صباح الخير|مساء الخير)[\\s.!،؟]*$/i.test(latestText.trim())) {
-            return { text: "وعليكم السلام ورحمة الله وبركاته، حيّاك الله! كيف أقدر أساعدك؟" };
-          }
-
           if (/(?:من أنتم|من انتم|من أنت|من انت|من هو العسول|ما هو العسول|عرف بنفسك|عرّف بنفسك|صاحب.{0,18}(?:المنصة|الموقع|العسول)|مؤسس.{0,18}(?:المنصة|الموقع|العسول)|مالك.{0,18}(?:المنصة|الموقع|العسول)|who are you|what is alassaul)/i.test(latestText)) {
             // Answer common platform identity questions without depending on the model provider.
             if (/(?:صاحب|مؤسس|مالك).{0,18}(?:المنصة|الموقع|العسول|alassaul)|(?:من هو|مين هو).{0,18}(?:صاحب|مؤسس|مالك)/i.test(latestText)) {

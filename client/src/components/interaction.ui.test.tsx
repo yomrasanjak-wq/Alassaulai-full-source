@@ -532,13 +532,14 @@ describe("Guestbook studio upload", () => {
 });
 
 describe("Account, live modal, and place details", () => {
-  it("offers email and phone as optional account methods without a fake password flow", () => {
+  it("offers first-party email and Saudi phone OTP without a fake password flow", () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: /دخول الحساب/ }));
     expect(screen.getByRole("tab", { name: /البريد الإلكتروني/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: /رقم الجوال/ }));
-    expect(screen.getByText(/سيتم فتح بوابة الدخول/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: /متابعة الدخول الآمن/ })).toBeTruthy();
+    expect(screen.getByLabelText("رقم الجوال السعودي")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /إرسال رمز SMS/ })).toBeTruthy();
+    expect(screen.queryByLabelText(/كلمة المرور/)).toBeNull();
   });
 
   it("opens a city-guide destination directly on the in-app map", async () => {
@@ -592,7 +593,7 @@ describe("Official live channel actions", () => {
     fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
     const iframe = screen.getByTitle("مكة المكرمة") as HTMLIFrameElement;
     expect(iframe).toBeTruthy();
-    expect(iframe.src).toContain("youtube-nocookie.com/embed/eC4LfEVxvKg");
+    expect(iframe.src).toContain("youtube-nocookie.com/embed/kYqGbBqmp8g");
     expect(document.querySelector(".video-shell")).toBeNull();
   });
 
