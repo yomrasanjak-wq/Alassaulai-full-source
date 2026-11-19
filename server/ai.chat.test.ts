@@ -210,7 +210,9 @@ describe("brain governance", () => {
 
   it("allows approved partner accounts to submit requests and read only their own request inbox", async () => {
     const ownRequest = { id: 107, requesterType: "partner", requesterOpenId: "partner-open-id", title: "تحديث بيانات الفندق", status: "pending", decisionNote: "ملاحظة داخلية سرية للـ CEO" };
-    vi.mocked(listControlRequestsForRequester).mockResolvedValue([ownRequest as never]);
+    const anotherPartnersRequest = { id: 207, requesterType: "partner", requesterOpenId: "another-partner-open-id", title: "طلب شريك آخر", status: "pending" };
+    // Simulate an over-broad data-layer result: the API must still enforce ownership.
+    vi.mocked(listControlRequestsForRequester).mockResolvedValue([ownRequest, anotherPartnersRequest] as never);
     const caller = appRouter.createCaller(createUserContext("partner-open-id", "partner"));
     await caller.partners.submitRequest({ title: "تحديث بيانات الفندق", description: "نرغب في تحديث تفاصيل الإقامة والأسعار الموسمية." });
     expect(vi.mocked(createControlRequest)).toHaveBeenCalledWith(expect.objectContaining({
@@ -221,8 +223,10 @@ describe("brain governance", () => {
     }));
     const partnerInbox = await caller.partners.myRequests();
     expect(partnerInbox).toHaveLength(1);
+    expect(partnerInbox[0]).toMatchObject({ id: 107, title: "تحديث بيانات الفندق" });
     expect(partnerInbox[0]).not.toHaveProperty("decisionNote");
     expect(JSON.stringify(partnerInbox)).not.toContain("ملاحظة داخلية سرية");
+    expect(JSON.stringify(partnerInbox)).not.toContain("طلب شريك آخر");
     expect(vi.mocked(listControlRequestsForRequester)).toHaveBeenCalledWith("partner-open-id");
     await expect(caller.control.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
