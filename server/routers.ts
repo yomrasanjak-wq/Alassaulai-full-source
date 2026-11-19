@@ -957,12 +957,48 @@ function getContextualFallback(
     && /(?:طرابزون|ترابزون|trabzon|المدينة المنورة|المدينه المنوره|المدينة|madinah|medina)/i.test(latest);
   if (asksItinerary) {
     const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
-    const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
+    const arabicDayCount = /(?:أربعة|اربعة|أربع|اربع)\s*(?:أيام|ايام)/i.test(latest) ? 4
+      : /(?:ثلاثة|ثلاث|ثلاثه)\s*(?:أيام|ايام)/i.test(latest) ? 3
+      : /(?:يومان|يومين)/i.test(latest) ? 2
+      : /(?:خمسة|خمسه|خمس)\s*(?:أيام|ايام)/i.test(latest) ? 5
+      : undefined;
+    const requestedDays = durationMatch ? Number(durationMatch[1]) : arabicDayCount;
+    const isTrabzon = /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
+    if (isTrabzon) {
+      const find = (pattern: RegExp) => DESTINATION_GALLERY.find((place) => pattern.test(place.name));
+      const days = [
+        [find(/قصر أتاتورك/), find(/الميدان/), find(/بوزتبه/), find(/قانيتا/)],
+        [find(/دير صوميلا/), find(/هامسي كوي/)],
+        [find(/أوزنجول/), find(/ديمركابي/)],
+        [find(/بحيرة سيرا/), find(/حيدر نبي/)],
+      ].map((places) => places.filter((place): place is NonNullable<typeof place> => Boolean(place)));
+      const count = Math.min(5, Math.max(1, requestedDays ?? 4));
+      const plan = days.slice(0, count).map((places, index) => {
+        const stops = places.map((place) => {
+          const map = new URL("https://www.google.com/maps/search/");
+          map.searchParams.set("api", "1");
+          map.searchParams.set("query", place.query);
+          return "- **" + place.name + "** (" + place.region + ") — [الموقع على الخريطة](" + map.toString() + ")";
+        });
+        return "**اليوم " + (index + 1) + "**\n" + stops.join("\n");
+      });
+      const extraDays = count > days.length
+        ? "\n\nلإكمال الأيام الإضافية، اختر وجهات أخرى من دليل ALASSAUL بدلاً من تكرار المحطات أو اختراعها."
+        : "";
+      return language === "AR"
+        ? "هذا برنامج مبدئي مبني على الوجهات المسجلة في دليل ALASSAUL، مع تجميع المحطات بحسب المنطقة:\n\n" + plan.join("\n\n") + extraDays
+          + "\n\nملاحظة: هذه خطة تحريرية وليست تحققاً مباشراً من الطقس أو ساعات العمل أو حالة الطرق. افتح روابط الخرائط للتحقق من المسار قبل الانطلاق."
+        : language === "TR"
+          ? "Bu, ALASSAUL rehberinde kayıtlı destinasyonlara dayalı ön gezi planıdır:\n\n" + plan.join("\n\n")
+            + "\n\nHava durumu, açılış saatleri ve yol koşulları canlı olarak doğrulanmamıştır."
+          : "This is a preliminary itinerary based on destinations listed in the ALASSAUL guide:\n\n" + plan.join("\n\n")
+            + "\n\nWeather, opening hours, and road conditions have not been verified live.";
+    }
     const durationNote = requestedDays && requestedDays > 1
-      ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
+      ? \` طلبت برنامجاً لمدة \${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.\`
       : "";
     return language === "AR"
-      ? `تعذّر إكمال برنامج الرحلة بسبب انقطاع مؤقت في مزود الذكاء الاصطناعي.${durationNote} أعد المحاولة بعد قليل، وسأرتب البرنامج كاملاً يوماً بيوم بدلاً من تخمين تفاصيل ناقصة.`
+      ? \`تعذّر إكمال برنامج الرحلة بسبب انقطاع مؤقت في مزود الذكاء الاصطناعي.\${durationNote} أعد المحاولة بعد قليل، وسأرتب البرنامج كاملاً يوماً بيوم بدلاً من تخمين تفاصيل ناقصة.\`
       : language === "TR"
         ? "Gezi programı yapay zekâ sağlayıcısındaki geçici kesinti nedeniyle tamamlanamadı. Lütfen biraz sonra tekrar deneyin."
         : "The itinerary could not be completed because the AI provider temporarily timed out. Please retry shortly; I won't replace a multi-day plan with an incomplete one-day answer.";
