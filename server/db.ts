@@ -151,6 +151,7 @@ export async function getUserByVerifiedEmail(email: string) {
 }
 
 export async function getUserByGoogleSub(googleSub: string) {
+  await ensureGoogleIdentitySchema();
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
   const rows = await db.select().from(users).where(eq(users.googleSub, googleSub)).limit(1);
@@ -159,6 +160,7 @@ export async function getUserByGoogleSub(googleSub: string) {
 
 /** Link a verified Google subject without changing the existing openId or related user data. */
 export async function linkGoogleIdentity(openId: string, googleSub: string) {
+  await ensureGoogleIdentitySchema();
   const db = await getDb();
   if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
   const rows = await db.update(users)
