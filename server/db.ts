@@ -1,4 +1,4 @@
-import { count, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
@@ -204,6 +204,30 @@ export async function updateControlRequest(
   if (!db) return undefined;
   await db.update(controlRequests).set({ ...input, updatedAt: new Date() }).where(eq(controlRequests.id, id));
   const rows = await db.select().from(controlRequests).where(eq(controlRequests.id, id)).limit(1);
+  return rows[0];
+}
+
+/**
+ * Atomically advance a staff task only while it is still assigned to the
+ * authenticated account and remains in the status that was just validated.
+ * This closes the read-then-write ownership race in control.update.
+ */
+export async function updateAssignedControlRequest(
+  id: number,
+  assignee: string,
+  expectedStatus: ControlRequest["status"],
+  nextStatus: ControlRequest["status"],
+): Promise<ControlRequest | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.update(controlRequests)
+    .set({ status: nextStatus, updatedAt: new Date() })
+    .where(and(
+      eq(controlRequests.id, id),
+      eq(controlRequests.assignee, assignee),
+      eq(controlRequests.status, expectedStatus),
+    ))
+    .returning();
   return rows[0];
 }
 
