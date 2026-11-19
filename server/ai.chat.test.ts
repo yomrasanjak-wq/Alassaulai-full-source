@@ -281,6 +281,7 @@ describe("brain governance", () => {
     const task = { id: 99, assignee: "it:1", status: "in_progress" };
     vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
     vi.mocked(listControlRequests).mockResolvedValue([task as never]);
+    vi.mocked(updateAssignedControlRequest).mockResolvedValue({ id: 99, assignee: "it:1", status: "ready_for_review" } as never);
     const caller = appRouter.createCaller(createUserContext("it-open-id", "it"));
     await caller.control.update({ id: 99, status: "ready_for_review" });
     expect(vi.mocked(updateAssignedControlRequest)).toHaveBeenCalledWith(99, "it:1", "in_progress", "ready_for_review");
