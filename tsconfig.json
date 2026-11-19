@@ -29,6 +29,7 @@
     "baseUrl": ".",
     "types": [
       "node",
+      "express",
       "vite/client",
       "google.maps"
     ],
