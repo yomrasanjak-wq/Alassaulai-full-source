@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import type { Express, Request, Response } from "express";
+import { parse as parseCookieHeader } from "cookie";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
@@ -46,7 +47,7 @@ function flowCookieOptions() {
 export function registerGoogleOAuthRoutes(app: Express) {
   app.get("/api/auth/google", (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
-    if (!ENV.googleClientId || !ENV.googleClientSecret || !ENV.cookieSecret || !ENV.databaseUrl) {
+    if (!ENV.googleClientId || !ENV.googleClientSecret || !ENV.cookieSecret || !ENV.databaseUrl || !ENV.appId) {
       res.status(503).send("تسجيل الدخول عبر Google غير مهيأ بعد على نسخة المعاينة.");
       return;
     }
