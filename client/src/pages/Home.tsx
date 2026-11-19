@@ -2183,7 +2183,7 @@ export default function Home() {
       </div>}
 
       <button className="floating-chat" aria-label="chat" onClick={() => setChatOpen((open) => !open)}><span className="floating-chat-avatar"><img src={ASSETS.officialRobot} alt="" /></span><span>اسأل العسول</span></button>
-      {chatOpen && <aside className="chat-panel" aria-label="محادثة مساعد ALASSAUL">
+      {chatOpen && <aside className="chat-panel" aria-label="محادثة مساعد ALASSAUL" style={{ left: 12, right: 12, transform: "none" }}>
         <div className="chat-header">
           <div><span className="chat-avatar official-robot"><img src={ASSETS.officialRobot} alt="روبوت ALASSAUL الرسمي" /></span><span><strong>المتحدث الرسمي · {t.chatTitle}</strong><small><span className="green-ping" /> {chatMutation.isPending ? "يكتب الآن…" : "متصل الآن"}</small></span></div>
           <div className="chat-header-actions">{auth.user && <button type="button" className={`chat-memory-toggle ${memoryPanelOpen ? "active" : ""}`} onClick={() => setMemoryPanelOpen((open) => !open)} aria-label="إعدادات ذاكرتي" title="ذاكرتي"><BrainCircuit size={17} /><span>ذاكرتي</span></button>}<button onClick={() => { window.speechSynthesis?.cancel(); setChatOpen(false); }} aria-label="إغلاق المحادثة"><X size={18} /></button></div>
