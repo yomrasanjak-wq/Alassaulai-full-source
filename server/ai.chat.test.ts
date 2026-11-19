@@ -208,6 +208,18 @@ describe("brain governance", () => {
     expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(106, expect.objectContaining({ status: "in_progress" }));
   });
 
+  it("blocks an executor from updating a task assigned to another executor account", async () => {
+    const anotherExecutorsTask = { id: 206, assignee: "executor:10", status: "reviewed" };
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([anotherExecutorsTask as never]);
+    const executor = appRouter.createCaller({
+      ...createUserContext("executor-nine-open-id", "executor"),
+      user: { ...createUserContext("executor-nine-open-id", "executor").user!, id: 9 } as never,
+    });
+    await expect(executor.control.update({ id: 206, status: "in_progress" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(vi.mocked(listControlRequestsForAssignee)).toHaveBeenCalledWith("executor:9");
+    expect(vi.mocked(updateControlRequest)).not.toHaveBeenCalled();
+  });
+
   it("allows approved partner accounts to submit requests and read only their own request inbox", async () => {
     const ownRequest = { id: 107, requesterType: "partner", requesterOpenId: "partner-open-id", title: "تحديث بيانات الفندق", status: "pending", decisionNote: "ملاحظة داخلية سرية للـ CEO" };
     const anotherPartnersRequest = { id: 207, requesterType: "partner", requesterOpenId: "another-partner-open-id", title: "طلب شريك آخر", status: "pending" };
