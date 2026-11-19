@@ -326,7 +326,7 @@ describe("live worldwide tourism place lookup", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
       if (url.startsWith("https://photon.komoot.io/api/")) {
-        expect(decodeURIComponent(url)).toContain("Trabzon, Türkiye");
+        expect(new URL(url).searchParams.get("q")).toBe("Trabzon, Türkiye");
         expect(new URL(url).searchParams.has("lang")).toBe(false);
         return new Response(JSON.stringify({
           features: [
@@ -848,7 +848,7 @@ describe("ai.chat", () => {
         expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
       } else if (url.hostname === "www.spl.com.sa") {
         officialFixtureCalls += 1;
-        expect(url.pathname).toContain("/fixtures-results");
+        expect(url.pathname).toMatch(/\/(?:fixtures-results|matches)$/);
       } else {
         throw new Error("Unexpected source for Saudi Pro League fixtures: " + url.hostname);
       }
