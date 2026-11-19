@@ -978,7 +978,8 @@ function getContextualFallback(
           const map = new URL("https://www.google.com/maps/search/");
           map.searchParams.set("api", "1");
           map.searchParams.set("query", place.query);
-          return "- **" + place.name + "** (" + place.region + ") — [الموقع على الخريطة](" + map.toString() + ")";
+          const displayName = /قانيتا/.test(place.name) ? "غانيتا (شاطئ قانيتا)" : place.name;
+          return "- **" + displayName + "** (" + place.region + ") — [الموقع على الخريطة](" + map.toString() + ")";
         });
         return "**اليوم " + (index + 1) + "**\n" + stops.join("\n");
       });
@@ -987,7 +988,7 @@ function getContextualFallback(
         : "";
       return language === "AR"
         ? "هذا برنامج مبدئي مبني على الوجهات المسجلة في دليل ALASSAUL، مع تجميع المحطات بحسب المنطقة:\n\n" + plan.join("\n\n") + extraDays
-          + "\n\nملاحظة: هذه خطة تحريرية وليست تحققاً مباشراً من الطقس أو ساعات العمل أو حالة الطرق. افتح روابط الخرائط للتحقق من المسار قبل الانطلاق."
+          + "\n\nملاحظة: هذا البرنامج ليس تحققاً من الطقس أو ساعات العمل أو حالة الطرق؛ افتح روابط الخرائط للتحقق من المسار قبل الانطلاق."
         : language === "TR"
           ? "Bu, ALASSAUL rehberinde kayıtlı destinasyonlara dayalı ön gezi planıdır:\n\n" + plan.join("\n\n")
             + "\n\nHava durumu, açılış saatleri ve yol koşulları canlı olarak doğrulanmamıştır."
