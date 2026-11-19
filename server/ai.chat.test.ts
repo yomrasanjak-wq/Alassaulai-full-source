@@ -328,6 +328,49 @@ describe("brain governance", () => {
     }
   });
 
+  it("publishes only CEO-approved partner ads with safe public fields and URLs", async () => {
+    const validAd = {
+      id: 501,
+      category: "partner",
+      status: "reviewed",
+      command: "ALASSAUL_AD_V1\n" + JSON.stringify({
+        title: "عرض إقامة",
+        description: "تفاصيل العرض",
+        country: "SA",
+        imageUrl: "https://cdn.example.com/ad.jpg",
+        targetUrl: "https://partner.example.com/offer",
+      }),
+      requesterOpenId: "private-partner-id",
+    };
+    const pendingAd = {
+      ...validAd,
+      id: 502,
+      status: "pending",
+    };
+    const unsafeAd = {
+      ...validAd,
+      id: 503,
+      command: "ALASSAUL_AD_V1\n" + JSON.stringify({
+        title: "رابط غير آمن",
+        description: "يجب ألا يظهر",
+        targetUrl: "javascript:alert(1)",
+      }),
+    };
+    vi.mocked(listControlRequests).mockResolvedValue([pendingAd, unsafeAd, validAd] as never);
+    const visitor = appRouter.createCaller(createPublicContext());
+    const ads = await visitor.partners.activeAds();
+    expect(ads).toEqual([{
+      id: 501,
+      title: "عرض إقامة",
+      description: "تفاصيل العرض",
+      country: "السعودية",
+      imageUrl: "https://cdn.example.com/ad.jpg",
+      targetUrl: "https://partner.example.com/offer",
+    }]);
+    expect(JSON.stringify(ads)).not.toContain("private-partner-id");
+    expect(JSON.stringify(ads)).not.toContain("ALASSAUL_AD_V1");
+  });
+
   it("applies the additive control-room schema only through the owner team view", async () => {
     const previousOwnerId = ENV.ownerOpenId;
     ENV.ownerOpenId = "platform-owner-open-id";
