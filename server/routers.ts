@@ -1314,26 +1314,43 @@ export const appRouter = router({
       }),
     list: controlStaffProcedure.query(async ({ ctx }) => {
       if (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) return listControlRequests();
-      const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : "IT";
+      if (!["secretary", "assistant", "it"].includes(ctx.user.role)) return [];
+      // Assignments are scoped to a single authenticated account, not the whole department.
+      const assignee = `${ctx.user.role}:${ctx.user.id}`;
       return listControlRequestsForAssignee(assignee);
     }),
     update: controlStaffProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "ready_for_review", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
       .mutation(async ({ ctx, input }) => {
         const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        const allTasks = await listControlRequests();
+        const currentTask = allTasks.find((task) => task.id === input.id);
+        if (!currentTask) throw new TRPCError({ code: "NOT_FOUND", message: "المهمة غير موجودة." });
         if (!isOwner) {
-          const assignee = ctx.user.role === "secretary" ? "السكرتير" : ctx.user.role === "assistant" ? "المساعد" : ctx.user.role === "it" ? "IT" : null;
-          if (!assignee || input.assignee !== undefined || input.decisionNote !== undefined || !["in_progress", "ready_for_review"].includes(input.status ?? "")) {
-            throw new TRPCError({ code: "FORBIDDEN", message: "يمكنك تحديث حالة المهام المسندة إلى قسمك فقط." });
+          const ownAssignment = `${ctx.user.role}:${ctx.user.id}`;
+          if (currentTask.assignee !== ownAssignment || input.assignee !== undefined || input.decisionNote !== undefined) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة ليست مسندة إلى حسابك الشخصي." });
           }
-          const assignedTasks = await listControlRequestsForAssignee(assignee);
-          if (!assignedTasks.some((task) => task.id === input.id)) {
-            throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة ليست ضمن مهام قسمك." });
+          const canStart = currentTask.status === "reviewed" && input.status === "in_progress";
+          const canSubmitForReview = currentTask.status === "in_progress" && input.status === "ready_for_review";
+          if (!canStart && !canSubmitForReview) {
+            throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكنك بدء المهمة قبل موافقة CEO، أو تغييرها خارج تسلسل التنفيذ والمراجعة." });
           }
-        } else if (input.status === "completed") {
-          const allTasks = await listControlRequests();
-          if (!allTasks.some((task) => task.id === input.id && task.status === "ready_for_review")) {
-            throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكن اعتماد الإكمال قبل أن يرفع فريق التنفيذ المهمة للمراجعة." });
+        } else {
+          if (input.status === "reviewed" || input.status === "in_progress") {
+            const assignment = input.assignee ?? currentTask.assignee;
+            if (assignment !== "CEO") {
+              const match = /^(secretary|assistant|it):(\d+)$/.exec(assignment ?? "");
+              if (!match) throw new TRPCError({ code: "BAD_REQUEST", message: "اختر موظفاً محدداً من الفريق قبل اعتماد المهمة." });
+              const [, role, memberId] = match;
+              const members = await listControlTeamMembers();
+              if (!members.some((member) => member.id === Number(memberId) && member.role === role)) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: "الموظف المحدد غير موجود أو لا يحمل صلاحية القسم المطلوب." });
+              }
+            }
+          }
+          if (input.status === "completed" && currentTask.status !== "ready_for_review") {
+            throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكن اعتماد الإكمال قبل أن يرفع الموظف المهمة للمراجعة." });
           }
         }
         const updated = await updateControlRequest(input.id, { status: input.status, assignee: isOwner ? input.assignee : undefined, decisionNote: isOwner ? input.decisionNote : undefined });
