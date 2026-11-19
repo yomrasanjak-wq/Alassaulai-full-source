@@ -7,6 +7,9 @@ import {
   varchar,
   jsonb,
   boolean,
+  integer,
+  uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["user", "admin", "secretary", "assistant", "it", "partner", "executor"]);
@@ -37,6 +40,28 @@ export const users = pgTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+/**
+ * External login identities are linked to the existing internal user row.
+ * Never replace users.openId: memories, audit records, and permissions use it.
+ */
+export const authIdentities = pgTable("authIdentities", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  provider: varchar("provider", { length: 32 }).notNull(),
+  providerSubject: varchar("providerSubject", { length: 255 }).notNull(),
+  providerEmail: varchar("providerEmail", { length: 320 }),
+  emailVerified: boolean("emailVerified").notNull().default(false),
+  linkedByOpenId: varchar("linkedByOpenId", { length: 64 }),
+  createdAt: createdAt(),
+}, (table) => ({
+  providerSubjectUnique: uniqueIndex("auth_identities_provider_subject_uq").on(table.provider, table.providerSubject),
+  userProviderUnique: uniqueIndex("auth_identities_user_provider_uq").on(table.userId, table.provider),
+  userIdIdx: index("auth_identities_user_id_idx").on(table.userId),
+}));
+
+export type AuthIdentity = typeof authIdentities.$inferSelect;
+export type InsertAuthIdentity = typeof authIdentities.$inferInsert;
 
 export const controlRequests = pgTable("controlRequests", {
   id: serial("id").primaryKey(),
