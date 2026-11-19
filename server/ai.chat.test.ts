@@ -164,22 +164,28 @@ describe("brain governance", () => {
     }
   });
 
-  it("allows a secretary to see and update only personally assigned, CEO-approved tasks", async () => {
-    const task = { id: 42, assignee: "secretary:1", status: "reviewed" };
+  it("allows a secretary to see only assigned task fields, excluding private requester and CEO notes", async () => {
+    const task = { id: 42, assignee: "secretary:1", status: "reviewed", requesterOpenId: "private-requester-id", decisionNote: "ملاحظة CEO داخلية" };
     vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
     vi.mocked(listControlRequests).mockResolvedValue([task as never]);
     const caller = appRouter.createCaller(createUserContext("secretary-open-id", "secretary"));
-    await expect(caller.control.list()).resolves.toEqual([task]);
+    const inbox = await caller.control.list();
+    expect(inbox).toEqual([{ id: 42, assignee: "secretary:1", status: "reviewed" }]);
+    expect(JSON.stringify(inbox)).not.toContain("private-requester-id");
+    expect(JSON.stringify(inbox)).not.toContain("ملاحظة CEO داخلية");
     expect(vi.mocked(listControlRequestsForAssignee)).toHaveBeenCalledWith("secretary:1");
     await caller.control.update({ id: 42, status: "in_progress" });
     expect(vi.mocked(updateAssignedControlRequest)).toHaveBeenCalledWith(42, "secretary:1", "reviewed", "in_progress");
   });
 
-  it("keeps assistant tasks and audit records isolated to the CEO", async () => {
-    const task = { id: 45, assignee: "assistant:1", status: "reviewed" };
+  it("keeps assistant tasks scoped and withholds private requester and CEO note fields", async () => {
+    const task = { id: 45, assignee: "assistant:1", status: "reviewed", requesterOpenId: "private-requester-id", decisionNote: "ملاحظة CEO داخلية" };
     vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
     const caller = appRouter.createCaller(createUserContext("assistant-open-id", "assistant"));
-    await expect(caller.control.list()).resolves.toEqual([task]);
+    const inbox = await caller.control.list();
+    expect(inbox).toEqual([{ id: 45, assignee: "assistant:1", status: "reviewed" }]);
+    expect(JSON.stringify(inbox)).not.toContain("private-requester-id");
+    expect(JSON.stringify(inbox)).not.toContain("ملاحظة CEO داخلية");
     expect(vi.mocked(listControlRequestsForAssignee)).toHaveBeenCalledWith("assistant:1");
     await caller.control.update({ id: 45, status: "in_progress" });
     expect(vi.mocked(updateAssignedControlRequest)).toHaveBeenCalledWith(45, "assistant:1", "reviewed", "in_progress");
