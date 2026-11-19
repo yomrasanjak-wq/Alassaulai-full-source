@@ -717,10 +717,10 @@ img { display: block; max-width: 100%; }
 .camera-art-overlay span { font-family: "Noto Kufi Arabic"; font-size: 12px; font-weight: 700; line-height: 1.6; }
 .camera-group-card .camera-thumb > .status-pill { z-index: 2; }
 /* Keep the assistant centered and scroll only inside its conversation */
-.chat-panel { left: 16px !important; right: 16px !important; inset-inline-start: auto !important; inset-inline-end: auto !important; margin-inline: auto; transform: none; width: min(430px, calc(100vw - 32px)); max-width: calc(100vw - 32px); box-sizing: border-box; max-height: min(720px, calc(100dvh - 96px)); }
+.chat-panel { left: 16px !important; right: 16px !important; margin-inline: auto; transform: none; width: min(430px, calc(100vw - 32px)); max-width: calc(100vw - 32px); box-sizing: border-box; max-height: min(720px, calc(100dvh - 96px)); }
 .chat-panel .chat-body { min-height: 0; overflow-y: auto; }
 @media (max-width: 640px) {
-  .chat-panel { left: 12px !important; right: 12px !important; inset-inline-start: auto !important; inset-inline-end: auto !important; bottom: 68px; margin-inline: auto; width: min(430px, calc(100vw - 24px)); max-width: calc(100vw - 24px); transform: none; max-height: calc(100dvh - 84px); }
+  .chat-panel { left: 12px !important; right: 12px !important; bottom: 68px; margin-inline: auto; width: min(430px, calc(100vw - 24px)); max-width: calc(100vw - 24px); transform: none; max-height: calc(100dvh - 84px); }
   .camera-group-card .camera-thumb { min-height: 190px; }
   .camera-art-overlay { padding-inline: 12px; }
   .camera-art-overlay span { font-size: 11px; }
@@ -1573,7 +1573,7 @@ img { display: block; max-width: 100%; }
 
 /* Premium ALASSAUL assistant refresh — visual layer only; chat logic stays in Home.tsx. */
 .chat-panel {
-  left: 50% !important; right: auto !important; inset-inline-start: auto !important; inset-inline-end: auto !important;
+  left: 50% !important; right: auto !important;
   bottom: 82px !important; transform: translateX(-50%) !important; margin: 0 !important;
   width: min(880px, calc(100vw - 28px)) !important; height: min(720px, calc(100vh - 112px)); max-height: calc(100vh - 112px);
   display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(212 175 55 / 34%); border-radius: 24px;
