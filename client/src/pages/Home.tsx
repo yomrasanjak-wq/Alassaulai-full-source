@@ -1328,7 +1328,7 @@ export default function Home() {
       const response = await chatMutation.mutateAsync({
         language,
         // Keep the browser payload aligned with the server's bounded 14-message context.
-        messages: nextMessages.slice(-14).map((message, index, recentMessages) => ({
+        messages: nextMessages.slice(-20).map((message, index, recentMessages) => ({
           role: message.from as "user" | "assistant",
           content: message.text,
           ...(index === recentMessages.length - 1 && message.imageDataUrl ? { imageDataUrl: message.imageDataUrl } : {}),
