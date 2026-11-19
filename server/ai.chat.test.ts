@@ -175,6 +175,18 @@ describe("brain governance", () => {
     expect(vi.mocked(updateAssignedControlRequest)).toHaveBeenCalledWith(42, "secretary:1", "reviewed", "in_progress");
   });
 
+  it("keeps assistant tasks and audit records isolated to the CEO", async () => {
+    const task = { id: 45, assignee: "assistant:1", status: "reviewed" };
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
+    const caller = appRouter.createCaller(createUserContext("assistant-open-id", "assistant"));
+    await expect(caller.control.list()).resolves.toEqual([task]);
+    expect(vi.mocked(listControlRequestsForAssignee)).toHaveBeenCalledWith("assistant:1");
+    await caller.control.update({ id: 45, status: "in_progress" });
+    expect(vi.mocked(updateAssignedControlRequest)).toHaveBeenCalledWith(45, "assistant:1", "reviewed", "in_progress");
+    await expect(caller.control.auditList()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.team.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("blocks staff from starting a task while it is still pending CEO approval", async () => {
     const task = { id: 43, assignee: "secretary:1", status: "pending" };
     vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
