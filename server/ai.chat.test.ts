@@ -474,6 +474,18 @@ describe("conversation continuity guidance", () => {
     expect(instruction).toContain("احتفظ ببقية سياق الطلب");
   });
 
+  it("recognizes the user's natural continue/keep-going acknowledgements", () => {
+    for (const reply of ["نواصل", "نكمل", "ممتاز", "أحسنت، استمر"]) {
+      const instruction = getConversationContinuityInstruction([
+        { role: "user", content: "راجع صلاحيات بوابة الشريك وأصلح العزل" },
+        { role: "assistant", content: "تمت مراجعة العزل..." },
+        { role: "user", content: reply },
+      ]);
+      expect(instruction).toContain("إشارة للاستمرار");
+      expect(instruction).toContain("دون إعادة الشرح");
+    }
+  });
+
   it("does not label the first user message as a follow-up", () => {
     expect(getConversationContinuityInstruction([
       { role: "user", content: "السلام عليكم" },
