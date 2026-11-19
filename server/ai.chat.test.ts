@@ -3,6 +3,17 @@ import { appRouter, classifyModelProviderFailure, compactChatHistory, extractTou
 import { getWikipediaSearchContext, isWikipediaReferenceQuestion } from "./_core/wikipediaSearch";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
+
+// Keep tourism tests hermetic: production Wikimedia fallback fans out to live APIs.
+vi.mock("./liveTourismFallback", () => ({
+  getWikimediaNearbyAttractions: vi.fn().mockResolvedValue([]),
+}));
+
+const TOURISM_TEST_OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+];
 import type { TrpcContext } from "./_core/context";
 
 vi.mock("./_core/llm", () => ({
@@ -453,7 +464,7 @@ describe("live worldwide tourism place lookup", () => {
           }],
         }), { status: 200, headers: { "content-type": "application/geo+json" } });
       }
-      expect(url).toBe("https://overpass-api.de/api/interpreter");
+      expect(TOURISM_TEST_OVERPASS_ENDPOINTS).toContain(url);
       return new Response(JSON.stringify({
         elements: [{
           type: "node", id: 12345, lat: 35.039, lon: 135.729,
@@ -467,7 +478,10 @@ describe("live worldwide tourism place lookup", () => {
       expect(result).toContain("openstreetmap.org/node/12345");
       expect(result).toContain("google.com/maps/dir/");
       expect(result).toContain("OpenStreetMap contributors");
-      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy).toHaveBeenCalledTimes(4);
+      for (const endpoint of TOURISM_TEST_OVERPASS_ENDPOINTS) {
+        expect(fetchSpy).toHaveBeenCalledWith(endpoint, expect.objectContaining({ method: "POST" }));
+      }
     } finally {
       fetchSpy.mockRestore();
     }
@@ -506,13 +520,22 @@ describe("live worldwide tourism place lookup", () => {
   });
 
   it("does not invent attractions when geocoding cannot resolve a destination", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ features: [] }), {
-      status: 200, headers: { "content-type": "application/geo+json" },
-    }));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      if (url.hostname === "photon.komoot.io") {
+        return new Response(JSON.stringify({ features: [] }), {
+          status: 200, headers: { "content-type": "application/geo+json" },
+        });
+      }
+      expect(url.hostname).toBe("nominatim.openstreetmap.org");
+      return new Response(JSON.stringify({ features: [] }), {
+        status: 200, headers: { "content-type": "application/geo+json" },
+      });
+    });
     try {
       const result = await getLiveTourismPlacesAnswer("أماكن سياحية في مكان غير معروف", "AR");
       expect(result).toContain("لم أتمكن من تحديد");
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
     } finally {
       fetchSpy.mockRestore();
     }
