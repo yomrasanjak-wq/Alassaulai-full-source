@@ -73,7 +73,7 @@ export const ENV = {
     : usesNetlifyAiGateway
       ? "gpt-5.6-luna"
       : usesDirectOpenAi
-        ? "gpt-6.1-sol"
+        ? "gpt-6.2-sol"
         : usesOpenRouter
           ? "openai/gpt-4.1-mini"
           : "qwen/qwen3.8-27b"),
