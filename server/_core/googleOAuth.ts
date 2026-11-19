@@ -81,11 +81,7 @@ export function registerGoogleOAuthRoutes(app: Express) {
     res.setHeader("Cache-Control", "no-store");
     const code = typeof req.query.code === "string" ? req.query.code : "";
     const state = typeof req.query.state === "string" ? req.query.state : "";
-    const cookies = (req.headers.cookie ?? "").split(";").reduce<Record<string, string>>((all, part) => {
-      const index = part.indexOf("=");
-      if (index > 0) all[part.slice(0, index).trim()] = decodeURIComponent(part.slice(index + 1).trim());
-      return all;
-    }, {});
+    const cookies = parseCookieHeader(req.headers.cookie ?? "");
     const expectedState = cookies[STATE_COOKIE];
     const nonce = cookies[NONCE_COOKIE];
     const verifier = cookies[VERIFIER_COOKIE];
@@ -94,7 +90,7 @@ export function registerGoogleOAuthRoutes(app: Express) {
       res.status(403).send("انتهت جلسة التحقق أو لم تطابق بيانات الحماية. أعد المحاولة من الموقع.");
       return;
     }
-    if (!ENV.googleClientId || !ENV.googleClientSecret || !ENV.cookieSecret || !ENV.databaseUrl) {
+    if (!ENV.googleClientId || !ENV.googleClientSecret || !ENV.cookieSecret || !ENV.databaseUrl || !ENV.appId) {
       res.status(503).send("إعدادات تسجيل الدخول عبر Google غير مكتملة.");
       return;
     }
