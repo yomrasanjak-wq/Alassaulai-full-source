@@ -76,7 +76,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   const values: InsertUser = { openId: user.openId };
   const updateSet: Partial<InsertUser> = {};
 
-  const textFields = ["name", "email", "loginMethod"] as const;
+  const textFields = ["name", "email", "loginMethod", "googleSub"] as const;
   type TextField = (typeof textFields)[number];
 
   const assignNullable = (field: TextField) => {
@@ -119,6 +119,38 @@ export async function getUserByOpenId(openId: string) {
   }
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result[0];
+}
+
+/** Resolve an account only after the caller has verified the provider's email claim. */
+export async function getUserByVerifiedEmail(email: string) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const normalized = email.trim().toLowerCase();
+  const rows = await db.select().from(users)
+    .where(sql`lower(${users.email}) = ${normalized}`).limit(2);
+  if (rows.length > 1) throw new Error("يوجد أكثر من حساب مسجل بهذا البريد؛ يلزم توحيد الحسابات قبل الربط.");
+  return rows[0];
+}
+
+export async function getUserByGoogleSub(googleSub: string) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const rows = await db.select().from(users).where(eq(users.googleSub, googleSub)).limit(1);
+  return rows[0];
+}
+
+/** Link a verified Google subject without changing the existing openId or related user data. */
+export async function linkGoogleIdentity(openId: string, googleSub: string) {
+  const db = await getDb();
+  if (!db) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+  const rows = await db.update(users)
+    .set({ googleSub, loginMethod: "google", updatedAt: new Date() })
+    .where(and(eq(users.openId, openId), isNull(users.googleSub)))
+    .returning();
+  if (rows[0]) return rows[0];
+  const existing = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  if (existing[0]?.googleSub === googleSub) return existing[0];
+  throw new Error("تعذر ربط حساب Google بهذا الحساب؛ قد يكون مرتبطاً بحساب آخر.");
 }
 
 export async function listControlRequestsForAssignee(assignee: string): Promise<ControlRequest[]> {
