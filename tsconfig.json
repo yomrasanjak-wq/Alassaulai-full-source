@@ -30,6 +30,7 @@
     "types": [
       "node",
       "express",
+      "express-serve-static-core",
       "vite/client",
       "google.maps"
     ],
