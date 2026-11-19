@@ -33,11 +33,12 @@ vi.mock("./db", async importOriginal => {
     listControlTeamMembers: vi.fn().mockResolvedValue([]),
     updateUserRoleByEmail: vi.fn().mockResolvedValue({ id: 2, email: "staff@example.com", role: "secretary" }),
     updateControlRequest: vi.fn().mockResolvedValue({ id: 1, status: "reviewed" }),
+    updateControlRequestIfUnchanged: vi.fn().mockResolvedValue({ id: 1, status: "reviewed" }),
     updateAssignedControlRequest: vi.fn().mockResolvedValue({ id: 1, status: "in_progress" }),
   };
 });
 
-import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, updateAssignedControlRequest, updateControlRequest, updateUserRoleByEmail } from "./db";
+import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, updateAssignedControlRequest, updateControlRequest, updateControlRequestIfUnchanged, updateUserRoleByEmail } from "./db";
 
 function createPublicContext(): TrpcContext {
   return {
@@ -63,6 +64,7 @@ describe("brain governance", () => {
     vi.mocked(listControlRequestsForRequester).mockResolvedValue([]);
     vi.mocked(listControlTeamMembers).mockResolvedValue([]);
     vi.mocked(updateControlRequest).mockResolvedValue({ id: 1, status: "reviewed" } as never);
+    vi.mocked(updateControlRequestIfUnchanged).mockResolvedValue({ id: 1, status: "reviewed" } as never);
   });
   it("does not expose administrative diagnostics or proposal actions to public visitors", async () => {
     const caller = appRouter.createCaller(createPublicContext());
@@ -210,7 +212,7 @@ describe("brain governance", () => {
     try {
       const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
       await owner.control.update({ id: 44, status: "reviewed", assignee: "secretary:2" });
-      expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(44, expect.objectContaining({ status: "reviewed", assignee: "secretary:2" }));
+      expect(vi.mocked(updateControlRequestIfUnchanged)).toHaveBeenCalledWith(44, "pending", "السكرتير", expect.objectContaining({ status: "reviewed", assignee: "secretary:2" }));
     } finally {
       ENV.ownerOpenId = previousOwnerId;
     }
@@ -289,7 +291,7 @@ describe("brain governance", () => {
     try {
       const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
       await owner.control.update({ id: 108, status: "reviewed", assignee: "executor:9" });
-      expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(108, expect.objectContaining({ status: "reviewed", assignee: "executor:9" }));
+      expect(vi.mocked(updateControlRequestIfUnchanged)).toHaveBeenCalledWith(108, "pending", "CEO", expect.objectContaining({ status: "reviewed", assignee: "executor:9" }));
     } finally {
       ENV.ownerOpenId = previousOwnerId;
     }
@@ -324,11 +326,11 @@ describe("brain governance", () => {
     ENV.ownerOpenId = "platform-owner-open-id";
     const submittedTask = { id: 102, assignee: "it:1", status: "ready_for_review" };
     vi.mocked(listControlRequests).mockResolvedValue([submittedTask as never]);
-    vi.mocked(updateControlRequest).mockResolvedValue({ ...submittedTask, status: "completed" } as never);
+    vi.mocked(updateControlRequestIfUnchanged).mockResolvedValue({ ...submittedTask, status: "completed" } as never);
     try {
       const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
       await owner.control.update({ id: 102, status: "completed" });
-      expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(102, expect.objectContaining({ status: "completed" }));
+      expect(vi.mocked(updateControlRequestIfUnchanged)).toHaveBeenCalledWith(102, "ready_for_review", "it:1", expect.objectContaining({ status: "completed" }));
     } finally {
       ENV.ownerOpenId = previousOwnerId;
     }
