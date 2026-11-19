@@ -10,10 +10,13 @@ CREATE TABLE IF NOT EXISTS public."authIdentities" (
   "linkedByOpenId" varchar(64),
   "createdAt" timestamptz NOT NULL DEFAULT now()
 );
+--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "auth_identities_provider_subject_uq"
   ON public."authIdentities" ("provider", "providerSubject");
+--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "auth_identities_user_provider_uq"
   ON public."authIdentities" ("userId", "provider");
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "auth_identities_user_id_idx"
   ON public."authIdentities" ("userId");
 
