@@ -1398,7 +1398,7 @@ export const appRouter = router({
         const incident = (await listControlRequests()).find((item) => item.id === input.id && item.requesterType === "it" && item.category === "security");
         if (!incident) throw new TRPCError({ code: "NOT_FOUND", message: "لم يتم العثور على البلاغ." });
         if (incident.status === "completed" || incident.status === "rejected") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكن تصعيد بلاغ مغلق." });
-        const updated = await updateControlRequest(input.id, { priority: "urgent" as never, status: "in_progress" });
+        const updated = await updateControlRequest(input.id, { priority: "urgent", status: "in_progress" });
         await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_escalated", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ note: input.note, priority: "urgent", status: "in_progress" }) });
         return { success: Boolean(updated), status: updated?.status ?? "in_progress", priority: updated?.priority ?? "urgent" };
       }),
