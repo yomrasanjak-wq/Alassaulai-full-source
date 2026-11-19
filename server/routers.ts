@@ -296,8 +296,20 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
     await waitForTourismRequestSlot();
     const geocodeUrl = new URL("https://photon.komoot.io/api/");
     const isKnownTurkishDestination = /(?:طرابزون|ترابزون|trabzon|أوزنجول|اوزنجول|uzung[oö]l|أيدر|ايدر|ayder|ريزه|ريزة|rize|سامسون|samsun|أوردو|ordu|جيرسون|giresun|سورميني|sürmene|surmene|أراكلي|araklı|arakli)/i.test(destination);
+    // Normalize common Arabic spellings to the canonical Turkish place name
+    // before geocoding; appending Türkiye to Arabic-only text is less reliable.
+    const canonicalTurkishPlace = /(?:طرابزون|ترابزون)/i.test(destination) ? "Trabzon"
+      : /(?:أوزنجول|اوزنجول)/i.test(destination) ? "Uzungöl"
+      : /(?:أيدر|ايدر)/i.test(destination) ? "Ayder"
+      : /(?:ريزه|ريزة)/i.test(destination) ? "Rize"
+      : /(?:سامسون)/i.test(destination) ? "Samsun"
+      : /(?:أوردو|اوردو)/i.test(destination) ? "Ordu"
+      : /(?:جيرسون|قيرسون|غيرسون)/i.test(destination) ? "Giresun"
+      : /(?:سورميني)/i.test(destination) ? "Sürmene"
+      : /(?:أراكلي|اراكلي)/i.test(destination) ? "Araklı"
+      : destination;
     const geocodeQuery = isKnownTurkishDestination && !/(?:تركيا|turkey|türkiye)/i.test(destination)
-      ? destination + ", Türkiye"
+      ? canonicalTurkishPlace + ", Türkiye"
       : destination;
     // Photon can reject unsupported language codes (notably Arabic) with HTTP 400.
     // Keep geocoding language-neutral; OSM name:ar/name:tr tags are selected below.
