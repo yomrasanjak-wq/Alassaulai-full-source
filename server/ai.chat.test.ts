@@ -18,13 +18,14 @@ vi.mock("./db", async importOriginal => {
     ensureControlRoomSchema: vi.fn().mockResolvedValue(undefined),
     listControlRequests: vi.fn().mockResolvedValue([]),
     listControlRequestsForAssignee: vi.fn().mockResolvedValue([]),
+    listControlRequestsForRequester: vi.fn().mockResolvedValue([]),
     listControlTeamMembers: vi.fn().mockResolvedValue([]),
     updateUserRoleByEmail: vi.fn().mockResolvedValue({ id: 2, email: "staff@example.com", role: "secretary" }),
     updateControlRequest: vi.fn().mockResolvedValue({ id: 1, status: "reviewed" }),
   };
 });
 
-import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, updateControlRequest, updateUserRoleByEmail } from "./db";
+import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, updateControlRequest, updateUserRoleByEmail } from "./db";
 
 function createPublicContext(): TrpcContext {
   return {
@@ -34,7 +35,7 @@ function createPublicContext(): TrpcContext {
   };
 }
 
-function createUserContext(openId: string, role: "user" | "admin" | "secretary" | "assistant" | "it" = "user"): TrpcContext {
+function createUserContext(openId: string, role: "user" | "admin" | "secretary" | "assistant" | "it" | "partner" | "executor" = "user"): TrpcContext {
   return {
     user: { id: 1, openId, role } as NonNullable<TrpcContext["user"]>,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
@@ -47,6 +48,7 @@ describe("brain governance", () => {
     vi.clearAllMocks();
     vi.mocked(listControlRequests).mockResolvedValue([]);
     vi.mocked(listControlRequestsForAssignee).mockResolvedValue([]);
+    vi.mocked(listControlRequestsForRequester).mockResolvedValue([]);
     vi.mocked(listControlTeamMembers).mockResolvedValue([]);
     vi.mocked(updateControlRequest).mockResolvedValue({ id: 1, status: "reviewed" } as never);
   });
@@ -182,6 +184,39 @@ describe("brain governance", () => {
     } finally {
       ENV.ownerOpenId = previousOwnerId;
     }
+  });
+
+  it("allows an executor to see and update only personally assigned CEO-approved work", async () => {
+    const task = { id: 106, assignee: "executor:9", status: "reviewed" };
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
+    const caller = appRouter.createCaller({ ...createUserContext("executor-open-id", "executor"), user: { ...createUserContext("executor-open-id", "executor").user!, id: 9 } as never });
+    await expect(caller.auth.controlAccess()).resolves.toMatchObject({ canAccess: true, isOwner: false });
+    await expect(caller.control.list()).resolves.toEqual([task]);
+    expect(vi.mocked(listControlRequestsForAssignee)).toHaveBeenCalledWith("executor:9");
+    await caller.control.update({ id: 106, status: "in_progress" });
+    expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(106, expect.objectContaining({ status: "in_progress" }));
+  });
+
+  it("allows approved partner accounts to submit requests and read only their own request inbox", async () => {
+    const ownRequest = { id: 107, requesterType: "partner", requesterOpenId: "partner-open-id", title: "تحديث بيانات الفندق", status: "pending" };
+    vi.mocked(listControlRequestsForRequester).mockResolvedValue([ownRequest as never]);
+    const caller = appRouter.createCaller(createUserContext("partner-open-id", "partner"));
+    await caller.partners.submitRequest({ title: "تحديث بيانات الفندق", description: "نرغب في تحديث تفاصيل الإقامة والأسعار الموسمية." });
+    expect(vi.mocked(createControlRequest)).toHaveBeenCalledWith(expect.objectContaining({
+      requesterType: "partner",
+      requesterOpenId: "partner-open-id",
+      assignee: "CEO",
+      category: "partner",
+    }));
+    await expect(caller.partners.myRequests()).resolves.toHaveLength(1);
+    expect(vi.mocked(listControlRequestsForRequester)).toHaveBeenCalledWith("partner-open-id");
+    await expect(caller.control.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("prevents ordinary users from submitting or viewing partner requests", async () => {
+    const caller = appRouter.createCaller(createUserContext("ordinary-user", "user"));
+    await expect(caller.partners.submitRequest({ title: "طلب شريك", description: "تفاصيل طلب تجريبي لحساب غير معتمد." })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.partners.myRequests()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("allows IT to submit its own assigned work for CEO review but never approve completion", async () => {
