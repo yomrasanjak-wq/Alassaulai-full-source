@@ -72,3 +72,9 @@ export const startLogin = async () => {
 
   window.location.assign(url.toString());
 };
+
+
+/** Begin the first-party ALASSAUL Google sign-in flow. */
+export const startGoogleLogin = () => {
+  window.location.assign("/api/auth/google");
+};
