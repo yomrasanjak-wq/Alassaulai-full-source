@@ -1,4 +1,4 @@
-import type { Application } from "express";
+import type { Application } from "express-serve-static-core";
 import { ENV } from "./env";
 
 export function registerStorageProxy(app: Application) {
