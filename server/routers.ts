@@ -963,6 +963,24 @@ function getContextualFallback(
   if (asksItinerary) {
     const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
     const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
+    const isTrabzon = /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
+    if (isTrabzon && (!requestedDays || requestedDays === 1) && language === "AR") {
+      const stops = [
+        { name: "قصر أتاتورك", time: "صباحاً", note: "زيارة القصر والحدائق المحيطة به؛ تحقق من مواعيد الزيارة قبل الانطلاق." },
+        { name: "ميدان طرابزون", time: "بعد الظهر", note: "جولة مشي واستراحة في وسط المدينة." },
+        { name: "غانيتا", time: "قبل الغروب", note: "ممشى الواجهة البحرية والاستمتاع بإطلالة البحر الأسود." },
+        { name: "بوزتبه", time: "المساء", note: "إطلالة بانورامية على المدينة إذا سمحت ظروف الطريق والطقس." },
+      ];
+      const items = stops.map((stop, index) => {
+        const url = new URL("https://www.google.com/maps/search/");
+        url.searchParams.set("api", "1");
+        url.searchParams.set("query", stop.name + " Trabzon Türkiye");
+        return `${index + 1}. **${stop.time} — ${stop.name}**: ${stop.note} [الخريطة](${url.toString()})`;
+      }).join("\\n");
+      return "إليك برنامجاً تمهيدياً مقترحاً ليوم واحد في طرابزون، بترتيب مرن:\\n\\n"
+        + items
+        + "\\n\\nهذه خطة مقترحة وليست تأكيداً لساعات العمل أو حالة الطرق، وليست تحققاً من الطقس الحالي. تحقق من المواعيد والطقس قبل الخروج. إذا كانت إقامتك أكثر من يوم، اذكر عدد الأيام لأرتب لك برنامجاً مفصلاً دون اختصارها في يوم واحد.";
+    }
     const durationNote = requestedDays && requestedDays > 1
       ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
       : "";
