@@ -3870,13 +3870,13 @@ img { display: block; max-width: 100%; }
 /* Keep the assistant dialog truly centered on both desktop and mobile. */
 .site-shell .chat-panel {
   position: fixed !important;
-  left: 50% !important;
-  right: auto !important;
-  top: 50% !important;
-  bottom: auto !important;
+  left: 12px !important;
+  right: 12px !important;
+  top: auto !important;
+  bottom: 80px !important;
   inset-inline-start: auto !important;
   inset-inline-end: auto !important;
-  transform: translate(-50%, -50%) !important;
+  transform: none !important;
   margin: 0 !important;
   width: min(920px, calc(100vw - 28px)) !important;
   height: min(760px, calc(100dvh - 40px)) !important;
@@ -3896,15 +3896,15 @@ img { display: block; max-width: 100%; }
 }
 @media (max-width: 740px) {
   .site-shell .chat-panel {
-    left: 50% !important;
-    right: auto !important;
-    top: 50% !important;
-    bottom: auto !important;
-    width: calc(100vw - 20px) !important;
-    max-width: calc(100vw - 20px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: 12px !important;
+    bottom: 12px !important;
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
     height: calc(100dvh - 24px) !important;
     max-height: calc(100dvh - 24px) !important;
-    transform: translate(-50%, -50%) !important;
+    transform: none !important;
     margin: 0 !important;
     border-radius: 18px !important;
   }
