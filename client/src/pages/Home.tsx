@@ -1327,7 +1327,7 @@ export default function Home() {
     try {
       const response = await chatMutation.mutateAsync({
         language,
-        // Keep the browser payload aligned with the server's bounded 14-message context.
+        // Keep the browser payload aligned with the server's bounded 20-message context.
         messages: nextMessages.slice(-20).map((message, index, recentMessages) => ({
           role: message.from as "user" | "assistant",
           content: message.text,
