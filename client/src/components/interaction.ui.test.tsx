@@ -7,6 +7,7 @@ const { mutateAsyncMock, auxiliaryMutationMock } = vi.hoisted(() => ({ mutateAsy
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     auth: {
+      controlAccess: { useQuery: () => ({ data: { isOwner: true, canAccess: true }, isLoading: false, refetch: vi.fn() }) },
       me: { useQuery: () => ({ data: { id: 1, openId: "owner", role: "admin", name: "Owner" }, isLoading: false, refetch: vi.fn() }) },
       visitorCount: { useQuery: () => ({ data: 0, isLoading: false, refetch: vi.fn() }) },
       logout: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock }) },

@@ -24,7 +24,7 @@ vi.mock("./db", async importOriginal => {
   };
 });
 
-import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, updateControlRequest, updateUserRoleByEmail } from "./db";
+import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, updateControlRequest, updateUserRoleByEmail } from "./db";
 
 function createPublicContext(): TrpcContext {
   return {
@@ -43,6 +43,13 @@ function createUserContext(openId: string, role: "user" | "admin" | "secretary" 
 }
 
 describe("brain governance", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(listControlRequests).mockResolvedValue([]);
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([]);
+    vi.mocked(listControlTeamMembers).mockResolvedValue([]);
+    vi.mocked(updateControlRequest).mockResolvedValue({ id: 1, status: "reviewed" } as never);
+  });
   it("does not expose administrative diagnostics or proposal actions to public visitors", async () => {
     const caller = appRouter.createCaller(createPublicContext());
     await expect(caller.brain.status()).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -143,22 +150,48 @@ describe("brain governance", () => {
     }
   });
 
-  it("allows a secretary to see and update only secretary-assigned tasks", async () => {
-    const task = { id: 42, assignee: "السكرتير", status: "pending" };
+  it("allows a secretary to see and update only personally assigned, CEO-approved tasks", async () => {
+    const task = { id: 42, assignee: "secretary:1", status: "reviewed" };
     vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
+    vi.mocked(listControlRequests).mockResolvedValue([task as never]);
     const caller = appRouter.createCaller(createUserContext("secretary-open-id", "secretary"));
     await expect(caller.control.list()).resolves.toEqual([task]);
+    expect(vi.mocked(listControlRequestsForAssignee)).toHaveBeenCalledWith("secretary:1");
     await caller.control.update({ id: 42, status: "in_progress" });
     expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(42, expect.objectContaining({ status: "in_progress" }));
   });
 
-  it("allows IT to submit its assigned work for CEO review but never approve completion", async () => {
-    const task = { id: 99, assignee: "IT", status: "in_progress" };
+  it("blocks staff from starting a task while it is still pending CEO approval", async () => {
+    const task = { id: 43, assignee: "secretary:1", status: "pending" };
     vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
+    const caller = appRouter.createCaller(createUserContext("secretary-open-id", "secretary"));
+    await expect(caller.control.update({ id: 43, status: "in_progress" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(vi.mocked(updateControlRequest)).not.toHaveBeenCalled();
+  });
+
+  it("requires CEO to assign a real staff account before approving execution", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    const task = { id: 44, assignee: "السكرتير", status: "pending" };
+    vi.mocked(listControlRequests).mockResolvedValue([task as never]);
+    vi.mocked(listControlTeamMembers).mockResolvedValue([{ id: 2, role: "secretary" } as never]);
+    try {
+      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      await owner.control.update({ id: 44, status: "reviewed", assignee: "secretary:2" });
+      expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(44, expect.objectContaining({ status: "reviewed", assignee: "secretary:2" }));
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
+  });
+
+  it("allows IT to submit its own assigned work for CEO review but never approve completion", async () => {
+    const task = { id: 99, assignee: "it:1", status: "in_progress" };
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
+    vi.mocked(listControlRequests).mockResolvedValue([task as never]);
     const caller = appRouter.createCaller(createUserContext("it-open-id", "it"));
     await caller.control.update({ id: 99, status: "ready_for_review" });
     expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(99, expect.objectContaining({ status: "ready_for_review" }));
-    await expect(caller.control.update({ id: 99, status: "completed" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.control.update({ id: 99, status: "completed" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     await expect(caller.control.update({ id: 99, status: "in_progress", assignee: "IT" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
