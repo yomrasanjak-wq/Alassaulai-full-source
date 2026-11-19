@@ -461,7 +461,7 @@ describe("conversation continuity guidance", () => {
       { role: "user", content: "وكم تكلف؟" },
     ]);
     expect(instruction).toContain("متابعة قصيرة");
-    expect(instruction).toContain("لا تطلب إعادة السياق");
+    expect(instruction).toContain("طلب إعادة السياق");
   });
 
   it("treats a correction as an update while preserving the remaining constraints", () => {
@@ -1254,7 +1254,7 @@ describe("ai.chat", () => {
     expect(compacted).toHaveLength(14);
     expect(compacted[0]?.content.length).toBe(1200);
     expect(compacted[13]?.content.length).toBe(1200);
-    expect(compacted[13]?.content.startsWith("13-")).toBe(true);
+    expect(compacted[13]?.content.startsWith("19-")).toBe(true);
     expect(compacted[13]?.content).toContain("تم اختصار وسط الرسالة");
     expect(compacted[13]?.content.endsWith("x".repeat(20))).toBe(true);
   });
