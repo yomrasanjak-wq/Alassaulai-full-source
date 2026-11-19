@@ -1,17 +1,17 @@
 import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState } from "@shared/const";
 import { parse as parseCookieHeader } from "cookie";
-import type { Application, Request, Response } from "express-serve-static-core";
+import express from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 import { ENV } from "./env";
 
-function getQueryParam(req: Request, key: string): string | undefined {
+function getQueryParam(req: { query: Record<string, unknown> }, key: string): string | undefined {
   const value = req.query[key];
   return typeof value === "string" ? value : undefined;
 }
 
-export function registerOAuthRoutes(app: Application) {
+export function registerOAuthRoutes(app: ReturnType<typeof express>) {
   // Public, non-secret OAuth configuration used by the browser at login time.
   // Keeping this endpoint runtime-based avoids silently broken static builds
   // when VITE_* variables were not available during the Netlify build.
