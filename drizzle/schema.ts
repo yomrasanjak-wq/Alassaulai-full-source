@@ -26,6 +26,7 @@ const updatedAt = () => timestamp("updatedAt", { withTimezone: true, mode: "date
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
+  googleSub: varchar("googleSub", { length: 255 }).unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
