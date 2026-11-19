@@ -497,7 +497,7 @@ describe("conversation continuity guidance", () => {
   });
 
   it("resolves short pronoun-led requests against the active prior task", () => {
-    for (const reply of ["افحصه مضبوط", "راجعها", "اختبره", "تأكد منه"]) {
+    for (const reply of ["افحصه مضبوط", "راجعها", "اختبره", "تأكد منه", "والله أنت فنان، أيوه افحصه مضبوط"]) {
       const instruction = getConversationContinuityInstruction([
         { role: "user", content: "راجع بوابة الشريك وعزل صلاحياتها" },
         { role: "assistant", content: "راجعت البوابة..." },
