@@ -593,7 +593,7 @@ describe("Official live channel actions", () => {
     fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
     const iframe = screen.getByTitle("مكة المكرمة") as HTMLIFrameElement;
     expect(iframe).toBeTruthy();
-    expect(iframe.src).toContain("youtube-nocookie.com/embed/eC4LfEVxvKg");
+    expect(iframe.src).toContain("youtube-nocookie.com/embed/kYqGbBqmp8g");
     expect(document.querySelector(".video-shell")).toBeNull();
   });
 
