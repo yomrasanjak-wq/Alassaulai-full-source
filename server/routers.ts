@@ -1323,11 +1323,11 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "ready_for_review", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
       .mutation(async ({ ctx, input }) => {
         const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
-        const allTasks = await listControlRequests();
-        const currentTask = allTasks.find((task) => task.id === input.id);
-        if (!currentTask) throw new TRPCError({ code: "NOT_FOUND", message: "المهمة غير موجودة." });
+        const ownAssignment = `${ctx.user.role}:${ctx.user.id}`;
+        const visibleTasks = isOwner ? await listControlRequests() : await listControlRequestsForAssignee(ownAssignment);
+        const currentTask = visibleTasks.find((task) => task.id === input.id);
+        if (!currentTask) throw new TRPCError({ code: isOwner ? "NOT_FOUND" : "FORBIDDEN", message: "المهمة غير موجودة أو غير مسندة إلى حسابك." });
         if (!isOwner) {
-          const ownAssignment = `${ctx.user.role}:${ctx.user.id}`;
           if (currentTask.assignee !== ownAssignment || input.assignee !== undefined || input.decisionNote !== undefined) {
             throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة ليست مسندة إلى حسابك الشخصي." });
           }
