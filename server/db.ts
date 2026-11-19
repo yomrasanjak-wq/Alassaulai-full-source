@@ -20,6 +20,7 @@ import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _controlRoomSchemaReady: Promise<void> | null = null;
+let _googleIdentitySchemaReady: Promise<void> | null = null;
 
 /**
  * Apply the small additive control-room schema extension on the first owner-only
@@ -46,6 +47,23 @@ export async function ensureControlRoomSchema(): Promise<void> {
     await _controlRoomSchemaReady;
   } catch (error) {
     _controlRoomSchemaReady = null;
+    throw error;
+  }
+}
+
+/** Additive, idempotent migration required before the Google identity column is queried. */
+async function ensureGoogleIdentitySchema(): Promise<void> {
+  if (_googleIdentitySchemaReady) return _googleIdentitySchemaReady;
+  _googleIdentitySchemaReady = (async () => {
+    if (!ENV.databaseUrl) throw new Error("قاعدة البيانات غير مهيأة على الخادم.");
+    const sql = neon(ENV.databaseUrl);
+    await sql.query('ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "googleSub" varchar(255)', []);
+    await sql.query('CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_unique_idx ON public.users ("googleSub") WHERE "googleSub" IS NOT NULL', []);
+  })();
+  try {
+    await _googleIdentitySchemaReady;
+  } catch (error) {
+    _googleIdentitySchemaReady = null;
     throw error;
   }
 }
