@@ -426,7 +426,7 @@ describe("live worldwide tourism place lookup", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
       if (url.startsWith("https://photon.komoot.io/api/")) {
-        expect(decodeURIComponent(url)).toContain("طرابزون, Türkiye");
+        expect(new URL(url).searchParams.get("q")).toBe("طرابزون, Türkiye");
         expect(new URL(url).searchParams.has("lang")).toBe(false);
         return new Response(JSON.stringify({
           features: [
@@ -959,10 +959,19 @@ describe("ai.chat", () => {
   });
 
   it("does not replace an unavailable Saudi Pro League fixture list with news articles", async () => {
+    const officialSplPages = [
+      "https://www.spl.com.sa/ar/fixtures-results",
+      "https://www.spl.com.sa/en/fixtures-results",
+      "https://www.spl.com.sa/ar/teams/%D8%A7%D9%84%D8%A7%D9%87%D9%84%D9%8A/matches",
+    ];
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = new URL(String(input));
-      expect(url.hostname).toBe("site.api.espn.com");
-      expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      if (url.hostname === "site.api.espn.com") {
+        expect(url.pathname).toContain("/soccer/ksa.1/scoreboard");
+      } else {
+        expect(url.hostname).toBe("www.spl.com.sa");
+        expect(officialSplPages).toContain(url.toString());
+      }
       return new Response("temporarily unavailable", { status: 503 });
     });
     try {
@@ -973,7 +982,7 @@ describe("ai.chat", () => {
       expect(result.text).toContain("تعذر جلب جدول مباريات دوري روشن");
       expect(result.text).not.toContain("أحدث أخبار دوري روشن");
       expect(result.text).not.toContain("روابط تقارير حديثة");
-      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(fetchSpy).toHaveBeenCalledTimes(4);
       expect(invokeLLM).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
