@@ -1327,6 +1327,7 @@ export const appRouter = router({
         const visibleTasks = isOwner ? await listControlRequests() : await listControlRequestsForAssignee(ownAssignment);
         const currentTask = visibleTasks.find((task) => task.id === input.id);
         if (!currentTask) throw new TRPCError({ code: isOwner ? "NOT_FOUND" : "FORBIDDEN", message: "المهمة غير موجودة أو غير مسندة إلى حسابك." });
+        if (currentTask.requesterType === "it" && currentTask.category === "security") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "تُدار البلاغات الأمنية من مسار الطوارئ المخصص فقط." });
         if (!isOwner) {
           if (currentTask.assignee !== ownAssignment || input.assignee !== undefined || input.decisionNote !== undefined) {
             throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة ليست مسندة إلى حسابك الشخصي." });
