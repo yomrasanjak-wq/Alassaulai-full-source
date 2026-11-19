@@ -219,6 +219,20 @@ describe("brain governance", () => {
     await expect(caller.partners.myRequests()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("lets CEO approve and assign a task to a verified executor account", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    vi.mocked(listControlRequests).mockResolvedValue([{ id: 108, assignee: "CEO", status: "pending" } as never]);
+    vi.mocked(listControlTeamMembers).mockResolvedValue([{ id: 9, role: "executor" } as never]);
+    try {
+      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      await owner.control.update({ id: 108, status: "reviewed", assignee: "executor:9" });
+      expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(108, expect.objectContaining({ status: "reviewed", assignee: "executor:9" }));
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
+  });
+
   it("allows IT to submit its own assigned work for CEO review but never approve completion", async () => {
     const task = { id: 99, assignee: "it:1", status: "in_progress" };
     vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
@@ -260,7 +274,11 @@ describe("brain governance", () => {
     try {
       const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
       await owner.team.assignRole({ email: "staff@example.com", role: "secretary" });
+      await owner.team.assignRole({ email: "partner@example.com", role: "partner" });
+      await owner.team.assignRole({ email: "executor@example.com", role: "executor" });
       expect(vi.mocked(updateUserRoleByEmail)).toHaveBeenCalledWith("staff@example.com", "secretary");
+      expect(vi.mocked(updateUserRoleByEmail)).toHaveBeenCalledWith("partner@example.com", "partner");
+      expect(vi.mocked(updateUserRoleByEmail)).toHaveBeenCalledWith("executor@example.com", "executor");
       const ordinaryUser = appRouter.createCaller(createUserContext("ordinary-user", "user"));
       await expect(ordinaryUser.team.assignRole({ email: "staff@example.com", role: "it" })).rejects.toMatchObject({ code: "FORBIDDEN" });
     } finally {
