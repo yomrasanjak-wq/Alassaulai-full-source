@@ -712,7 +712,6 @@ describe("ai.chat", () => {
   });
 
   it.each([
-    "السلام عليكم",
     "اشرح لي معنى الصبر في القرآن وكيف أطبقه يومياً",
     "لماذا يتكوّن الضباب فوق الجبال صباحاً؟",
     "من أين أبدأ في زيارة ريزا إذا كانت إقامتي ثلاثة أيام؟",
@@ -735,6 +734,15 @@ describe("ai.chat", () => {
     expect(request?.messages?.[0]?.content).toContain("لا تستبدل الإجابة بترحيب عام أو نص محفوظ");
     expect(request?.messages?.[0]?.content).toContain("تعامل مع الرسائل كسياق حوار واحد");
     expect(request?.messages?.[0]?.content).toContain("لا تدّع أنك إنسان أو موظف بشري");
+  });
+
+  it("answers a simple greeting directly without a model request", async () => {
+    const result = await appRouter.createCaller(createPublicContext()).ai.chat({
+      language: "AR",
+      messages: [{ role: "user", content: "السلام عليكم" }],
+    });
+    expect(result.text).toBe("وعليكم السلام ورحمة الله وبركاته، حيّاك الله! كيف أقدر أساعدك؟");
+    expect(invokeLLM).not.toHaveBeenCalled();
   });
 
   it("returns current weather directly without depending on a model response", async () => {
@@ -1077,7 +1085,7 @@ describe("ai.chat", () => {
     };
     await appRouter.createCaller(namedContext).ai.chat({
       language: "AR",
-      messages: [{ role: "user", content: "السلام عليكم" }],
+      messages: [{ role: "user", content: "اشرح لي الفرق بين المعرفة العامة والمعلومة الحديثة" }],
     });
     const request = vi.mocked(invokeLLM).mock.calls[0]?.[0];
     const systemMessage = request?.messages?.[0]?.content;
