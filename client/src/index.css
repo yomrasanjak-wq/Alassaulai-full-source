@@ -3874,8 +3874,6 @@ img { display: block; max-width: 100%; }
   right: 12px !important;
   top: auto !important;
   bottom: 80px !important;
-  inset-inline-start: auto !important;
-  inset-inline-end: auto !important;
   transform: none !important;
   margin: 0 !important;
   width: min(920px, calc(100vw - 28px)) !important;
