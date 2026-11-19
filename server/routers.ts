@@ -1,6 +1,6 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
+import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
@@ -1217,7 +1217,7 @@ export const appRouter = router({
     // It deliberately does not access Neon or initialize the control-room schema.
     controlAccess: protectedProcedure.query(({ ctx }) => {
       const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
-      const staffRoles = ["secretary", "assistant", "it"];
+      const staffRoles = ["secretary", "assistant", "it", "executor"];
       return { isOwner, canAccess: isOwner || staffRoles.includes(ctx.user.role) };
     }),
     visitorCount: publicProcedure.query(() => countRegisteredVisitors()),
@@ -1289,7 +1289,7 @@ export const appRouter = router({
       return listControlTeamMembers();
     }),
     assignRole: ownerProcedure
-      .input(z.object({ email: z.string().trim().email().max(320), role: z.enum(["user", "secretary", "assistant", "it"]) }))
+      .input(z.object({ email: z.string().trim().email().max(320), role: z.enum(["user", "secretary", "assistant", "it", "partner", "executor"]) }))
       .mutation(async ({ ctx, input }) => {
         const member = await updateUserRoleByEmail(input.email.toLowerCase(), input.role);
         if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "لم نجد حساباً بهذا البريد. يجب على الموظف تسجيل الدخول مرة واحدة أولاً." });
@@ -1314,7 +1314,7 @@ export const appRouter = router({
       }),
     list: controlStaffProcedure.query(async ({ ctx }) => {
       if (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) return listControlRequests();
-      if (!["secretary", "assistant", "it"].includes(ctx.user.role)) return [];
+      if (!["secretary", "assistant", "it", "executor"].includes(ctx.user.role)) return [];
       // Assignments are scoped to a single authenticated account, not the whole department.
       const assignee = `${ctx.user.role}:${ctx.user.id}`;
       return listControlRequestsForAssignee(assignee);
@@ -1340,7 +1340,7 @@ export const appRouter = router({
           if (input.status === "reviewed" || input.status === "in_progress") {
             const assignment = input.assignee ?? currentTask.assignee;
             if (assignment !== "CEO") {
-              const match = /^(secretary|assistant|it):(\d+)$/.exec(assignment ?? "");
+              const match = /^(secretary|assistant|it|executor):(\d+)$/.exec(assignment ?? "");
               if (!match) throw new TRPCError({ code: "BAD_REQUEST", message: "اختر موظفاً محدداً من الفريق قبل اعتماد المهمة." });
               const [, role, memberId] = match;
               const members = await listControlTeamMembers();
@@ -1874,6 +1874,29 @@ ${newsContext}`);
       }),
   }),
   partners: router({
+    submitRequest: protectedProcedure
+      .input(z.object({ title: z.string().trim().min(4).max(180), description: z.string().trim().min(10).max(2000) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "partner") throw new TRPCError({ code: "FORBIDDEN", message: "إرسال طلبات الشركاء متاح للحسابات المعتمدة كشريك فقط." });
+        const request = await createControlRequest({
+          title: input.title,
+          command: input.description,
+          requesterType: "partner",
+          requesterOpenId: ctx.user.openId,
+          category: "partner",
+          priority: "normal",
+          assignee: "CEO",
+        });
+        if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "partner.request_submitted", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ status: request.status }) });
+        return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
+      }),
+    myRequests: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "partner") throw new TRPCError({ code: "FORBIDDEN", message: "هذه الصفحة مخصصة لحسابات الشركاء المعتمدة." });
+      const requests = await listControlRequestsForRequester(ctx.user.openId);
+      return requests
+        .filter((item) => item.requesterType === "partner")
+        .map(({ id, title, status, priority, createdAt, updatedAt, decisionNote }) => ({ id, title, status, priority, createdAt, updatedAt, decisionNote }));
+    }),
     // Only CEO-approved campaigns are visible to visitors. Drafts remain in the control inbox.
     activeAds: publicProcedure.query(async () => {
       const requests = await listControlRequests();
