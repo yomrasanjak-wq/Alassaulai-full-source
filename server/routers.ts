@@ -1213,6 +1213,13 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    // Lightweight permission check: reads only the authenticated session and server config.
+    // It deliberately does not access Neon or initialize the control-room schema.
+    controlAccess: protectedProcedure.query(({ ctx }) => {
+      const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+      const staffRoles = ["secretary", "assistant", "it"];
+      return { isOwner, canAccess: isOwner || staffRoles.includes(ctx.user.role) };
+    }),
     visitorCount: publicProcedure.query(() => countRegisteredVisitors()),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
