@@ -70,7 +70,7 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - لا تستنتج تفضيلاً أو معلومة شخصية من الصمت أو التخمين؛ استخدم ما ورد صراحة في السياق فقط.
 `;
 
-const MAX_CHAT_HISTORY = 14;
+const MAX_CHAT_HISTORY = 20;
 const MAX_CHAT_MESSAGE_CHARS = 1200;
 
 /** Return a backup model only when it is genuinely different from the primary.
@@ -145,6 +145,21 @@ export function getConversationContinuityInstruction(messages: Array<{ role: "us
   }
   if (latest.split(/\s+/).length <= 12 && /^(?:(?:طيب|تمام|حسنًا|حسنا|ممتاز|أحسنت|احسنت|نواصل|نكمل|كمل|استمر|تابع|وبالنسبة|وبخصوص|وماذا|وكم|كم|وهل|وإذا|واذا|وكيف|وأيضًا|وايضا|بعدها|ثم|هذا|هذه|وهذا|وهذه)[،,؟?\s]*)/i.test(latest)) {
     return "هذه متابعة قصيرة أو إشارة للاستمرار: اربطها بأقرب موضوع سابق ذي صلة، واستعمل تفاصيله وقيوده، وأجب عن النقطة الجديدة فقط. إذا كانت الرسالة موافقة أو طلب استمرار فقط، فتابع الخطوة التالية دون إعادة الشرح أو طلب إعادة السياق.";
+  }
+  // Natural Arabic acknowledgements often include praise or thanks before the
+  // actual continue request (for example: "جزاك الله خيراً، نواصل").
+  const isContinueOnly = latest.split(/\s+/).length <= 20
+    && /(?:^|[\s،,])(?:نواصل|نكمل|كمل|استمر|تابع)(?:$|[\s،,!.؟])/i.test(latest)
+    && !/[؟?]/.test(latest)
+    && !/(?:لكن|ولكن|لا أريد|لا،|بدلاً من|بدلا من|غيّر|غير|صحح|صحّح)/i.test(latest);
+  if (isContinueOnly) {
+    return "هذه متابعة أو موافقة مصحوبة بعبارات شكر أو ثناء: اعتبرها طلباً لمواصلة آخر عمل قائم، ولا تبدأ موضوعاً جديداً ولا تكرر الملخص السابق. انتقل إلى الخطوة العملية التالية مع الحفاظ على القيود والقرارات السابقة.";
+  }
+  // Short pronoun-led requests such as "افحصه" or "راجعها" refer to the
+  // active object in the previous turns; resolve that reference from history.
+  if (latest.split(/\s+/).length <= 14
+    && /^(?:افحصه|افحصها|افحصهم|راجعه|راجعها|راجعهم|اختبره|اختبرها|دققه|دققها|شيك عليه|شيك عليها|تأكد منه|تأكد منها|كمل عليه|كمل عليها|تابعها|تابعه)(?:$|[\s،,!.؟])/i.test(latest)) {
+    return "هذه متابعة تشير بضمير إلى عنصر أو عمل سابق: حدّد مرجع الضمير من أقرب سياق واضح، وافحص أو أكمل ذلك العنصر نفسه. لا تطلب من الزائر إعادة إرساله ما دام ظاهراً في السجل؛ وإذا وُجد أكثر من مرجع محتمل فاسأل سؤال تحديد واحداً.";
   }
   return "استعمل سجل الحوار لفهم الإشارات والضمائر والقيود السابقة، مع إعطاء الأولوية لأحدث تصحيح أو تغيير صريح من الزائر.";
 }
@@ -1545,7 +1560,7 @@ export const appRouter = router({
       }),
     chat: publicProcedure
       .input(z.object({
-        messages: z.array(chatMessageSchema).min(1).max(14),
+        messages: z.array(chatMessageSchema).min(1).max(20),
         language: languageSchema,
       }))
       .mutation(async ({ input, ctx }) => {
