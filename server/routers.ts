@@ -1,6 +1,6 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
+import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateAssignedControlRequest, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
@@ -1371,7 +1371,12 @@ export const appRouter = router({
             throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكن اعتماد الإكمال قبل أن يرفع الموظف المهمة للمراجعة." });
           }
         }
-        const updated = await updateControlRequest(input.id, { status: input.status, assignee: isOwner ? input.assignee : undefined, decisionNote: isOwner ? input.decisionNote : undefined });
+        const updated = isOwner
+          ? await updateControlRequest(input.id, { status: input.status, assignee: input.assignee, decisionNote: input.decisionNote })
+          : await updateAssignedControlRequest(input.id, ownAssignment, currentTask.status, input.status!);
+        if (!updated && !isOwner) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "تغيرت ملكية المهمة أو حالتها أثناء التحديث؛ حدّث القائمة ثم حاول مجدداً." });
+        }
         if (updated) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "task.status_updated", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ status: input.status, assignee: updated.assignee }) });
         return updated;
       }),
