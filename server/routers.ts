@@ -995,10 +995,10 @@ function getContextualFallback(
             + "\n\nWeather, opening hours, and road conditions have not been verified live.";
     }
     const durationNote = requestedDays && requestedDays > 1
-      ? \` طلبت برنامجاً لمدة \${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.\`
+      ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
       : "";
     return language === "AR"
-      ? \`تعذّر إكمال برنامج الرحلة بسبب انقطاع مؤقت في مزود الذكاء الاصطناعي.\${durationNote} أعد المحاولة بعد قليل، وسأرتب البرنامج كاملاً يوماً بيوم بدلاً من تخمين تفاصيل ناقصة.\`
+      ? `تعذّر إكمال برنامج الرحلة بسبب انقطاع مؤقت في مزود الذكاء الاصطناعي.${durationNote} أعد المحاولة بعد قليل، وسأرتب البرنامج كاملاً يوماً بيوم بدلاً من تخمين تفاصيل ناقصة.`
       : language === "TR"
         ? "Gezi programı yapay zekâ sağlayıcısındaki geçici kesinti nedeniyle tamamlanamadı. Lütfen biraz sonra tekrar deneyin."
         : "The itinerary could not be completed because the AI provider temporarily timed out. Please retry shortly; I won't replace a multi-day plan with an incomplete one-day answer.";
