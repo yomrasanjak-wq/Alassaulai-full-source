@@ -24,7 +24,7 @@ vi.mock("./db", async importOriginal => {
   };
 });
 
-import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, updateControlRequest, updateUserRoleByEmail } from "./db";
+import { createControlRequest, ensureControlRoomSchema, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, updateControlRequest, updateUserRoleByEmail } from "./db";
 
 function createPublicContext(): TrpcContext {
   return {
@@ -156,7 +156,7 @@ describe("brain governance", () => {
 
   it("blocks staff from starting a task while it is still pending CEO approval", async () => {
     const task = { id: 43, assignee: "secretary:1", status: "pending" };
-    vi.mocked(listControlRequests).mockResolvedValue([task as never]);
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([task as never]);
     const caller = appRouter.createCaller(createUserContext("secretary-open-id", "secretary"));
     await expect(caller.control.update({ id: 43, status: "in_progress" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expect(vi.mocked(updateControlRequest)).not.toHaveBeenCalled();
