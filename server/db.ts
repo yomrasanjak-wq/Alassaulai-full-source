@@ -127,6 +127,12 @@ export async function listControlRequestsForAssignee(assignee: string): Promise<
   return db.select().from(controlRequests).where(eq(controlRequests.assignee, assignee)).orderBy(desc(controlRequests.createdAt)).limit(100);
 }
 
+export async function listControlRequestsForRequester(requesterOpenId: string): Promise<ControlRequest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(controlRequests).where(eq(controlRequests.requesterOpenId, requesterOpenId)).orderBy(desc(controlRequests.createdAt)).limit(100);
+}
+
 export async function listControlTeamMembers() {
   const db = await getDb();
   if (!db) return [];
@@ -176,7 +182,7 @@ export async function countRegisteredVisitors(): Promise<number> {
 }
 
 export async function createControlRequest(
-  input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority"> & { assignee?: string },
+  input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority"> & { assignee?: string; requesterOpenId?: string },
 ): Promise<ControlRequest | undefined> {
   const db = await getDb();
   if (!db) return undefined;
