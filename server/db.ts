@@ -192,7 +192,7 @@ export async function listControlRequests(): Promise<ControlRequest[]> {
 
 export async function updateControlRequest(
   id: number,
-  input: Partial<Pick<ControlRequest, "status" | "assignee" | "decisionNote">>,
+  input: Partial<Pick<ControlRequest, "status" | "assignee" | "decisionNote" | "priority">>,
 ): Promise<ControlRequest | undefined> {
   const db = await getDb();
   if (!db) return undefined;
