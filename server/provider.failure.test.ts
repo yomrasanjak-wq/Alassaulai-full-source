@@ -29,6 +29,6 @@ describe("provider failure communication", () => {
     const result = await caller.ai.chat({ language: "AR", messages: [{ role: "user", content: "اشرح لي ظاهرة علمية" }] });
     expect(result.text).toContain(expected);
     expect(result.text).not.toContain(error.message);
-    expect(invokeLLM).toHaveBeenCalledTimes(2);
+    expect(invokeLLM).toHaveBeenCalledTimes(error instanceof DOMException && error.name === "TimeoutError" ? 1 : 2);
   });
 });
