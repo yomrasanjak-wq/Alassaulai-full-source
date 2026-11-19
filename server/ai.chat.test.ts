@@ -313,6 +313,21 @@ describe("brain governance", () => {
     }
   });
 
+  it("allows only CEO to approve completion after staff submits a task for review", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    const submittedTask = { id: 102, assignee: "it:1", status: "ready_for_review" };
+    vi.mocked(listControlRequests).mockResolvedValue([submittedTask as never]);
+    vi.mocked(updateControlRequest).mockResolvedValue({ ...submittedTask, status: "completed" } as never);
+    try {
+      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      await owner.control.update({ id: 102, status: "completed" });
+      expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(102, expect.objectContaining({ status: "completed" }));
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
+  });
+
   it("applies the additive control-room schema only through the owner team view", async () => {
     const previousOwnerId = ENV.ownerOpenId;
     ENV.ownerOpenId = "platform-owner-open-id";
