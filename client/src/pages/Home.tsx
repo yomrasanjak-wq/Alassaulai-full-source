@@ -920,7 +920,7 @@ export default function Home() {
       const payload = { title: title.slice(0, 90), description: description.slice(0, 240), country: adCountry, imageUrl, targetUrl: parsedTarget.toString() };
       await controlCreateTaskMutation.mutateAsync({
         title: "إعلان شريك: " + payload.title,
-        command: "ALASSAUL_AD_V1\\n" + JSON.stringify(payload),
+        command: "ALASSAUL_AD_V1\n" + JSON.stringify(payload),
         category: "partner",
         priority: "normal",
         assignee: "CEO",
