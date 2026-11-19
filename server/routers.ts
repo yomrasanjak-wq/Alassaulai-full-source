@@ -365,10 +365,9 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
       ? [configuredOverpass]
       : ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
     let placesData: { elements?: TourismOverpassElement[] } | undefined;
-    // Start the independent Wikipedia fallback alongside Overpass so a slow map server
-    // does not add another full network timeout before a useful answer can be returned.
-    const wikimediaFallback = getWikimediaNearbyAttractions(lat, lon, language);
-    const attempts = await Promise.all(overpassEndpoints.map(async (endpoint) => {
+    const overpassFailures: string[] = [];
+    // Query public Overpass instances sequentially and stop at the first valid response.
+    for (const endpoint of overpassEndpoints) {
       try {
         const placesResponse = await fetch(endpoint, {
           method: "POST",
@@ -379,21 +378,16 @@ export async function getLiveTourismPlacesAnswer(message: string, language: "AR"
         if (!placesResponse.ok) throw new Error("HTTP " + placesResponse.status);
         const candidate = await placesResponse.json() as { elements?: TourismOverpassElement[] };
         if (!Array.isArray(candidate.elements)) throw new Error("Invalid Overpass response");
-        return { endpoint, data: candidate };
+        placesData = candidate;
+        break;
       } catch (endpointError) {
         const diagnostic = safeProviderDiagnostic(endpointError);
         console.warn("[ALASSAUL tourism] Overpass endpoint failed", endpoint, diagnostic);
-        return { endpoint, error: diagnostic };
+        overpassFailures.push(endpoint + ": " + (diagnostic.diagnostic ?? "unknown error"));
       }
-    }));
-    const successfulAttempt = attempts.find((attempt): attempt is { endpoint: string; data: { elements?: TourismOverpassElement[] } } => "data" in attempt);
-    placesData = successfulAttempt?.data;
-    const overpassFailures = attempts.filter((attempt) => "error" in attempt).map((attempt) => {
-      const failure = attempt as { endpoint: string; error: { diagnostic?: string } };
-      return failure.endpoint + ": " + (failure.error.diagnostic ?? "unknown error");
-    });
+    }
     if (!placesData) {
-      const wikimediaPlaces = await wikimediaFallback;
+      const wikimediaPlaces = await getWikimediaNearbyAttractions(lat, lon, language);
       if (wikimediaPlaces.length) {
         const items = wikimediaPlaces.map((place, index) => {
           const directions = "https://www.google.com/maps/dir/?api=1&destination=" + place.lat + "," + place.lon;
