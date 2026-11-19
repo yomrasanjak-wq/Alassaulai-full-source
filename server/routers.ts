@@ -1360,7 +1360,10 @@ export const appRouter = router({
       if (!["secretary", "assistant", "it", "executor"].includes(ctx.user.role)) return [];
       // Assignments are scoped to a single authenticated account, not the whole department.
       const assignee = `${ctx.user.role}:${ctx.user.id}`;
-      return listControlRequestsForAssignee(assignee);
+      const assignedTasks = await listControlRequestsForAssignee(assignee);
+      // Staff need the assigned task itself, not private requester identifiers or
+      // CEO-only decision notes. Keep those fields inside the owner control room.
+      return assignedTasks.map(({ requesterOpenId: _requesterOpenId, decisionNote: _decisionNote, ...task }) => task);
     }),
     update: controlStaffProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "ready_for_review", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
