@@ -12,7 +12,7 @@ vi.mock("@/lib/trpc", () => ({
       visitorCount: { useQuery: () => ({ data: 0, isLoading: false, refetch: vi.fn() }) },
       logout: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock }) },
     },
-    partners: { activeAds: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) } },
+    partners: { activeAds: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) }, myRequests: { useQuery: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }) }, submitRequest: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) } },
     ai: {
       chat: {
         useMutation: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),
