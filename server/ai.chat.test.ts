@@ -326,7 +326,7 @@ describe("live worldwide tourism place lookup", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
       if (url.startsWith("https://photon.komoot.io/api/")) {
-        expect(decodeURIComponent(url)).toContain("طرابزون, Türkiye");
+        expect(decodeURIComponent(url)).toContain("Trabzon, Türkiye");
         expect(new URL(url).searchParams.has("lang")).toBe(false);
         return new Response(JSON.stringify({
           features: [
