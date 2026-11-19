@@ -523,7 +523,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   if (useResponsesApi) {
     const requestedEffort = reasoning?.effort ?? thinking?.effort;
     const normalizedEffort = requestedEffort === "minimal" ? "low" : requestedEffort;
-    // GPT-6.1 Sol supports low/medium/high/xhigh/max. Keep routine visitor
+    // GPT-6.2 Sol supports low/medium/high/xhigh/max. Keep routine visitor
     // questions responsive while allowing the caller to request more effort.
     payload.reasoning = {
       effort: typeof normalizedEffort === "string" ? normalizedEffort : "low",

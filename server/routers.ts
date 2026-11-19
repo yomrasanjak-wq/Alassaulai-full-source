@@ -1,6 +1,6 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateControlRequest, updateMediaItem, updateUserRoleByEmail } from "./db";
+import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateAssignedControlRequest, updateControlRequest, updateControlRequestIfUnchanged, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
@@ -70,7 +70,7 @@ const assistantSystemPrompt = `أنت مساعد ذكاء اصطناعي عام 
 - لا تستنتج تفضيلاً أو معلومة شخصية من الصمت أو التخمين؛ استخدم ما ورد صراحة في السياق فقط.
 `;
 
-const MAX_CHAT_HISTORY = 14;
+const MAX_CHAT_HISTORY = 20;
 const MAX_CHAT_MESSAGE_CHARS = 1200;
 
 /** Return a backup model only when it is genuinely different from the primary.
@@ -88,7 +88,7 @@ export function getDistinctBackupModel(primaryModel: string | undefined, backupM
 export function getAdaptiveTaskInstruction(message: string): string {
   const text = message.normalize("NFKC").toLowerCase();
   if (/(أخبار العالم|اخبار العالم|آخر الأخبار|اخر الاخبار|الأخبار اليوم|الاخبار اليوم|خبر عاجل|عاجل|ماذا يحدث في العالم|أخبار اليوم|اخبار اليوم|أخبار السعودية|اخبار السعودية|السعودية اليوم|أخبار اليمن|اخبار اليمن|اليمن اليوم|latest news|world news|breaking news)/i.test(text)) {
-    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. التزم بالعدد الذي يطلبه المستخدم حرفياً؛ إذا طلب ثلاثة أخبار فاعرض ثلاثة فقط، وإذا لم يحدد عدداً فاعرض ثلاثة أخبار كحد افتراضي. في موجز أخبار العالم نوّع التغطية جغرافياً وموضوعياً، وفضّل ثلاثة ناشرين موثوقين مختلفين متى توفرت تغطية حديثة قابلة للتحقق؛ لا تضحِّ بالدقة لمجرد التنويع. لكل خبر عنوان دقيق يعكس محتوى صفحة الناشر، وملخص موجز وتاريخ النشر واسم الناشر. ميّز بوضوح بين الوقائع المؤكدة والادعاءات والتقارير الأولية، ولا تكرر الخبر نفسه بصيغ مختلفة. لا تكتب روابط Markdown داخل متن الإجابة ولا تنشئ قائمة مصادر يدوياً؛ ستُرفق روابط المصادر الموثقة تلقائياً بعد الإجابة. لا تعرض روابط Google News أو RSS أو صفحات تجميع الأخبار على أنها مصادر أصلية، ولا تنسب خبراً إلى ناشر لمجرد ظهوره في نتيجة بحث. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. إذا لم تتوفر أداة بحث حي أو روابط ناشر أصلية، صرّح بذلك ولا تختلق عناوين أو مصادر.";
+    return "نمط الأخبار: افهم الدولة أو النطاق الذي يقصده المستخدم ولا تخلط أخبار العالم بالسعودية أو اليمن. لا تعرض معلومة على أنها حدث اليوم ما لم تتحقق من تاريخها ومصدرها. التزم بالعدد الذي يطلبه المستخدم حرفياً؛ إذا طلب ثلاثة أخبار فاعرض ثلاثة فقط، وإذا لم يحدد عدداً فاعرض ثلاثة أخبار كحد افتراضي. في موجز أخبار العالم نوّع التغطية جغرافياً وموضوعياً، وفضّل ثلاثة ناشرين موثوقين مختلفين متى توفرت تغطية حديثة قابلة للتحقق؛ لا تضحِّ بالدقة لمجرد التنويع. لكل خبر عنوان دقيق يعكس محتوى صفحة الناشر، وملخص موجز وتاريخ النشر واسم الناشر. ميّز بوضوح بين الوقائع المؤكدة والادعاءات والتقارير الأولية، ولا تكرر الخبر نفسه بصيغ مختلفة. لا تكتب روابط Markdown داخل متن الإجابة ولا تنشئ قائمة مصادر يدوياً؛ ستُرفق روابط المصادر الموثقة تلقائياً بعد الإجابة. لا تعرض روابط Google News أو RSS أو صفحات تجميع الأخبار على أنها مصادر أصلية، ولا تنسب خبراً إلى ناشر لمجرد ظهوره في نتيجة بحث. لا تملأ العدد بأخبار قديمة أو غير مرتبطة؛ اعرض العدد المتحقق فقط. إذا لم تتوفر أداة بحث حي أو روابط ناشر أصلية، صرّح بذلك ولا تختلق عناوين أو مصادر.";
   }
   if (/(كيف أصلح|كيف اصلح|متعطل|عطل|لا يعمل|ما يشتغل|ما يفتح|خطأ|مشكلة|حل المشكلة|تشخيص)/i.test(text)) {
     return "نمط معالجة مشكلة: حدّد الاحتمال الأقرب دون الجزم، ثم أعطِ خطوات تشخيص مرتبة من الأبسط والأكثر أماناً إلى المتقدم. اذكر ما ينبغي عدم فعله، واسأل عن معلومة واحدة فقط إذا كانت ضرورية.";
@@ -97,7 +97,7 @@ export function getAdaptiveTaskInstruction(message: string): string {
     return "نمط الرياضة الحية: حدّد البطولة والتاريخ المقصود، واستخدم أحدث بيانات موثوقة متاحة. عند طلب مباريات اليوم أو جدول دوري روشن، اعرض جدولاً واضحاً بأعمدة: المباراة | الساعة بتوقيت السعودية | القناة الناقلة. حوّل الأوقات إلى توقيت Asia/Riyadh وتحقق من التاريخ وحالة المباراة. لا تذكر قناة إلا إذا أكدها مصدر موثوق؛ وإلا اكتب «غير معلنة في المصدر المتاح». أدرج تاريخ ووقت آخر تحديث والمصدر عند توفرهما. لا تخلط الأخبار بجدول المباريات ولا تخمّن مباراة أو نتيجة أو موعداً؛ إذا فشل المصدر فقل ذلك صراحة.";
   }
   if (/(رتب لي|برنامج|خطة|جدول|خطط|نظم|نظّم|رحلة|بكج|ميزانية|خلال \d+ أيام)/i.test(text)) {
-    const itinerary = "نمط التخطيط: لا تكتفِ بالقول إنك تستطيع التخطيط؛ أنشئ البرنامج مباشرة عندما تكون الوجهة والمدة واضحتين. قسّم الرحلة يوماً بيوم، وبترتيب صباحي ومسائي مع أوقات تقريبية، وأسماء الوجهات والأنشطة، واقتراح مطاعم أو استراحات عند ملاءمة المسار، ومدة التنقل الواقعية بين المحطات. اجمع المواقع المتقاربة جغرافياً ولا تحشر وجهات بعيدة في يوم واحد. أضف ميزانية تقريبية ونصائح توفير عندما تفيد، واذكر افتراضاتك بوضوح. إذا ذكر المستخدم أشخاصاً أو مدناً أو ترتيباً أو محطات محددة فالتزم بها. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، ولا تخترع ساعات عمل أو أنشطة موسمية.";
+    const itinerary = "نمط التخطيط: أنشئ خطة قابلة للتنفيذ مباشرة عندما تكون الوجهة والمدة واضحتين، ولا تكتفِ بالقول إنك تستطيع التخطيط. قسّم الرحلة يوماً بيوم، وبترتيب صباحي ومسائي مع أوقات تقريبية، وأسماء الوجهات والأنشطة، واقتراح مطاعم أو استراحات عند ملاءمة المسار، ومدة التنقل الواقعية بين المحطات. اجمع المواقع المتقاربة جغرافياً ولا تحشر وجهات بعيدة في يوم واحد. أضف ميزانية تقريبية ونصائح توفير عندما تفيد، واذكر افتراضاتك بوضوح. إذا ذكر المستخدم أشخاصاً أو مدناً أو ترتيباً أو محطات محددة فالتزم بها. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، ولا تخترع ساعات عمل أو أنشطة موسمية.";
     if (/(طرابزون|ترابزون|أوزنجول|اوزنجول|أيدر|ايدر|ريزه|سامسون|أوردو|جيرسون|إسطنبول|اسطنبول|شمال تركيا|سورميني|أراكلي)/i.test(text)) {
       return `${itinerary} خصّص الخطة لشمال تركيا: اجمع الوجهات المتقاربة في اليوم نفسه، وراعِ وقت القيادة والطقس الجبلي، وضمّن عند ملاءمة المسار سامسون وأوردو وجيرسون وأرسين وسورميني وأراكلي وإسطنبول، ولا تضعها كلها في مسار واحد إن كان الوقت لا يسمح.`;
     }
@@ -143,17 +143,42 @@ export function getConversationContinuityInstruction(messages: Array<{ role: "us
   if (/(?:لا،?\s*(?:أقصد|اقصد)|قصدي|الصحيح|بل\s|عدّل|عدل|غيّر|غير|بدلًا من|بدلا من)/i.test(latest)) {
     return "هذه رسالة تصحيح أو تعديل: اعتمد أحدث تصحيح للجزء الذي حدده الزائر فقط، واحتفظ ببقية سياق الطلب السابق وشروطه.";
   }
-  if (latest.split(/\s+/).length <= 12 && /^(?:(?:طيب|تمام|حسنًا|حسنا|وبالنسبة|وبخصوص|وماذا|وكم|كم|وهل|وإذا|واذا|وكيف|وأيضًا|وايضا|بعدها|ثم|هذا|هذه|وهذا|وهذه)[،,؟?\s]*)/i.test(latest)) {
-    return "هذه متابعة قصيرة على الأرجح: اربطها بأقرب موضوع سابق ذي صلة، واستعمل تفاصيله وقيوده، وأجب عن النقطة الجديدة فقط. لا تطلب إعادة السياق.";
+  if (latest.split(/\s+/).length <= 12 && /^(?:(?:طيب|تمام|حسنًا|حسنا|ممتاز|أحسنت|احسنت|نواصل|نكمل|كمل|استمر|تابع|وبالنسبة|وبخصوص|وماذا|وكم|كم|وهل|وإذا|واذا|وكيف|وأيضًا|وايضا|بعدها|ثم|هذا|هذه|وهذا|وهذه)[،,؟?\s]*)/i.test(latest)) {
+    return "هذه متابعة قصيرة أو إشارة للاستمرار: اربطها بأقرب موضوع سابق ذي صلة، واستعمل تفاصيله وقيوده، وأجب عن النقطة الجديدة فقط. إذا كانت الرسالة موافقة أو طلب استمرار فقط، فتابع الخطوة التالية دون إعادة الشرح أو طلب إعادة السياق.";
+  }
+  // Natural Arabic acknowledgements often include praise or thanks before the
+  // actual continue request (for example: "جزاك الله خيراً، نواصل").
+  const isContinueOnly = latest.split(/\s+/).length <= 20
+    && /(?:^|[\s،,])(?:نواصل|نكمل|كمل|استمر|تابع)(?:$|[\s،,!.؟])/i.test(latest)
+    && !/[؟?]/.test(latest)
+    && !/(?:لكن|ولكن|لا أريد|لا،|بدلاً من|بدلا من|غيّر|غير|صحح|صحّح)/i.test(latest);
+  if (isContinueOnly) {
+    return "هذه متابعة أو موافقة مصحوبة بعبارات شكر أو ثناء: اعتبرها طلباً لمواصلة آخر عمل قائم، ولا تبدأ موضوعاً جديداً ولا تكرر الملخص السابق. انتقل إلى الخطوة العملية التالية مع الحفاظ على القيود والقرارات السابقة.";
+  }
+  // Short pronoun-led requests such as "افحصه" or "راجعها" refer to the
+  // active object in the previous turns; resolve that reference from history.
+  if (latest.split(/\s+/).length <= 20
+    && /(?:^|[\s،,])(?:افحصه|افحصها|افحصهم|راجعه|راجعها|راجعهم|اختبره|اختبرها|دققه|دققها|شيك عليه|شيك عليها|تأكد منه|تأكد منها|كمل عليه|كمل عليها|تابعها|تابعه)(?:$|[\s،,!.؟])/i.test(latest)) {
+    return "هذه متابعة تشير بضمير إلى عنصر أو عمل سابق: حدّد مرجع الضمير من أقرب سياق واضح، وافحص أو أكمل ذلك العنصر نفسه. لا تطلب من الزائر إعادة إرساله ما دام ظاهراً في السجل؛ وإذا وُجد أكثر من مرجع محتمل فاسأل سؤال تحديد واحداً.";
   }
   return "استعمل سجل الحوار لفهم الإشارات والضمائر والقيود السابقة، مع إعطاء الأولوية لأحدث تصحيح أو تغيير صريح من الزائر.";
 }
 
 export function compactChatHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
-  return messages.slice(-MAX_CHAT_HISTORY).map((message) => ({
-    role: message.role,
-    content: message.content.slice(-MAX_CHAT_MESSAGE_CHARS),
-  }));
+  return messages.slice(-MAX_CHAT_HISTORY).map((message) => {
+    const content = message.content;
+    if (content.length <= MAX_CHAT_MESSAGE_CHARS) return { role: message.role, content };
+    // Preserve the opening request and latest details; trimming only the tail can
+    // erase the destination, budget, or constraints stated at the start.
+    const marker = "\n[… تم اختصار وسط الرسالة للحفاظ على بدايتها وآخر تفاصيلها …]\n";
+    const available = MAX_CHAT_MESSAGE_CHARS - marker.length;
+    const headLength = Math.ceil(available / 2);
+    const tailLength = available - headLength;
+    return {
+      role: message.role,
+      content: content.slice(0, headLength) + marker + content.slice(-tailLength),
+    };
+  });
 }
 
 
@@ -963,6 +988,24 @@ function getContextualFallback(
   if (asksItinerary) {
     const durationMatch = latest.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days?)/i);
     const requestedDays = durationMatch ? Number(durationMatch[1]) : undefined;
+    const isTrabzon = /(?:طرابزون|ترابزون|trabzon)/i.test(latest);
+    if (isTrabzon && (!requestedDays || requestedDays === 1) && language === "AR") {
+      const stops = [
+        { name: "قصر أتاتورك", time: "صباحاً", note: "زيارة القصر والحدائق المحيطة به؛ تحقق من مواعيد الزيارة قبل الانطلاق." },
+        { name: "ميدان طرابزون", time: "بعد الظهر", note: "جولة مشي واستراحة في وسط المدينة." },
+        { name: "غانيتا", time: "قبل الغروب", note: "ممشى الواجهة البحرية والاستمتاع بإطلالة البحر الأسود." },
+        { name: "بوزتبه", time: "المساء", note: "إطلالة بانورامية على المدينة إذا سمحت ظروف الطريق والطقس." },
+      ];
+      const items = stops.map((stop, index) => {
+        const url = new URL("https://www.google.com/maps/search/");
+        url.searchParams.set("api", "1");
+        url.searchParams.set("query", stop.name + " Trabzon Türkiye");
+        return `${index + 1}. **${stop.time} — ${stop.name}**: ${stop.note} [الخريطة](${url.toString()})`;
+      }).join("\\n");
+      return "إليك برنامجاً تمهيدياً مقترحاً ليوم واحد في طرابزون، بترتيب مرن:\\n\\n"
+        + items
+        + "\\n\\nهذه خطة مقترحة وليست تأكيداً لساعات العمل أو حالة الطرق، وهذا ليس تحققاً من الطقس الحالي. تحقق من المواعيد والطقس قبل الخروج. إذا كانت إقامتك أكثر من يوم، اذكر عدد الأيام لأرتب لك برنامجاً مفصلاً دون اختصارها في يوم واحد.";
+    }
     const durationNote = requestedDays && requestedDays > 1
       ? ` طلبت برنامجاً لمدة ${requestedDays} أيام، ولن أستبدله ببرنامج يوم واحد ناقص.`
       : "";
@@ -1217,7 +1260,7 @@ export const appRouter = router({
     // It deliberately does not access Neon or initialize the control-room schema.
     controlAccess: protectedProcedure.query(({ ctx }) => {
       const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
-      const staffRoles = ["secretary", "assistant", "it"];
+      const staffRoles = ["secretary", "assistant", "it", "executor"];
       return { isOwner, canAccess: isOwner || staffRoles.includes(ctx.user.role) };
     }),
     visitorCount: publicProcedure.query(() => countRegisteredVisitors()),
@@ -1289,7 +1332,7 @@ export const appRouter = router({
       return listControlTeamMembers();
     }),
     assignRole: ownerProcedure
-      .input(z.object({ email: z.string().trim().email().max(320), role: z.enum(["user", "secretary", "assistant", "it"]) }))
+      .input(z.object({ email: z.string().trim().email().max(320), role: z.enum(["user", "secretary", "assistant", "it", "partner", "executor"]) }))
       .mutation(async ({ ctx, input }) => {
         const member = await updateUserRoleByEmail(input.email.toLowerCase(), input.role);
         if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "لم نجد حساباً بهذا البريد. يجب على الموظف تسجيل الدخول مرة واحدة أولاً." });
@@ -1314,10 +1357,13 @@ export const appRouter = router({
       }),
     list: controlStaffProcedure.query(async ({ ctx }) => {
       if (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) return listControlRequests();
-      if (!["secretary", "assistant", "it"].includes(ctx.user.role)) return [];
+      if (!["secretary", "assistant", "it", "executor"].includes(ctx.user.role)) return [];
       // Assignments are scoped to a single authenticated account, not the whole department.
       const assignee = `${ctx.user.role}:${ctx.user.id}`;
-      return listControlRequestsForAssignee(assignee);
+      const assignedTasks = await listControlRequestsForAssignee(assignee);
+      // Staff need the assigned task itself, not private requester identifiers or
+      // CEO-only decision notes. Keep those fields inside the owner control room.
+      return assignedTasks.map(({ requesterOpenId: _requesterOpenId, decisionNote: _decisionNote, ...task }) => task);
     }),
     update: controlStaffProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "ready_for_review", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
@@ -1340,7 +1386,7 @@ export const appRouter = router({
           if (input.status === "reviewed" || input.status === "in_progress") {
             const assignment = input.assignee ?? currentTask.assignee;
             if (assignment !== "CEO") {
-              const match = /^(secretary|assistant|it):(\d+)$/.exec(assignment ?? "");
+              const match = /^(secretary|assistant|it|executor):(\d+)$/.exec(assignment ?? "");
               if (!match) throw new TRPCError({ code: "BAD_REQUEST", message: "اختر موظفاً محدداً من الفريق قبل اعتماد المهمة." });
               const [, role, memberId] = match;
               const members = await listControlTeamMembers();
@@ -1353,7 +1399,12 @@ export const appRouter = router({
             throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكن اعتماد الإكمال قبل أن يرفع الموظف المهمة للمراجعة." });
           }
         }
-        const updated = await updateControlRequest(input.id, { status: input.status, assignee: isOwner ? input.assignee : undefined, decisionNote: isOwner ? input.decisionNote : undefined });
+        const updated = isOwner
+          ? await updateControlRequestIfUnchanged(input.id, currentTask.status, currentTask.assignee, { status: input.status, assignee: input.assignee, decisionNote: input.decisionNote })
+          : await updateAssignedControlRequest(input.id, ownAssignment, currentTask.status, input.status!);
+        if (!updated) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "تغيرت ملكية المهمة أو حالتها أثناء التحديث؛ حدّث القائمة ثم حاول مجدداً." });
+        }
         if (updated) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "task.status_updated", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ status: input.status, assignee: updated.assignee }) });
         return updated;
       }),
@@ -1512,7 +1563,7 @@ export const appRouter = router({
       }),
     chat: publicProcedure
       .input(z.object({
-        messages: z.array(chatMessageSchema).min(1).max(14),
+        messages: z.array(chatMessageSchema).min(1).max(20),
         language: languageSchema,
       }))
       .mutation(async ({ input, ctx }) => {
@@ -1874,15 +1925,38 @@ ${newsContext}`);
       }),
   }),
   partners: router({
+    submitRequest: protectedProcedure
+      .input(z.object({ title: z.string().trim().min(4).max(180), description: z.string().trim().min(10).max(2000) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "partner") throw new TRPCError({ code: "FORBIDDEN", message: "إرسال طلبات الشركاء متاح للحسابات المعتمدة كشريك فقط." });
+        const request = await createControlRequest({
+          title: input.title,
+          command: input.description,
+          requesterType: "partner",
+          requesterOpenId: ctx.user.openId,
+          category: "partner",
+          priority: "normal",
+          assignee: "CEO",
+        });
+        if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "partner.request_submitted", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ status: request.status }) });
+        return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
+      }),
+    myRequests: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "partner") throw new TRPCError({ code: "FORBIDDEN", message: "هذه الصفحة مخصصة لحسابات الشركاء المعتمدة." });
+      const requests = await listControlRequestsForRequester(ctx.user.openId);
+      return requests
+        .filter((item) => item.requesterType === "partner" && item.requesterOpenId === ctx.user.openId)
+        .map(({ id, title, status, priority, createdAt, updatedAt }) => ({ id, title, status, priority, createdAt, updatedAt }));
+    }),
     // Only CEO-approved campaigns are visible to visitors. Drafts remain in the control inbox.
     activeAds: publicProcedure.query(async () => {
       const requests = await listControlRequests();
       return requests
-        .filter((item) => item.category === "partner" && item.status === "reviewed" && item.command.startsWith("ALASSAUL_AD_V1\\n"))
+        .filter((item) => item.category === "partner" && item.status === "reviewed" && item.command.startsWith("ALASSAUL_AD_V1\n"))
         .slice(0, 3)
         .flatMap((item) => {
           try {
-            const ad = JSON.parse(item.command.slice("ALASSAUL_AD_V1\\n".length)) as {
+            const ad = JSON.parse(item.command.slice("ALASSAUL_AD_V1\n".length)) as {
               title?: string; description?: string; country?: string; imageUrl?: string; targetUrl?: string;
             };
             if (!ad.title || !ad.description || !ad.targetUrl) return [];

@@ -1,4 +1,4 @@
-import { count, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNull, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
@@ -127,6 +127,12 @@ export async function listControlRequestsForAssignee(assignee: string): Promise<
   return db.select().from(controlRequests).where(eq(controlRequests.assignee, assignee)).orderBy(desc(controlRequests.createdAt)).limit(100);
 }
 
+export async function listControlRequestsForRequester(requesterOpenId: string): Promise<ControlRequest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(controlRequests).where(eq(controlRequests.requesterOpenId, requesterOpenId)).orderBy(desc(controlRequests.createdAt)).limit(100);
+}
+
 export async function listControlTeamMembers() {
   const db = await getDb();
   if (!db) return [];
@@ -176,7 +182,7 @@ export async function countRegisteredVisitors(): Promise<number> {
 }
 
 export async function createControlRequest(
-  input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority"> & { assignee?: string },
+  input: Pick<ControlRequest, "title" | "command" | "requesterType" | "category" | "priority"> & { assignee?: string; requesterOpenId?: string },
 ): Promise<ControlRequest | undefined> {
   const db = await getDb();
   if (!db) return undefined;
@@ -198,6 +204,57 @@ export async function updateControlRequest(
   if (!db) return undefined;
   await db.update(controlRequests).set({ ...input, updatedAt: new Date() }).where(eq(controlRequests.id, id));
   const rows = await db.select().from(controlRequests).where(eq(controlRequests.id, id)).limit(1);
+  return rows[0];
+}
+
+/**
+ * Atomically apply a CEO decision only if the task still has the status and
+ * assignee that the CEO reviewed. This prevents stale control-room views from
+ * overwriting a concurrent reassignment or status transition.
+ */
+export async function updateControlRequestIfUnchanged(
+  id: number,
+  expectedStatus: ControlRequest["status"],
+  expectedAssignee: string | null,
+  input: Partial<Pick<ControlRequest, "status" | "assignee" | "decisionNote">>,
+): Promise<ControlRequest | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const ownershipCondition = expectedAssignee === null
+    ? isNull(controlRequests.assignee)
+    : eq(controlRequests.assignee, expectedAssignee);
+  const rows = await db.update(controlRequests)
+    .set({ ...input, updatedAt: new Date() })
+    .where(and(
+      eq(controlRequests.id, id),
+      eq(controlRequests.status, expectedStatus),
+      ownershipCondition,
+    ))
+    .returning();
+  return rows[0];
+}
+
+/**
+ * Atomically advance a staff task only while it is still assigned to the
+ * authenticated account and remains in the status that was just validated.
+ * This closes the read-then-write ownership race in control.update.
+ */
+export async function updateAssignedControlRequest(
+  id: number,
+  assignee: string,
+  expectedStatus: ControlRequest["status"],
+  nextStatus: ControlRequest["status"],
+): Promise<ControlRequest | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.update(controlRequests)
+    .set({ status: nextStatus, updatedAt: new Date() })
+    .where(and(
+      eq(controlRequests.id, id),
+      eq(controlRequests.assignee, assignee),
+      eq(controlRequests.status, expectedStatus),
+    ))
+    .returning();
   return rows[0];
 }
 

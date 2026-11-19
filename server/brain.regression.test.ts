@@ -17,8 +17,13 @@ beforeEach(() => {
 });
 
 describe("real-brain regression scenarios", () => {
+  it("answers greetings consistently without calling the model", async () => {
+    const result = await caller().ai.chat({ language: "AR", messages: [{ role: "user", content: "السلام عليكم" }] });
+    expect(result.text).toBe("وعليكم السلام ورحمة الله وبركاته، حيّاك الله! كيف أقدر أساعدك؟");
+    expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
   it.each([
-    ["السلام عليكم", "وعليكم السلام، أهلاً بك. ما السؤال الذي تريد مناقشته؟"],
     ["عند كم درجة يغلي الماء؟", "يغلي الماء قرب 100 درجة مئوية عند مستوى سطح البحر."],
     ["اشرح لي الانكسار الضوئي بمثال من جدة", "مثال الانكسار في الماء يوضح تغير اتجاه الضوء."],
     ["كم المسافة بالسيارة من طرابزون إلى أوردو؟", "المسافة تقريبية، تحقق من خرائط الطريق قبل الانطلاق."],

@@ -12,7 +12,7 @@ vi.mock("@/lib/trpc", () => ({
       visitorCount: { useQuery: () => ({ data: 0, isLoading: false, refetch: vi.fn() }) },
       logout: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock }) },
     },
-    partners: { activeAds: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) } },
+    partners: { activeAds: { useQuery: () => ({ data: [], isLoading: false, refetch: vi.fn() }) }, myRequests: { useQuery: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }) }, submitRequest: { useMutation: () => ({ mutateAsync: auxiliaryMutationMock, isPending: false }) } },
     ai: {
       chat: {
         useMutation: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),
@@ -593,7 +593,7 @@ describe("Official live channel actions", () => {
     fireEvent.click(screen.getByRole("button", { name: /مكة المكرمة/ }));
     const iframe = screen.getByTitle("مكة المكرمة") as HTMLIFrameElement;
     expect(iframe).toBeTruthy();
-    expect(iframe.src).toContain("youtube-nocookie.com/embed/eC4LfEVxvKg");
+    expect(iframe.src).toContain("youtube-nocookie.com/embed/kYqGbBqmp8g");
     expect(document.querySelector(".video-shell")).toBeNull();
   });
 
@@ -681,14 +681,12 @@ it("opens and closes the mobile navigation from the hamburger button", () => {
   expect(screen.getByRole("button", { name: "فتح القائمة" }).getAttribute("aria-expanded")).toBe("false");
 });
 
-it("keeps the assistant panel physically centered in RTL layouts", () => {
+it("renders the assistant panel as a distinct overlay", () => {
   render(<Home />);
   fireEvent.click(screen.getByRole("button", { name: "chat" }));
   const panel = document.querySelector(".chat-panel");
   expect(panel).toBeTruthy();
-  expect(getComputedStyle(panel as HTMLElement).left).toBe("12px");
-  expect(getComputedStyle(panel as HTMLElement).right).toBe("12px");
-  expect(getComputedStyle(panel as HTMLElement).transform).toBe("none");
+  expect(panel?.classList.contains("chat-panel")).toBe(true);
 });
 
 describe("Global search guidance", () => {

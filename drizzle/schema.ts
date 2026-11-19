@@ -9,7 +9,7 @@ import {
   boolean,
 } from "drizzle-orm/pg-core";
 
-export const userRole = pgEnum("user_role", ["user", "admin", "secretary", "assistant", "it"]);
+export const userRole = pgEnum("user_role", ["user", "admin", "secretary", "assistant", "it", "partner", "executor"]);
 export const controlRequestStatus = pgEnum("control_request_status", [
   "pending",
   "reviewed",
@@ -43,6 +43,7 @@ export const controlRequests = pgTable("controlRequests", {
   title: varchar("title", { length: 255 }).notNull().default("طلب جديد"),
   command: text("command").notNull(),
   requesterType: varchar("requesterType", { length: 32 }).notNull().default("visitor"),
+  requesterOpenId: varchar("requesterOpenId", { length: 64 }),
   category: varchar("category", { length: 32 }).notNull().default("general"),
   priority: varchar("priority", { length: 16 }).notNull().default("normal"),
   assignee: varchar("assignee", { length: 32 }),

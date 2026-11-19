@@ -56,7 +56,7 @@ test('OpenAI key takes priority over Gemini and Groq and selects Responses API',
   });
   assert.equal(result.status, 0);
   assert.match(result.stdout, /Responses API route detected/);
-  assert.match(result.stdout, /gpt-6\.1-sol/);
+  assert.match(result.stdout, /gpt-6\.2-sol/);
   assert.match(result.stdout, /gpt-6\.1-terra/);
   assert.doesNotMatch(result.stdout, /openai-test-secret|gemini-test-secret|groq-test-secret/);
 });
