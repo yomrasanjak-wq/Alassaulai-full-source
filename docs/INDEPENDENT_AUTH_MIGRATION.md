@@ -42,6 +42,20 @@ Planning baseline only. This document does not change runtime authentication, da
 - Verify production database row counts and representative ownership links before and after rollout.
 - Keep a documented rollback path to the current Manus login until the new provider is proven stable.
 
+## Authentication consumer audit (2026-11-19)
+- server/_core/context.ts calls sdk.authenticateRequest for tRPC requests; public procedures tolerate anonymous users while protected procedures depend on the resolved database user.
+- server/_core/trpc.ts and server/routers.ts compare ctx.user.openId with OWNER_OPEN_ID for owner-only access. This must continue to resolve to the same existing internal user after provider migration.
+- client/src/main.tsx has a Preview/WebView fallback that reads sessionStorage[manus-cookie] and forwards the app session as a Bearer token. The stored value is the app's own session cookie, not a raw provider token; preserve or deliberately replace this compatibility path when changing the login provider.
+- server/routers.ts clears the shared app_session_id cookie on logout. The new provider must issue the same application session contract or update cookie creation, verification, and logout together.
+- Scheduled-task authentication is still Manus-coupled: server/_core/sdk.ts recognizes cron_ session identities and calls Manus GetUserInfoWithJwt to resolve taskUid. Search found the resolver in the SDK and its response types, plus the heartbeat job helper. Do not remove this path as part of the visitor/owner login cutover until scheduled-task callbacks have an independent verified replacement.
+- The auth consumer search did not find another direct call site for authenticateRequest or createSessionToken beyond the SDK and OAuth callback. The tRPC context remains the central authenticated-user entry point.
+
+## Migration blockers confirmed by the audit
+1. Google OIDC credentials are not present in the inspected environment, so a real provider callback cannot yet be exercised.
+2. Scheduled-task callbacks depend on Manus JWT introspection and require a separate migration plan.
+3. Owner identity must be confirmed from the existing Neon row before configuring OWNER_OPEN_ID or linking a Google subject.
+4. The Preview Bearer-token fallback and logout cookie contract must be covered by tests, not silently dropped.
+
 ## Immediate next engineering tasks
 1. Inspect all current auth consumers and any scheduled-task/session flows before changing the SDK.
 2. Confirm the exact existing owner user row and role without exposing personal data or secrets in logs.
