@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNull, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
@@ -204,6 +204,33 @@ export async function updateControlRequest(
   if (!db) return undefined;
   await db.update(controlRequests).set({ ...input, updatedAt: new Date() }).where(eq(controlRequests.id, id));
   const rows = await db.select().from(controlRequests).where(eq(controlRequests.id, id)).limit(1);
+  return rows[0];
+}
+
+/**
+ * Atomically apply a CEO decision only if the task still has the status and
+ * assignee that the CEO reviewed. This prevents stale control-room views from
+ * overwriting a concurrent reassignment or status transition.
+ */
+export async function updateControlRequestIfUnchanged(
+  id: number,
+  expectedStatus: ControlRequest["status"],
+  expectedAssignee: string | null,
+  input: Partial<Pick<ControlRequest, "status" | "assignee" | "decisionNote">>,
+): Promise<ControlRequest | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const ownershipCondition = expectedAssignee === null
+    ? isNull(controlRequests.assignee)
+    : eq(controlRequests.assignee, expectedAssignee);
+  const rows = await db.update(controlRequests)
+    .set({ ...input, updatedAt: new Date() })
+    .where(and(
+      eq(controlRequests.id, id),
+      eq(controlRequests.status, expectedStatus),
+      ownershipCondition,
+    ))
+    .returning();
   return rows[0];
 }
 
