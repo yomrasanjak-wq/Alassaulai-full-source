@@ -208,6 +208,19 @@ describe("brain governance", () => {
     }
   });
 
+  it("blocks CEO from changing emergency incidents through ordinary task controls", async () => {
+    const previousOwnerId = ENV.ownerOpenId;
+    ENV.ownerOpenId = "platform-owner-open-id";
+    vi.mocked(listControlRequests).mockResolvedValue([{ id: 85, requesterType: "it", category: "security", status: "pending" } as never]);
+    try {
+      const owner = appRouter.createCaller(createUserContext("platform-owner-open-id", "user"));
+      await expect(owner.control.update({ id: 85, status: "rejected" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+      expect(vi.mocked(updateControlRequest)).not.toHaveBeenCalled();
+    } finally {
+      ENV.ownerOpenId = previousOwnerId;
+    }
+  });
+
   it("applies the additive control-room schema only through the owner team view", async () => {
     const previousOwnerId = ENV.ownerOpenId;
     ENV.ownerOpenId = "platform-owner-open-id";
