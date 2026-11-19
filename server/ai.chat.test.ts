@@ -43,6 +43,13 @@ function createUserContext(openId: string, role: "user" | "admin" | "secretary" 
 }
 
 describe("brain governance", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(listControlRequests).mockResolvedValue([]);
+    vi.mocked(listControlRequestsForAssignee).mockResolvedValue([]);
+    vi.mocked(listControlTeamMembers).mockResolvedValue([]);
+    vi.mocked(updateControlRequest).mockResolvedValue({ id: 1, status: "reviewed" } as never);
+  });
   it("does not expose administrative diagnostics or proposal actions to public visitors", async () => {
     const caller = appRouter.createCaller(createPublicContext());
     await expect(caller.brain.status()).rejects.toMatchObject({ code: "FORBIDDEN" });
