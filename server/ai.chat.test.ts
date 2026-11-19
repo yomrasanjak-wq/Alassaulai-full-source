@@ -172,7 +172,7 @@ describe("brain governance", () => {
     await expect(caller.control.list()).resolves.toEqual([task]);
     expect(vi.mocked(listControlRequestsForAssignee)).toHaveBeenCalledWith("secretary:1");
     await caller.control.update({ id: 42, status: "in_progress" });
-    expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(42, expect.objectContaining({ status: "in_progress" }));
+    expect(vi.mocked(updateAssignedControlRequest)).toHaveBeenCalledWith(42, "secretary:1", "reviewed", "in_progress");
   });
 
   it("blocks staff from starting a task while it is still pending CEO approval", async () => {
@@ -283,7 +283,7 @@ describe("brain governance", () => {
     vi.mocked(listControlRequests).mockResolvedValue([task as never]);
     const caller = appRouter.createCaller(createUserContext("it-open-id", "it"));
     await caller.control.update({ id: 99, status: "ready_for_review" });
-    expect(vi.mocked(updateControlRequest)).toHaveBeenCalledWith(99, expect.objectContaining({ status: "ready_for_review" }));
+    expect(vi.mocked(updateAssignedControlRequest)).toHaveBeenCalledWith(99, "it:1", "in_progress", "ready_for_review");
     await expect(caller.control.update({ id: 99, status: "completed" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     await expect(caller.control.update({ id: 99, status: "in_progress", assignee: "IT" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
