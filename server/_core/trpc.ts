@@ -61,6 +61,17 @@ export const controlStaffProcedure = t.procedure.use(
   }),
 );
 
+// Operational management: the verified platform owner and the designated secretary.
+export const operationsManagerProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+    if (!ctx.user || (!isOwnerIdentity(ctx.user) && ctx.user.role !== "secretary")) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "هذه الصلاحية مخصصة للسكرتير ومدير المنصة." });
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  }),
+);
+
 // Owner-only procedure for consequential governance decisions. Fail closed if the configured owner identity is missing.
 export const ownerProcedure = t.procedure.use(
   t.middleware(async opts => {
