@@ -1342,8 +1342,17 @@ export const appRouter = router({
   }),
   control: router({
     createTask: ownerProcedure
-      .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"), assignee: z.enum(["CEO", "السكرتير", "المساعد", "IT"]) }))
+      .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"), assignee: z.string().max(32) }))
        .mutation(async ({ ctx, input }) => {
+        if (input.assignee !== "CEO") {
+          const match = /^(secretary|assistant|it|executor):(\\d+)$/.exec(input.assignee);
+          if (!match) throw new TRPCError({ code: "BAD_REQUEST", message: "اختر موظفاً محدداً من القائمة قبل تسجيل المهمة." });
+          const [, role, memberId] = match;
+          const members = await listControlTeamMembers();
+          if (!members.some((member) => member.id === Number(memberId) && member.role === role)) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "الموظف المحدد غير موجود أو لا يحمل صلاحية القسم المطلوب." });
+          }
+        }
         const request = await createControlRequest({ ...input, requesterType: "owner" });
         if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "task.created", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ assignee: input.assignee, category: input.category, priority: input.priority }) });
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
