@@ -1390,7 +1390,10 @@ export const appRouter = router({
         const currentTask = visibleTasks.find((task) => task.id === input.id);
         if (!currentTask) throw new TRPCError({ code: isOwner || isSecretary ? "NOT_FOUND" : "FORBIDDEN", message: "المهمة غير موجودة أو لا تملك صلاحية إدارتها." });
         if (isSecretary) {
-          // Secretary may route work, but cannot approve, reject, complete, or alter CEO notes.
+          // Secretary may route active work, but cannot alter terminal tasks or CEO decisions.
+          if (currentTask.status === "completed" || currentTask.status === "rejected") {
+            throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكن إعادة توزيع مهمة مغلقة." });
+          }
           if (!input.assignee || input.status !== undefined || input.decisionNote !== undefined) {
             throw new TRPCError({ code: "FORBIDDEN", message: "صلاحية السكرتير هنا لإعادة توزيع المهمة فقط؛ قرارات الاعتماد تبقى لدى CEO." });
           }
