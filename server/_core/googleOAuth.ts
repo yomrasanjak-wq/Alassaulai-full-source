@@ -28,11 +28,18 @@ function safeEqual(a: string | undefined, b: string | undefined) {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 function originFor(req: Request) {
-  const protoHeader = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
-  const proto = protoHeader || req.protocol;
-  const host = req.get("x-forwarded-host")?.split(",")[0]?.trim() || req.get("host");
-  if (!host || (proto !== "https" && !/^localhost(?::\d+)?$/i.test(host))) {
-    throw new Error("تعذر تحديد عنوان آمن لإكمال تسجيل الدخول.");
+  const proto = (req.get("x-forwarded-proto")?.split(",")[0]?.trim() || req.protocol).toLowerCase();
+  const rawHost = req.get("x-forwarded-host")?.split(",")[0]?.trim() || req.get("host") || "";
+  const host = rawHost.toLowerCase().replace(/\\.$/, "");
+  const configuredHosts = (process.env.GOOGLE_OAUTH_ALLOWED_HOSTS || "")
+    .split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
+  const isLocalhost = /^localhost(?::\\d+)?$/.test(host);
+  const isProductionHost = host === "alassaul.com" || host === "www.alassaul.com";
+  // Vercel preview hostnames are scoped to this project's unique deployment prefix.
+  const isProjectPreview = /^alassaul-full-source-[a-z0-9-]+-yomrasanjak-3670s-projects\\.vercel\\.app$/.test(host);
+  const isAllowed = configuredHosts.includes(host) || isLocalhost || isProductionHost || isProjectPreview;
+  if (!isAllowed || (proto !== "https" && !(isLocalhost && proto === "http"))) {
+    throw new Error("عنوان العودة غير مدرج ضمن النطاقات الموثوقة لتسجيل الدخول.");
   }
   return `${proto}://${host}`;
 }
@@ -79,6 +86,7 @@ export function registerGoogleOAuthRoutes(app: Express) {
 
   app.get("/api/auth/google/callback", async (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
+    const providerError = typeof req.query.error === "string" ? req.query.error : "";
     const code = typeof req.query.code === "string" ? req.query.code : "";
     const state = typeof req.query.state === "string" ? req.query.state : "";
     const cookies = parseCookieHeader(req.headers.cookie ?? "");
@@ -86,6 +94,14 @@ export function registerGoogleOAuthRoutes(app: Express) {
     const nonce = cookies[NONCE_COOKIE];
     const verifier = cookies[VERIFIER_COOKIE];
     clearFlowCookies(res);
+    if (providerError) {
+      if (providerError === "access_denied") {
+        res.redirect(302, "/?auth=cancelled");
+        return;
+      }
+      res.status(400).send("تعذر إكمال تسجيل الدخول عبر Google. أعد المحاولة من الموقع.");
+      return;
+    }
     if (!code || !safeEqual(state, expectedState) || !nonce || !verifier) {
       res.status(403).send("انتهت جلسة التحقق أو لم تطابق بيانات الحماية. أعد المحاولة من الموقع.");
       return;
