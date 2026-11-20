@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { jwtVerify, createRemoteJWKSet } from "jose";
-import type { Express, Request, Response } from "express";
+import type { Application, Request, Response } from "express-serve-static-core";
 import { parse as parseCookieHeader } from "cookie";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import * as db from "../db";
@@ -53,7 +53,7 @@ function flowCookieOptions() {
   return { httpOnly: true, secure: true, sameSite: "none" as const, path: "/", maxAge: FLOW_MAX_AGE };
 }
 
-export function registerGoogleOAuthRoutes(app: Express) {
+export function registerGoogleOAuthRoutes(app: Application) {
   app.get("/api/auth/google", (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
     if (!ENV.googleClientId || !ENV.googleClientSecret || !ENV.cookieSecret || !ENV.databaseUrl || !ENV.appId) {
