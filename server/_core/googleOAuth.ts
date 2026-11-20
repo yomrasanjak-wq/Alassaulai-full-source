@@ -44,11 +44,13 @@ function originFor(req: Request) {
   return `${proto}://${host}`;
 }
 function clearFlowCookies(res: Response) {
-  const options = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" };
+  const options = { httpOnly: true, secure: true, sameSite: "none" as const, path: "/" };
   for (const name of [STATE_COOKIE, NONCE_COOKIE, VERIFIER_COOKIE]) res.clearCookie(name, options);
 }
 function flowCookieOptions() {
-  return { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/", maxAge: FLOW_MAX_AGE };
+  // Google returns to this site from a different origin. None + Secure makes
+  // the short-lived host-only flow cookies available in mobile browsers too.
+  return { httpOnly: true, secure: true, sameSite: "none" as const, path: "/", maxAge: FLOW_MAX_AGE };
 }
 
 export function registerGoogleOAuthRoutes(app: Express) {
@@ -103,7 +105,11 @@ export function registerGoogleOAuthRoutes(app: Express) {
       return;
     }
     if (!code || !safeEqual(state, expectedState) || !nonce || !verifier) {
-      res.status(403).send("انتهت جلسة التحقق أو لم تطابق بيانات الحماية. أعد المحاولة من الموقع.");
+      console.warn("[Google OAuth] State verification failed", {
+        hasCode: Boolean(code), hasState: Boolean(state), hasStateCookie: Boolean(expectedState),
+        stateMatches: safeEqual(state, expectedState), hasNonceCookie: Boolean(nonce), hasVerifierCookie: Boolean(verifier),
+      });
+      res.status(403).send("تعذر تأكيد جلسة الدخول الآمنة. ارجع إلى الموقع وابدأ الدخول من جديد.");
       return;
     }
     if (!ENV.googleClientId || !ENV.googleClientSecret || !ENV.cookieSecret || !ENV.databaseUrl || !ENV.appId) {
