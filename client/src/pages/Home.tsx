@@ -1668,23 +1668,40 @@ export default function Home() {
 
   async function submitControlCommand() {
     const command = controlCommand.trim();
-    if (!command) {
-      notify("اكتب الأمر أولاً", "مثال: أضف معلماً جديداً إلى ريزا.", "warning");
+    const title = controlTitle.trim() || "طلب يحتاج متابعة";
+    if (command.length < 3) {
+      notify("اكتب تفاصيل المهمة", "أضف وصفاً واضحاً لا يقل عن ثلاثة أحرف قبل التسجيل.", "warning");
       return;
     }
     try {
-      const taskInput = { title: controlTitle.trim() || "طلب يحتاج متابعة", command, category: controlCategory, priority: controlPriority };
+      const taskInput = { title, command, category: controlCategory, priority: controlPriority };
       const result = isControlOwner
         ? await controlCreateTaskMutation.mutateAsync({ ...taskInput, assignee: controlAssignee })
         : await controlMutation.mutateAsync(taskInput);
+      if (!result.success || !result.id) {
+        throw new Error("لم يؤكد الخادم حفظ المهمة في قاعدة البيانات.");
+      }
       const assignedMember = teamMembersQuery.data?.find((member) => controlAssignee === `${member.role}:${member.id}`);
-      const assignedLabel = controlAssignee === "CEO" ? "CEO" : assignedMember?.name || assignedMember?.email || "الموظف المحدد";
-      notify("تم تسجيل المهمة", result.id ? `رقم ${result.id} · المسؤول المحدد: ${assignedLabel} · بانتظار موافقة CEO قبل بدء التنفيذ.` : `المسؤول المحدد: ${assignedLabel} · بانتظار موافقة CEO.`, "success");
+      const assignedLabel = controlAssignee === "CEO"
+        ? "CEO"
+        : assignedMember?.name || assignedMember?.email || "الموظف المحدد";
+      if (isControlOwner) {
+        const refreshed = await controlRequestsQuery.refetch();
+        const visible = refreshed.data?.some((item) => item.id === result.id);
+        if (!visible) {
+          notify("تم حفظ المهمة وتحتاج تحديث القائمة", `رقم المهمة ${result.id} · المسؤول: ${assignedLabel}. لم تظهر في القائمة بعد؛ أعد تحميل قائمة المهام.`, "warning");
+        } else {
+          notify("تم تسجيل المهمة وظهرت في القائمة", `رقم ${result.id} · المسؤول: ${assignedLabel} · الحالة: بانتظار موافقة CEO قبل التنفيذ.`, "success");
+        }
+      } else {
+        notify("تم إرسال الطلب", `رقم ${result.id} · أُرسل إلى غرفة التحكم لمراجعة CEO.`, "success");
+      }
       setControlCommand("");
       setControlTitle("طلب يحتاج متابعة");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "تعذر الاتصال بالخادم.";
+      notify("تعذر تسجيل المهمة", message.slice(0, 220), "error");
       void controlRequestsQuery.refetch();
-    } catch {
-      notify("تعذر إرسال الأمر", "تأكد من الاتصال ثم حاول مرة أخرى.", "error");
     }
   }
 
