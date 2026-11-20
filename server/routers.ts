@@ -8,7 +8,7 @@ import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGrounding
 import { getWikipediaSearchContext } from "./_core/wikipediaSearch";
 import { synthesizeSpeech } from "./_core/textToSpeech";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, controlStaffProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, controlStaffProcedure, operationsManagerProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { buildDirectionsUrl, parseRouteRequest } from "@shared/routeRequest";
@@ -1327,7 +1327,7 @@ export const appRouter = router({
   team: router({
     // The first owner-only team read also applies the additive role/audit schema
     // using the server-side DATABASE_URL. Staff and visitors cannot invoke it.
-    list: ownerProcedure.query(async () => {
+    list: operationsManagerProcedure.query(async () => {
       await ensureControlRoomSchema();
       return listControlTeamMembers();
     }),
@@ -1341,7 +1341,7 @@ export const appRouter = router({
       }),
   }),
   control: router({
-    createTask: ownerProcedure
+    createTask: operationsManagerProcedure
       .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"), assignee: z.string().max(32) }))
        .mutation(async ({ ctx, input }) => {
         if (input.assignee !== "CEO") {
@@ -1353,8 +1353,9 @@ export const appRouter = router({
             throw new TRPCError({ code: "BAD_REQUEST", message: "الموظف المحدد غير موجود أو لا يحمل صلاحية القسم المطلوب." });
           }
         }
-        const request = await createControlRequest({ ...input, requesterType: "owner" });
-        if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "task.created", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ assignee: input.assignee, category: input.category, priority: input.priority }) });
+        const isOwner = isOwnerIdentity(ctx.user);
+        const request = await createControlRequest({ ...input, requesterType: isOwner ? "owner" : "secretary", requesterOpenId: ctx.user.openId });
+        if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: isOwner ? "task.created" : "task.created_by_secretary", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ assignee: input.assignee, category: input.category, priority: input.priority }) });
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
       }),
     submit: publicProcedure
@@ -1366,7 +1367,12 @@ export const appRouter = router({
       }),
     list: controlStaffProcedure.query(async ({ ctx }) => {
       if (isOwnerIdentity(ctx.user)) return listControlRequests();
-      if (!["secretary", "assistant", "it", "executor"].includes(ctx.user.role)) return [];
+      if (ctx.user.role === "secretary") {
+        // The secretary coordinates the full operational inbox but does not receive
+        // private requester identities or CEO decision notes.
+        return (await listControlRequests()).map(({ requesterOpenId: _requesterOpenId, decisionNote: _decisionNote, ...task }) => task);
+      }
+      if (!["assistant", "it", "executor"].includes(ctx.user.role)) return [];
       // Assignments are scoped to a single authenticated account, not the whole department.
       const assignee = `${ctx.user.role}:${ctx.user.id}`;
       const assignedTasks = await listControlRequestsForAssignee(assignee);
@@ -1378,11 +1384,26 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "ready_for_review", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
       .mutation(async ({ ctx, input }) => {
         const isOwner = isOwnerIdentity(ctx.user);
+        const isSecretary = ctx.user.role === "secretary";
         const ownAssignment = `${ctx.user.role}:${ctx.user.id}`;
-        const visibleTasks = isOwner ? await listControlRequests() : await listControlRequestsForAssignee(ownAssignment);
+        const visibleTasks = isOwner || isSecretary ? await listControlRequests() : await listControlRequestsForAssignee(ownAssignment);
         const currentTask = visibleTasks.find((task) => task.id === input.id);
-        if (!currentTask) throw new TRPCError({ code: isOwner ? "NOT_FOUND" : "FORBIDDEN", message: "المهمة غير موجودة أو غير مسندة إلى حسابك." });
-        if (!isOwner) {
+        if (!currentTask) throw new TRPCError({ code: isOwner || isSecretary ? "NOT_FOUND" : "FORBIDDEN", message: "المهمة غير موجودة أو لا تملك صلاحية إدارتها." });
+        if (isSecretary) {
+          // Secretary may route work, but cannot approve, reject, complete, or alter CEO notes.
+          if (!input.assignee || input.status !== undefined || input.decisionNote !== undefined) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "صلاحية السكرتير هنا لإعادة توزيع المهمة فقط؛ قرارات الاعتماد تبقى لدى CEO." });
+          }
+          if (input.assignee !== "CEO") {
+            const match = /^(secretary|assistant|it|executor):(\\d+)$/.exec(input.assignee);
+            if (!match) throw new TRPCError({ code: "BAD_REQUEST", message: "اختر موظفاً محدداً من الفريق." });
+            const [, role, memberId] = match;
+            const members = await listControlTeamMembers();
+            if (!members.some((member) => member.id === Number(memberId) && member.role === role)) {
+              throw new TRPCError({ code: "BAD_REQUEST", message: "الموظف المحدد غير موجود أو لا يحمل دور القسم المطلوب." });
+            }
+          }
+        } else if (!isOwner) {
           if (currentTask.assignee !== ownAssignment || input.assignee !== undefined || input.decisionNote !== undefined) {
             throw new TRPCError({ code: "FORBIDDEN", message: "هذه المهمة ليست مسندة إلى حسابك الشخصي." });
           }
@@ -1408,13 +1429,13 @@ export const appRouter = router({
             throw new TRPCError({ code: "PRECONDITION_FAILED", message: "لا يمكن اعتماد الإكمال قبل أن يرفع الموظف المهمة للمراجعة." });
           }
         }
-        const updated = isOwner
-          ? await updateControlRequestIfUnchanged(input.id, currentTask.status, currentTask.assignee, { status: input.status, assignee: input.assignee, decisionNote: input.decisionNote })
+        const updated = isOwner || isSecretary
+          ? await updateControlRequestIfUnchanged(input.id, currentTask.status, currentTask.assignee, isSecretary ? { assignee: input.assignee } : { status: input.status, assignee: input.assignee, decisionNote: input.decisionNote })
           : await updateAssignedControlRequest(input.id, ownAssignment, currentTask.status, input.status!);
         if (!updated) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "تغيرت ملكية المهمة أو حالتها أثناء التحديث؛ حدّث القائمة ثم حاول مجدداً." });
         }
-        if (updated) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "task.status_updated", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ status: input.status, assignee: updated.assignee }) });
+        if (updated) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: isSecretary ? "task.reassigned_by_secretary" : "task.status_updated", targetType: "control_request", targetId: String(input.id), details: JSON.stringify({ status: input.status ?? currentTask.status, assignee: updated.assignee }) });
         return updated;
       }),
     reportIncident: controlStaffProcedure
