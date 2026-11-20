@@ -1395,7 +1395,7 @@ export const appRouter = router({
             throw new TRPCError({ code: "FORBIDDEN", message: "صلاحية السكرتير هنا لإعادة توزيع المهمة فقط؛ قرارات الاعتماد تبقى لدى CEO." });
           }
           if (input.assignee !== "CEO") {
-            const match = /^(secretary|assistant|it|executor):(\\d+)$/.exec(input.assignee);
+            const match = /^(secretary|assistant|it|executor):(\d+)$/.exec(input.assignee);
             if (!match) throw new TRPCError({ code: "BAD_REQUEST", message: "اختر موظفاً محدداً من الفريق." });
             const [, role, memberId] = match;
             const members = await listControlTeamMembers();
