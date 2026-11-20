@@ -4030,3 +4030,27 @@ img { display: block; max-width: 100%; }
 .partner-ad-admin input,.partner-ad-admin textarea,.partner-ad-admin select { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #d4d9ce; border-radius: 10px; background: #fffefa; color: #203d35; font: inherit; font-size: 13px; }
 .partner-ad-admin textarea { min-height: 74px; resize: vertical; }
 @media (max-width: 560px) { .partner-ad-popup { inset-inline: 10px; bottom: 76px; width: auto; grid-template-columns: 88px minmax(0,1fr); gap: 10px; padding: 10px; } .partner-ad-popup > img { width: 88px; height: 96px; } .partner-ad-copy strong { font-size: 13px; } .partner-ad-copy p { font-size: 10px; } }
+
+/* Distinct, high-contrast secure sign-in card for desktop and mobile. */
+.modal-card:has(.auth-modal) { overflow: hidden; border: 1px solid #c8a96b; border-radius: 18px; background: #103d36; box-shadow: 0 28px 70px rgb(4 25 21 / 42%); }
+.modal-card:has(.auth-modal) .modal-close { top: 16px; inset-inline-end: 16px; border: 1px solid rgb(215 190 132 / 35%); border-radius: 50%; background: rgb(255 255 255 / 9%); color: #f4ead4; }
+.auth-modal { min-height: 390px; padding: 34px clamp(22px, 6vw, 48px) 30px; color: #f3eee2; background: radial-gradient(ellipse at 50% -15%, rgb(80 131 103 / 38%), transparent 58%), linear-gradient(155deg, #174a40 0%, #0b302b 100%); border-top: 4px solid #c8a96b; }
+.auth-modal-brand { display: flex; flex-direction: column; align-items: center; gap: 3px; margin: 0 0 20px; color: #dfc58e; letter-spacing: .2em; }
+.auth-modal-brand span { font-family: Georgia, serif; font-size: 18px; font-weight: 700; }
+.auth-modal-brand small { color: #a9c1b2; font-size: 8px; letter-spacing: .24em; }
+.auth-modal .modal-icon { width: 58px; height: 58px; margin: 0 auto 17px; border: 1px solid #d7bd83; border-radius: 50%; background: #f1e7d1; color: #17463c; box-shadow: 0 0 0 6px rgb(213 187 129 / 9%); }
+.auth-modal .section-eyebrow { color: #d8bc7f; }
+.auth-modal h2 { color: #fff8e9; font-size: clamp(21px, 4vw, 27px); }
+.auth-modal > p { max-width: 410px; margin: 0 auto 18px; color: #c3d3c8; line-height: 2; }
+.auth-modal .auth-method-note { justify-content: center; margin: 18px 0 16px; padding: 13px 14px; border: 1px solid rgb(216 190 132 / 35%); border-radius: 10px; background: rgb(255 255 255 / 7%); color: #e8e1d1; font-size: 11px; }
+.auth-modal .auth-method-note svg { color: #dfc58e; }
+.auth-modal .full-button { min-height: 50px; border: 1px solid #e0c88f; border-radius: 9px; background: linear-gradient(110deg, #d9bd7e, #c7a361); color: #173d36; font-weight: 700; box-shadow: 0 9px 24px rgb(0 0 0 / 20%); }
+.auth-modal .full-button:hover { background: #ead7a8; }
+.auth-modal .modal-text-button { color: #d8c9a7; }
+@media (max-width: 640px) {
+  .modal-card:has(.auth-modal) { width: 100%; border-radius: 16px; }
+  .auth-modal { min-height: 0; padding: 28px 21px 24px; }
+  .auth-modal-brand { margin-bottom: 16px; }
+  .auth-modal > p { font-size: 12px; }
+}
+
