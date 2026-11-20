@@ -30,13 +30,13 @@ function safeEqual(a: string | undefined, b: string | undefined) {
 function originFor(req: Request) {
   const proto = (req.get("x-forwarded-proto")?.split(",")[0]?.trim() || req.protocol).toLowerCase();
   const rawHost = req.get("x-forwarded-host")?.split(",")[0]?.trim() || req.get("host") || "";
-  const host = rawHost.toLowerCase().replace(/\\.$/, "");
+  const host = rawHost.toLowerCase().replace(/\.$/, "");
   const configuredHosts = (process.env.GOOGLE_OAUTH_ALLOWED_HOSTS || "")
     .split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
-  const isLocalhost = /^localhost(?::\\d+)?$/.test(host);
+  const isLocalhost = /^localhost(?::\d+)?$/.test(host);
   const isProductionHost = host === "alassaul.com" || host === "www.alassaul.com";
   // Vercel preview hostnames are scoped to this project's unique deployment prefix.
-  const isProjectPreview = /^alassaul-full-source-[a-z0-9-]+-yomrasanjak-3670s-projects\\.vercel\\.app$/.test(host);
+  const isProjectPreview = /^alassaul-full-source-[a-z0-9-]+-yomrasanjak-3670s-projects\.vercel\.app$/.test(host);
   const isAllowed = configuredHosts.includes(host) || isLocalhost || isProductionHost || isProjectPreview;
   if (!isAllowed || (proto !== "https" && !(isLocalhost && proto === "http"))) {
     throw new Error("عنوان العودة غير مدرج ضمن النطاقات الموثوقة لتسجيل الدخول.");
