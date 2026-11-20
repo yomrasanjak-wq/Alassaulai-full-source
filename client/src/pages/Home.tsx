@@ -734,7 +734,6 @@ export default function Home() {
   const [discoveryIndex, setDiscoveryIndex] = useState(0);
   const [discoveryImageLoaded, setDiscoveryImageLoaded] = useState(false);
   const [modalData, setModalData] = useState<Record<string, string>>({});
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [selectedPlace, setSelectedPlace] = useState<CityDestination | null>(null);
   const [liveStatus, setLiveStatus] = useState<LiveStatus>("loading");
   const [chatOpen, setChatOpen] = useState(false);
