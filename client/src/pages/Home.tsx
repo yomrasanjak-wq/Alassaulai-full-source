@@ -897,8 +897,6 @@ export default function Home() {
   const partnerRequestsQuery = trpc.partners.myRequests.useQuery(undefined, { staleTime: 10_000, enabled: modal === "partner" && auth.user?.role === "partner" });
   const partnerRequestMutation = trpc.partners.submitRequest.useMutation({ onSuccess: () => void partnerRequestsQuery.refetch() });
 
-  const controlRequestsQuery = trpc.control.list.useQuery(undefined, { staleTime: 10_000, enabled: modal === "control" && canAccessControl });
-  const controlUpdateMutation = trpc.control.update.useMutation({ onSuccess: () => void controlRequestsQuery.refetch() });
   useEffect(() => {
     if (typeof window === "undefined" || !partnerAdsQuery.data?.length || visiblePartnerAd) return;
     if (window.sessionStorage.getItem("alassaul-partner-ad-dismissed") === "1") return;
@@ -942,6 +940,8 @@ export default function Home() {
   const controlAccessQuery = trpc.auth.controlAccess.useQuery(undefined, { staleTime: 30_000, enabled: modal === "control" && Boolean(auth.user) });
   const isControlOwner = controlAccessQuery.data?.isOwner === true;
   const canAccessControl = controlAccessQuery.data?.canAccess === true;
+  const controlRequestsQuery = trpc.control.list.useQuery(undefined, { staleTime: 10_000, enabled: modal === "control" && canAccessControl });
+  const controlUpdateMutation = trpc.control.update.useMutation({ onSuccess: () => void controlRequestsQuery.refetch() });
   // Run the read-only SELECT 1 health check before any team-schema initialization.
   const controlHealthQuery = trpc.control.health.useQuery(undefined, { staleTime: 30_000, refetchInterval: 60_000, enabled: modal === "control" && canAccessControl });
   const teamMembersQuery = trpc.team.list.useQuery(undefined, { staleTime: 15_000, enabled: modal === "control" && isControlOwner && controlHealthQuery.data?.database === "healthy" });
