@@ -2,7 +2,7 @@ import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
-import { ENV, isOwnerIdentity } from "./env";
+import { isOwnerIdentity } from "./env";
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
