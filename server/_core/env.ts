@@ -60,6 +60,7 @@ export const ENV = {
   databaseUrl: process.env.DATABASE_URL ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  ownerEmail: (process.env.OWNER_EMAIL ?? "").trim().toLowerCase(),
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   isProduction: process.env.NODE_ENV === "production",
@@ -94,3 +95,11 @@ export const ENV = {
     "VITE_GOOGLE_TTS_API_KEY"
   ),
 };
+
+/** Match the configured platform owner by stable provider ID or verified account email. */
+export function isOwnerIdentity(user: { openId?: string | null; email?: string | null } | null | undefined): boolean {
+  if (!user) return false;
+  const byOpenId = Boolean(ENV.ownerOpenId && user.openId === ENV.ownerOpenId);
+  const byVerifiedEmail = Boolean(ENV.ownerEmail && user.email?.trim().toLowerCase() === ENV.ownerEmail);
+  return byOpenId || byVerifiedEmail;
+}
