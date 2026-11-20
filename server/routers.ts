@@ -1,4 +1,4 @@
-import { ENV } from "./_core/env";
+import { ENV, isOwnerIdentity } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
 import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateAssignedControlRequest, updateControlRequest, updateControlRequestIfUnchanged, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
@@ -1259,7 +1259,7 @@ export const appRouter = router({
     // Lightweight permission check: reads only the authenticated session and server config.
     // It deliberately does not access Neon or initialize the control-room schema.
     controlAccess: protectedProcedure.query(({ ctx }) => {
-      const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+      const isOwner = isOwnerIdentity(ctx.user);
       const staffRoles = ["secretary", "assistant", "it", "executor"];
       return { isOwner, canAccess: isOwner || staffRoles.includes(ctx.user.role) };
     }),
