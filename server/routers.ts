@@ -1345,7 +1345,7 @@ export const appRouter = router({
       .input(z.object({ title: z.string().trim().min(3).max(255), command: z.string().trim().min(3).max(2000), category: z.enum(["general", "bug", "content", "partner", "security"]).default("general"), priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"), assignee: z.string().max(32) }))
        .mutation(async ({ ctx, input }) => {
         if (input.assignee !== "CEO") {
-          const match = /^(secretary|assistant|it|executor):(\\d+)$/.exec(input.assignee);
+          const match = /^(secretary|assistant|it|executor):(\d+)$/.exec(input.assignee);
           if (!match) throw new TRPCError({ code: "BAD_REQUEST", message: "اختر موظفاً محدداً من القائمة قبل تسجيل المهمة." });
           const [, role, memberId] = match;
           const members = await listControlTeamMembers();
@@ -1365,7 +1365,7 @@ export const appRouter = router({
         return { success: Boolean(request), id: request?.id ?? null, status: request?.status ?? "unavailable" };
       }),
     list: controlStaffProcedure.query(async ({ ctx }) => {
-      if (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) return listControlRequests();
+      if (isOwnerIdentity(ctx.user)) return listControlRequests();
       if (!["secretary", "assistant", "it", "executor"].includes(ctx.user.role)) return [];
       // Assignments are scoped to a single authenticated account, not the whole department.
       const assignee = `${ctx.user.role}:${ctx.user.id}`;
@@ -1377,7 +1377,7 @@ export const appRouter = router({
     update: controlStaffProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "ready_for_review", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
       .mutation(async ({ ctx, input }) => {
-        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        const isOwner = isOwnerIdentity(ctx.user);
         const ownAssignment = `${ctx.user.role}:${ctx.user.id}`;
         const visibleTasks = isOwner ? await listControlRequests() : await listControlRequestsForAssignee(ownAssignment);
         const currentTask = visibleTasks.find((task) => task.id === input.id);
@@ -1420,7 +1420,7 @@ export const appRouter = router({
     reportIncident: controlStaffProcedure
       .input(z.object({ title: z.string().trim().min(4).max(180), description: z.string().trim().min(10).max(2000), severity: z.enum(["normal", "high", "urgent"]).default("high") }))
       .mutation(async ({ ctx, input }) => {
-        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        const isOwner = isOwnerIdentity(ctx.user);
         if (ctx.user.role !== "it" && !isOwner) throw new TRPCError({ code: "FORBIDDEN", message: "تسجيل الحوادث التقنية متاح لفريق IT فقط." });
         const request = await createControlRequest({ title: input.title, command: input.description, requesterType: "it", category: "security", priority: input.severity, assignee: "CEO" });
         if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_reported", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ severity: input.severity }) });
