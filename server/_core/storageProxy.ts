@@ -1,5 +1,5 @@
 import express from "express";
-import type { Request, Response } from "express-serve-static-core";
+import type { Request, Response } from "express";
 type Application = ReturnType<typeof express>;
 import { ENV } from "./env";
 
