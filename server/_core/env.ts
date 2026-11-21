@@ -60,6 +60,8 @@ export const ENV = {
   databaseUrl: process.env.DATABASE_URL ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  ownerEmail: firstConfigured("ALASSAUL_OWNER_EMAIL", "OWNER_EMAIL").toLowerCase(),
+  ownerPhone: firstConfigured("ALASSAUL_OWNER_PHONE").replace(/\\s/g, ""),
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: configuredBaseUrl || "",
   forgeApiKey: explicitProviderKey,
