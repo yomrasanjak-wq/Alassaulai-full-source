@@ -1,4 +1,5 @@
-import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, randomInt, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
 import { neon } from "@neondatabase/serverless";
 import { COOKIE_NAME } from "@shared/const";
 type Request = {
@@ -159,6 +160,137 @@ function serviceUnavailable(res: Response, message: string) {
 }
 
 export function registerEmailAuthRoutes(app: Application) {
+
+const scryptAsync = promisify(scryptCallback) as (password: string, salt: Buffer, keylen: number) => Promise<Buffer>;
+let passwordTableReady: Promise<void> | null = null;
+
+async function ensurePasswordTable() {
+  if (!passwordTableReady) {
+    passwordTableReady = (async () => {
+      const sql = getSql();
+      await sql.query(`
+        CREATE TABLE IF NOT EXISTS public.alassaul_password_credentials (
+          user_id integer PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+          password_hash text NOT NULL,
+          failed_attempts integer NOT NULL DEFAULT 0,
+          locked_until timestamptz,
+          updated_at timestamptz NOT NULL DEFAULT now()
+        )
+      `, []);
+    })();
+  }
+  try { await passwordTableReady; }
+  catch (error) { passwordTableReady = null; throw error; }
+}
+
+async function hashOwnerPassword(password: string): Promise<string> {
+  const salt = randomBytes(16);
+  const derived = await scryptAsync(password, salt, 64);
+  return `scrypt:${salt.toString("hex")}:${derived.toString("hex")}`;
+}
+
+async function verifyOwnerPassword(password: string, stored: string): Promise<boolean> {
+  const parts = stored.split(":");
+  if (parts.length !== 3 || parts[0] !== "scrypt" || !/^[a-f0-9]{32}$/i.test(parts[1]) || !/^[a-f0-9]{128}$/i.test(parts[2])) return false;
+  const expected = Buffer.from(parts[2], "hex");
+  const actual = await scryptAsync(password, Buffer.from(parts[1], "hex"), 64);
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+function validOwnerEmail(email: string | null): boolean {
+  return Boolean(email && ENV.ownerEmail && email === ENV.ownerEmail && ENV.ownerOpenId);
+}
+
+
+  // First-party owner password sign-in. The account is resolved only from server-side
+  // owner configuration; client input can never choose an openId or role.
+  app.post("/api/auth/password/login", async (req: Request, res: Response) => {
+    noStore(res);
+    if (!safeOrigin(req)) { res.status(403).json({ error: "تعذر إتمام الطلب." }); return; }
+    const email = normalizeEmail(req.body?.email);
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
+    if (!email || !password || password.length > 128 || !validOwnerEmail(email)) {
+      res.status(401).json({ error: "بيانات الدخول غير صحيحة." }); return;
+    }
+    if (!ENV.databaseUrl || !ENV.cookieSecret) {
+      serviceUnavailable(res, "خدمة تسجيل الدخول غير مهيأة حاليًا."); return;
+    }
+    try {
+      await ensurePasswordTable();
+      const sql = getSql();
+      const users = await sql.query(
+        'SELECT id, "openId", name FROM public.users WHERE "openId" = $1 LIMIT 1',
+        [ENV.ownerOpenId],
+      ) as Array<{ id: number; openId: string; name: string | null }>;
+      const owner = users[0];
+      if (!owner) { res.status(401).json({ error: "بيانات الدخول غير صحيحة." }); return; }
+      const credentials = await sql.query(
+        'SELECT password_hash, failed_attempts, locked_until FROM public.alassaul_password_credentials WHERE user_id = $1 LIMIT 1',
+        [owner.id],
+      ) as Array<{ password_hash: string; failed_attempts: number; locked_until: string | null }>;
+      const credential = credentials[0];
+      if (!credential) {
+        res.status(409).json({ error: "لم تُنشأ كلمة مرور لهذا الحساب بعد. استخدم خيار استعادة كلمة المرور لإثبات البريد وإنشائها." }); return;
+      }
+      if (credential.locked_until && new Date(credential.locked_until).getTime() > Date.now()) {
+        res.status(429).json({ error: "تم إيقاف المحاولة مؤقتًا لحماية الحساب. حاول لاحقًا." }); return;
+      }
+      const valid = await verifyOwnerPassword(password, credential.password_hash);
+      if (!valid) {
+        await sql.query(
+          'UPDATE public.alassaul_password_credentials SET failed_attempts = failed_attempts + 1, locked_until = CASE WHEN failed_attempts + 1 >= 8 THEN now() + interval \'15 minutes\' ELSE locked_until END, updated_at = now() WHERE user_id = $1',
+          [owner.id],
+        );
+        res.status(401).json({ error: "بيانات الدخول غير صحيحة." }); return;
+      }
+      await sql.query(
+        'UPDATE public.alassaul_password_credentials SET failed_attempts = 0, locked_until = NULL, updated_at = now() WHERE user_id = $1',
+        [owner.id],
+      );
+      await establishSession(req, res, owner.openId, owner.name || email);
+    } catch (error) {
+      console.error("[OwnerPasswordAuth] Sign-in failed", error);
+      serviceUnavailable(res, "تعذر إكمال تسجيل الدخول الآن. حاول لاحقًا.");
+    }
+  });
+
+  // Password creation/change is permitted only after a verified email OTP session
+  // for the configured canonical owner account.
+  app.post("/api/auth/password/set", async (req: Request, res: Response) => {
+    noStore(res);
+    if (!safeOrigin(req)) { res.status(403).json({ error: "تعذر إتمام الطلب." }); return; }
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
+    if (password.length < 12 || password.length > 128) {
+      res.status(400).json({ error: "اجعل كلمة المرور 12 حرفًا على الأقل، وبحد أقصى 128 حرفًا." }); return;
+    }
+    if (!ENV.databaseUrl || !ENV.cookieSecret || !ENV.ownerOpenId || !ENV.ownerEmail) {
+      serviceUnavailable(res, "إعداد حساب المالك غير مكتمل على الخادم."); return;
+    }
+    try {
+      const user = await sdk.authenticateRequest(req as any);
+      if (user.openId !== ENV.ownerOpenId) {
+        res.status(403).json({ error: "هذا الإجراء مخصص لمالك المنصة." }); return;
+      }
+      const sql = getSql();
+      const verified = await sql.query(
+        'SELECT 1 AS verified FROM public."authIdentities" WHERE "userId" = $1 AND provider = \'email_otp\' AND lower("providerSubject") = $2 AND "emailVerified" = true LIMIT 1',
+        [user.id, ENV.ownerEmail],
+      ) as Array<{ verified: number }>;
+      if (!verified.length) {
+        res.status(403).json({ error: "أثبت ملكية البريد الإلكتروني أولًا عبر رمز التحقق." }); return;
+      }
+      await ensurePasswordTable();
+      const passwordHash = await hashOwnerPassword(password);
+      await sql.query(
+        'INSERT INTO public.alassaul_password_credentials (user_id, password_hash, failed_attempts, locked_until, updated_at) VALUES ($1, $2, 0, NULL, now()) ON CONFLICT (user_id) DO UPDATE SET password_hash = EXCLUDED.password_hash, failed_attempts = 0, locked_until = NULL, updated_at = now()',
+        [user.id, passwordHash],
+      );
+      res.json({ success: true, message: "تم تحديث كلمة المرور بأمان." });
+    } catch (error) {
+      console.error("[OwnerPasswordAuth] Password update failed", error);
+      res.status(401).json({ error: "انتهت جلسة التحقق أو تعذر تحديث كلمة المرور. أعد إثبات البريد." });
+    }
+  });
   app.post("/api/auth/email/request", async (req: Request, res: Response) => {
     noStore(res);
     if (!safeOrigin(req)) {
