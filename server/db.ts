@@ -113,6 +113,72 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   });
 }
 
+/** Read-only owner identity audit. Returns booleans/counts only; never exposes account identifiers. */
+export async function auditOwnerAccountIdentity() {
+  const ownerEmail = ENV.ownerEmail.trim().toLowerCase();
+  const legacyOwnerOpenId = ENV.ownerOpenId;
+  const unavailable = {
+    available: false,
+    ownerEmailConfigured: Boolean(ownerEmail),
+    legacyOwnerIdentityConfigured: Boolean(legacyOwnerOpenId),
+    ownerEmailMatchCount: 0,
+    legacyOwnerMatchCount: 0,
+    sameCanonicalAccount: false,
+    verifiedEmailIdentity: false,
+    ownerRoleIsAdmin: false,
+    safeToPlanMigration: false,
+  };
+  if (!ownerEmail || !legacyOwnerOpenId) return unavailable;
+  const database = await getDb();
+  if (!database) return unavailable;
+
+  try {
+    const emailMatches = await database.select({
+      id: users.id,
+      role: users.role,
+    }).from(users)
+      .where(sql`lower(btrim(${users.email})) = ${ownerEmail}`)
+      .limit(2);
+    const legacyMatches = await database.select({
+      id: users.id,
+    }).from(users)
+      .where(eq(users.openId, legacyOwnerOpenId))
+      .limit(2);
+
+    const sameCanonicalAccount = emailMatches.length === 1 &&
+      legacyMatches.length === 1 &&
+      emailMatches[0].id === legacyMatches[0].id;
+    let verifiedEmailIdentity = false;
+    if (sameCanonicalAccount) {
+      const identities = await database.select({ id: authIdentities.id })
+        .from(authIdentities)
+        .where(and(
+          eq(authIdentities.userId, emailMatches[0].id),
+          eq(authIdentities.provider, "email_otp"),
+          eq(authIdentities.providerSubject, ownerEmail),
+          eq(authIdentities.emailVerified, true),
+        ))
+        .limit(1);
+      verifiedEmailIdentity = identities.length === 1;
+    }
+
+    return {
+      available: true,
+      ownerEmailConfigured: true,
+      legacyOwnerIdentityConfigured: true,
+      ownerEmailMatchCount: emailMatches.length,
+      legacyOwnerMatchCount: legacyMatches.length,
+      sameCanonicalAccount,
+      verifiedEmailIdentity,
+      ownerRoleIsAdmin: sameCanonicalAccount && emailMatches[0].role === "admin",
+      safeToPlanMigration: sameCanonicalAccount && verifiedEmailIdentity &&
+        emailMatches[0].role === "admin",
+    };
+  } catch {
+    return unavailable;
+  }
+}
+
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) {
