@@ -83,7 +83,9 @@ console.log(JSON.stringify({
     matchesLegacyOwnerOpenId: account.matches_legacy_owner_open_id,
     hasVerifiedOwnerEmailOtpIdentity: verifiedEmailIdentityUserIds.includes(Number(account.id)),
   })),
-  safeToPlanMigration: emailMatches.length === 1 &&
+  safeToPlanMigration: tables[0].identities_exists &&
+    emailMatches.length === 1 &&
     legacyMatches.length === 1 &&
-    emailMatches[0].id === legacyMatches[0].id,
+    emailMatches[0].id === legacyMatches[0].id &&
+    verifiedEmailIdentityUserIds.includes(Number(emailMatches[0].id)),
 }, null, 2));
