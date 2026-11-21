@@ -6,6 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
 import { getGoogleGroundedAnswer, getGoogleMapsGroundedAnswer, isGoogleGroundingQuestion, isGoogleMapsQuestion } from "./_core/googleGrounding";
 import { getWikipediaSearchContext } from "./_core/wikipediaSearch";
+import { getWikimediaImageAnswer } from "./liveImageSearch";
 import { synthesizeSpeech } from "./_core/textToSpeech";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, controlStaffProcedure, ownerProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -95,6 +96,9 @@ export function getAdaptiveTaskInstruction(message: string): string {
   }
   if (/(نتائج? المباريات|نتيجة المباراة|الدوري السعودي|دوري روشن|الدوري الأوروبي|دوري أبطال أوروبا|دوري ابطال اوروبا|كأس العالم|كاس العالم|مباراة اليوم|جدول المباريات|ترتيب الدوري|من فاز|live score|football results|league standings)/i.test(text)) {
     return "نمط الرياضة الحية: حدّد البطولة والتاريخ المقصود، واستخدم أحدث بيانات موثوقة متاحة. عند طلب مباريات اليوم أو جدول دوري روشن، اعرض جدولاً واضحاً بأعمدة: المباراة | الساعة بتوقيت السعودية | القناة الناقلة. حوّل الأوقات إلى توقيت Asia/Riyadh وتحقق من التاريخ وحالة المباراة. لا تذكر قناة إلا إذا أكدها مصدر موثوق؛ وإلا اكتب «غير معلنة في المصدر المتاح». أدرج تاريخ ووقت آخر تحديث والمصدر عند توفرهما. لا تخلط الأخبار بجدول المباريات ولا تخمّن مباراة أو نتيجة أو موعداً؛ إذا فشل المصدر فقل ذلك صراحة.";
+  }
+  if (/(?:كم(?: تبلغ| تقدر)?\s*(?:التكلفة|التكلفه|تكلفة|تكلفه)|(?:التكلفة|التكلفه|تكلفة الرحلة|تكلفه الرحله)|كم يكلف|كم تكلف|ميزانية السفر|budget|trip cost|travel cost)/i.test(text)) {
+    return "نمط ميزانية السفر: اربط سؤال التكلفة بآخر رحلة وخطتها في سجل الحوار. لا تفترض عدد المسافرين أو عدد الليالي أو مدينة المغادرة أو الشهر أو وسيلة النقل إذا لم يذكرها المستخدم؛ لا تكتب سيناريو «شخصين وأربع ليالٍ» من عندك. وضّح ما يشمله التقدير وما لا يشمله، وافصل السكن والتنقل والطعام والأنشطة والطيران. إذا كانت معلومة ناقصة تغيّر الحساب كثيراً، اسأل سؤالاً واحداً عن أهم معلومة، أو اعرض نطاقاً مشروطاً بافتراضات معلنة. لا تقدّم تقديراً على أنه عرض حجز أو سعر مؤكد. استخدم البحث الحي للأسعار الحالية عندما يكون متاحاً؛ وإذا لم تحصل على أسعار موثوقة فقل إن الرقم تقريبي للتخطيط ولا تخترع أسعاراً حالية. إذا قال المستخدم إنه وجد سعراً أرخص، تقبّل ذلك واطلب تفاصيل العرض للمقارنة على البنود نفسها دون مجادلة.";
   }
   if (/(رتب لي|برنامج|خطة|جدول|خطط|نظم|نظّم|رحلة|بكج|ميزانية|خلال \d+ أيام)/i.test(text)) {
     const itinerary = "نمط التخطيط: أنشئ خطة قابلة للتنفيذ مباشرة عندما تكون الوجهة والمدة واضحتين، ولا تكتفِ بالقول إنك تستطيع التخطيط. قسّم الرحلة يوماً بيوم، وبترتيب صباحي ومسائي مع أوقات تقريبية، وأسماء الوجهات والأنشطة، واقتراح مطاعم أو استراحات عند ملاءمة المسار، ومدة التنقل الواقعية بين المحطات. اجمع المواقع المتقاربة جغرافياً ولا تحشر وجهات بعيدة في يوم واحد. أضف ميزانية تقريبية ونصائح توفير عندما تفيد، واذكر افتراضاتك بوضوح. إذا ذكر المستخدم أشخاصاً أو مدناً أو ترتيباً أو محطات محددة فالتزم بها. لا تدّعِ حجزاً أو توافراً أو سعراً حالياً لم تتحقق منه، ولا تخترع ساعات عمل أو أنشطة موسمية.";
@@ -274,6 +278,32 @@ export function getLocalTourismCatalogContext(message: string, language: "AR" | 
       ? "Bunlar platformun rehberinde listelenen yerlerdir; açık olma durumu, fiyatlar ve yol koşulları canlı olarak doğrulanmalıdır."
       : "These are places listed in the platform guide; opening status, prices, and road conditions still require live verification.";
   return heading + " (" + matches.length + "):\n\n" + rows.join("\n\n") + "\n\n" + note;
+}
+
+/** Return a real, locally hosted gallery image for explicit visitor photo requests.
+ * Only curated same-origin assets are rendered; this avoids invented or untrusted image URLs.
+ */
+export function getGalleryImageAnswer(message: string): string | undefined {
+  const normalized = message.normalize("NFKC").replace(/[\u064B-\u065F\u0670\u0640]/g, "").trim();
+  const asksForImage = /(?:اعرض|أعرض|ورني|ورّني|أرني|ارني|ابغى اشوف|أبغى أشوف|ابي اشوف|أبي أشوف|شوفني|صورة|صور|صوره|picture|photo|image|show me)/i.test(normalized);
+  if (!asksForImage) return undefined;
+
+  const isUzungol = /(?:أوزنجول|اوزنجول|أوزنقول|اوزنقول|uzung[oö]l|زنجول|زنجود)/i.test(normalized);
+  const asksForSpecificBoatScene = /(?:مركب|قارب|قوارب|مراكب|boat|boats|canoe)/i.test(normalized);
+  if (isUzungol && asksForSpecificBoatScene) return undefined;
+  const normalizedQuery = normalized.toLocaleLowerCase();
+  const place = isUzungol
+    ? DESTINATION_GALLERY.find((item) => /أوزنجول/.test(item.name))
+    : DESTINATION_GALLERY.find((item) => {
+      const name = item.name.normalize("NFKC").toLocaleLowerCase();
+      return normalizedQuery.includes(name) && name.length >= 3;
+    });
+  if (!place?.image || !/^\/images\/[a-z0-9._/-]+$/i.test(place.image)) return undefined;
+
+  const title = isUzungol ? "أوزنجول" : place.name;
+  return "تفضل، هذه صورة **" + title + "** من دليل ALASSAUL:\n\n!["
+    + place.alt.replace(/[\[\]\r\n]/g, " ").slice(0, 180) + "](" + place.image + ")"
+    + "\n\nهذه صورة مرجعية للمكان، وليست بثاً مباشراً أو صورة مؤكدة من هذا الشهر.";
 }
 
 async function waitForTourismRequestSlot(): Promise<void> {
@@ -1606,6 +1636,13 @@ export const appRouter = router({
             return { text: "مطار ينبع هو مطار الأمير عبد المحسن بن عبد العزيز (Prince Abdul Mohsin bin Abdulaziz Airport)، ورمز المطار الدولي IATA هو YNB. يخدم مدينة ينبع في منطقة المدينة المنورة بالمملكة العربية السعودية." };
           }
 
+          const imageAnswer = await getWikimediaImageAnswer(latestText, input.language);
+          if (imageAnswer?.includes("![")) return { text: imageAnswer };
+
+          const galleryImageAnswer = getGalleryImageAnswer(latestText);
+          if (galleryImageAnswer) return { text: galleryImageAnswer };
+          if (imageAnswer) return { text: imageAnswer };
+
           const directWeather = await getLiveWeatherAnswer(contextualWeatherText)
             ?? await getAyderWeatherAnswer(latestText)
             ?? await getJeddahWeatherAnswer(latestText);
@@ -1788,12 +1825,13 @@ ${newsContext}`);
         }
         const needsLiveWebSearch = isWorldNewsQuestion(latestText)
           || isGoogleGroundingQuestion(latestText)
-          || /(?:سعر|أسعار|اسعار|حراج|مستعمل|قيمة السوق|حارس|لاعب|تشكيلة|مدرب|كم.*(?:السوق|حراج)|current|latest|today)/i.test(latestText);
+          || /(?:سعر|أسعار|اسعار|حراج|مستعمل|قيمة السوق|حارس|لاعب|تشكيلة|مدرب|كم.*(?:السوق|حراج)|التكلفة|التكلفه|تكلفة الرحلة|تكلفه الرحله|ميزانية السفر|كم يكلف|كم تكلف|trip cost|travel cost|current|latest|today)/i.test(latestText);
         const llmRequest = {
           model: ENV.primaryModel,
-          max_completion_tokens: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText)) ? 1200 : 512,
+          max_completion_tokens: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText)) ? 1200 : /(?:التكلفة|التكلفه|تكلفة الرحلة|تكلفه الرحله|ميزانية السفر|كم يكلف|كم تكلف|trip cost|travel cost)/i.test(latestText) ? 900 : 512,
           reasoning: { effort: "minimal" },
           webSearch: needsLiveWebSearch,
+          timeoutMs: (isItineraryPlanningQuestion(latestText) || isWorldNewsQuestion(latestText)) ? 22_000 : needsLiveWebSearch ? 18_000 : 15_000,
           messages: llmMessages,
         };
         const backupModel = getDistinctBackupModel(llmRequest.model, ENV.backupModel);

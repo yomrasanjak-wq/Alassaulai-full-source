@@ -73,6 +73,8 @@ export type InvokeParams = {
   reasoning?: Record<string, unknown>;
   /** Use OpenAI's hosted live web search on Responses API requests. */
   webSearch?: boolean;
+  /** Per-request response deadline in milliseconds; lower for simple chat turns. */
+  timeoutMs?: number;
 };
 
 export type ToolCall = {
@@ -422,6 +424,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     max_tokens,
     maxCompletionTokens,
     max_completion_tokens,
+    timeoutMs,
   } = params;
 
   const useResponsesApi = isResponsesGateway();
@@ -570,10 +573,12 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
         // Avoid retrying a slow Responses request inside the short serverless
         // window; one bounded attempt is more useful than duplicate latency.
         maxRetries: 0,
-        requestTimeoutMs: useResponsesApi ? 22_000 : 10_000,
-        requestBudgetMs: useResponsesApi ? 23_000 : 11_000,
+        requestTimeoutMs: Math.min(timeoutMs ?? (useResponsesApi ? 22_000 : 10_000), useResponsesApi ? 22_000 : 10_000),
+        requestBudgetMs: Math.min((timeoutMs ?? (useResponsesApi ? 22_000 : 10_000)) + 1_000, useResponsesApi ? 23_000 : 11_000),
       }
-    : undefined);
+    : timeoutMs
+      ? { requestTimeoutMs: timeoutMs, requestBudgetMs: timeoutMs + 1_000 }
+      : undefined);
 
   if (!response.ok) {
     const errorText = await response.text();

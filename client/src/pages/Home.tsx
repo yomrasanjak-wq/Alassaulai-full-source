@@ -680,9 +680,27 @@ type SpeechRecognitionLike = {
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 function renderChatText(text: string) {
-  return text.split(/(https?:\/\/[^\s]+)/g).map((part, index) => /^https?:\/\//i.test(part)
-    ? <a key={`${index}-${part}`} href={part.replace(/[),.;]+$/, "")} target="_blank" rel="noreferrer" className="chat-inline-link">{part.replace(/[),.;]+$/, "")}</a>
-    : part);
+  return text.split(/(!\[[^\]]*\]\((?:\/images\/[^\s)]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[^\s)]+)\)|https?:\/\/[^\s]+)/g).map((part, index) => {
+    const imageMatch = part.match(/^!\[([^\]]*)\]\(((?:\/images\/[A-Za-z0-9._/%?=&-]+|https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%?=&-]+))\)$/);
+    const imageUrl = imageMatch?.[2];
+    const safeLocalImage = Boolean(imageUrl && imageUrl.startsWith("/images/") && !imageUrl.split(/[?#]/, 1)[0].split("/").includes(".."));
+    const safeCommonsImage = Boolean(imageUrl && /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[A-Za-z0-9._/%-]+(?:\?[A-Za-z0-9._%=&-]*)?$/.test(imageUrl));
+    if (imageMatch && (safeLocalImage || safeCommonsImage)) {
+      return <img
+        key={"chat-image-" + index}
+        src={imageUrl}
+        alt={imageMatch[1] || "صورة من دليل ALASSAUL"}
+        loading="eager"
+        decoding="async"
+        referrerPolicy="no-referrer"
+        onError={(event) => { event.currentTarget.style.display = "none"; }}
+        style={{ display: "block", width: "min(100%, 480px)", maxHeight: "320px", objectFit: "cover", borderRadius: "14px", margin: "12px 0" }}
+      />;
+    }
+    return /^https?:\/\//i.test(part)
+      ? <a key={index + "-" + part} href={part.replace(/[),.;]+$/, "")} target="_blank" rel="noreferrer" className="chat-inline-link">{part.replace(/[),.;]+$/, "")}</a>
+      : part;
+  });
 }
 
 type MemoryCard = { id: number; pair: string; label: string; flipped: boolean; matched: boolean };
