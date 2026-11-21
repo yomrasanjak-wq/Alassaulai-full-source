@@ -10,13 +10,13 @@ type Request = {
   get(name: string): string | undefined;
 };
 type Response = {
-  setHeader(name: string, value: string): this;
-  cookie(name: string, value: any, options?: any): this;
-  clearCookie(name: string, options?: any): this;
-  status(code: number): this;
-  json(body?: any): this;
-  redirect(url: string): this;
-  set(name: string, value: string): this;
+  setHeader(name: string, value: string): Response;
+  cookie(name: string, value: any, options?: any): Response;
+  clearCookie(name: string, options?: any): Response;
+  status(code: number): Response;
+  json(body?: any): Response;
+  redirect(statusOrUrl: number | string, url?: string): Response;
+  set(name: string, value: string): Response;
 };
 type Application = ReturnType<typeof express>;
 import * as db from "../db";
