@@ -1,7 +1,7 @@
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 import { COOKIE_NAME } from "@shared/const";
-import type { Express, Request, Response } from "express";
+import type { Application, Request, Response } from "express-serve-static-core";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
@@ -140,7 +140,7 @@ function serviceUnavailable(res: Response, message: string) {
   res.status(503).json({ error: message });
 }
 
-export function registerEmailAuthRoutes(app: Express) {
+export function registerEmailAuthRoutes(app: Application) {
   app.post("/api/auth/email/request", async (req: Request, res: Response) => {
     noStore(res);
     if (!safeOrigin(req)) {
