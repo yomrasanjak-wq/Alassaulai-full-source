@@ -32,7 +32,10 @@ export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
 
-    const isOwner = Boolean(ENV.ownerOpenId && ctx.user?.openId === ENV.ownerOpenId);
+    const isOwner = Boolean(
+      (ENV.ownerOpenId && ctx.user?.openId === ENV.ownerOpenId) ||
+      (ENV.ownerEmail && ctx.user?.email?.trim().toLowerCase() === ENV.ownerEmail)
+    );
     if (!ctx.user || (ctx.user.role !== 'admin' && !isOwner)) {
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
     }
@@ -65,7 +68,10 @@ export const controlStaffProcedure = t.procedure.use(
 export const ownerProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
-    if (!ENV.ownerOpenId || !ctx.user || ctx.user.openId !== ENV.ownerOpenId) {
+    if (!ctx.user || !(
+      (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) ||
+      (ENV.ownerEmail && ctx.user.email?.trim().toLowerCase() === ENV.ownerEmail)
+    )) {
       throw new TRPCError({ code: "FORBIDDEN", message: "يتطلب هذا الإجراء موافقة مالك المنصة." });
     }
     return next({ ctx: { ...ctx, user: ctx.user } });
