@@ -1,5 +1,6 @@
 import express from "express";
-import type { Request, Response } from "express";
+type Request = Express.Request;
+type Response = Express.Response;
 type Application = ReturnType<typeof express>;
 import { ENV } from "./env";
 
