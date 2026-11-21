@@ -942,13 +942,13 @@ export default function Home() {
   const isControlOwner = controlAccessQuery.data?.isOwner === true;
   const isControlManager = isControlOwner || auth.user?.role === "secretary";
   const canAccessControl = controlAccessQuery.data?.canAccess === true;
-  const controlRequestsQuery = trpc.control.list.useQuery(undefined, { staleTime: 10_000, enabled: modal === "control" && canAccessControl });
+  const controlRequestsQuery = trpc.control.list.useQuery(undefined, { staleTime: 10_000, refetchInterval: 15_000, enabled: modal === "control" && canAccessControl });
   const controlUpdateMutation = trpc.control.update.useMutation({ onSuccess: () => void controlRequestsQuery.refetch() });
   // Run the read-only SELECT 1 health check before any team-schema initialization.
   const controlHealthQuery = trpc.control.health.useQuery(undefined, { staleTime: 30_000, refetchInterval: 60_000, enabled: modal === "control" && canAccessControl });
-  const teamMembersQuery = trpc.team.list.useQuery(undefined, { staleTime: 15_000, enabled: modal === "control" && isControlManager && controlHealthQuery.data?.database === "healthy" });
+  const teamMembersQuery = trpc.team.list.useQuery(undefined, { staleTime: 15_000, refetchInterval: 30_000, enabled: modal === "control" && isControlManager && controlHealthQuery.data?.database === "healthy" });
   const teamRoleMutation = trpc.team.assignRole.useMutation({ onSuccess: () => { void teamMembersQuery.refetch(); setTeamEmail(""); } });
-  const auditLogsQuery = trpc.control.auditList.useQuery(undefined, { staleTime: 15_000, enabled: modal === "control" && isControlOwner && controlHealthQuery.data?.database === "healthy" });
+  const auditLogsQuery = trpc.control.auditList.useQuery(undefined, { staleTime: 15_000, refetchInterval: 30_000, enabled: modal === "control" && isControlOwner && controlHealthQuery.data?.database === "healthy" });
   const mediaUploadMutation = trpc.media.upload.useMutation();
   const mediaItemsQuery = trpc.media.list.useQuery(undefined, { staleTime: 30_000 });
   const mediaUpdateMutation = trpc.media.update.useMutation();
