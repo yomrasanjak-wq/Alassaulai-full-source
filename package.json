@@ -13,7 +13,8 @@
     "db:push": "tsx scripts/migrate-neon.ts",
     "brain:preflight": "node scripts/brain-preflight.mjs",
     "brain:preflight:test": "node --test scripts/brain-preflight.test.mjs",
-    "brain:live-check": "node scripts/brain-live-probe.mjs"
+    "brain:live-check": "node scripts/brain-live-probe.mjs",
+    "owner:audit": "tsx scripts/audit-owner-account.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
