@@ -1,7 +1,6 @@
 import express from "express";
+import type { Request, Response } from "express-serve-static-core";
 type Application = ReturnType<typeof express>;
-type Request = Parameters<express.RequestHandler>[0];
-type Response = Parameters<express.RequestHandler>[1];
 import { ENV } from "./env";
 
 export function registerStorageProxy(app: Application) {
