@@ -60,6 +60,25 @@ export const authIdentities = pgTable("authIdentities", {
 export type AuthIdentity = typeof authIdentities.$inferSelect;
 export type InsertAuthIdentity = typeof authIdentities.$inferInsert;
 
+export const emailLoginCodes = pgTable("email_login_codes", {
+  id: serial("id", { mode: "number" }).primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  codeHash: varchar("codeHash", { length: 64 }).notNull(),
+  ipHash: varchar("ipHash", { length: 64 }).notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  expiresAt: timestamp("expiresAt", { withTimezone: true, mode: "date" }).notNull(),
+  consumedAt: timestamp("consumedAt", { withTimezone: true, mode: "date" }),
+  deliveryStatus: varchar("deliveryStatus", { length: 16 }).notNull().default("sent"),
+  createdAt: createdAt(),
+});
+
+export const phoneLoginRequests = pgTable("phone_login_requests", {
+  id: serial("id", { mode: "number" }).primaryKey(),
+  phoneHash: varchar("phoneHash", { length: 64 }).notNull(),
+  deliveryStatus: varchar("deliveryStatus", { length: 16 }).notNull().default("sent"),
+  createdAt: createdAt(),
+});
+
 export const controlRequests = pgTable("controlRequests", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull().default("طلب جديد"),
