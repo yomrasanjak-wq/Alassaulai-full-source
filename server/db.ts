@@ -433,7 +433,7 @@ export async function disableAssistantMemory(ownerOpenId: string): Promise<boole
  */
 export async function linkVerifiedEmailIdentity(email: string): Promise<User> {
   const normalized = email.trim().toLowerCase();
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalized)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
     throw new Error("البريد الإلكتروني غير صالح.");
   }
   const database = await getDb();
