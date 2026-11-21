@@ -1259,7 +1259,10 @@ export const appRouter = router({
     // Lightweight permission check: reads only the authenticated session and server config.
     // It deliberately does not access Neon or initialize the control-room schema.
     controlAccess: protectedProcedure.query(({ ctx }) => {
-      const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+      const isOwner = Boolean(
+        (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) ||
+        (ENV.ownerEmail && ctx.user.email?.trim().toLowerCase() === ENV.ownerEmail)
+      );
       const staffRoles = ["secretary", "assistant", "it", "executor"];
       return { isOwner, canAccess: isOwner || staffRoles.includes(ctx.user.role) };
     }),
@@ -1368,7 +1371,10 @@ export const appRouter = router({
     update: controlStaffProcedure
       .input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "reviewed", "in_progress", "ready_for_review", "completed", "rejected"]).optional(), assignee: z.string().max(32).optional(), decisionNote: z.string().max(2000).optional() }))
       .mutation(async ({ ctx, input }) => {
-        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        const isOwner = Boolean(
+        (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) ||
+        (ENV.ownerEmail && ctx.user.email?.trim().toLowerCase() === ENV.ownerEmail)
+      );
         const ownAssignment = `${ctx.user.role}:${ctx.user.id}`;
         const visibleTasks = isOwner ? await listControlRequests() : await listControlRequestsForAssignee(ownAssignment);
         const currentTask = visibleTasks.find((task) => task.id === input.id);
@@ -1411,7 +1417,10 @@ export const appRouter = router({
     reportIncident: controlStaffProcedure
       .input(z.object({ title: z.string().trim().min(4).max(180), description: z.string().trim().min(10).max(2000), severity: z.enum(["normal", "high", "urgent"]).default("high") }))
       .mutation(async ({ ctx, input }) => {
-        const isOwner = Boolean(ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId);
+        const isOwner = Boolean(
+        (ENV.ownerOpenId && ctx.user.openId === ENV.ownerOpenId) ||
+        (ENV.ownerEmail && ctx.user.email?.trim().toLowerCase() === ENV.ownerEmail)
+      );
         if (ctx.user.role !== "it" && !isOwner) throw new TRPCError({ code: "FORBIDDEN", message: "تسجيل الحوادث التقنية متاح لفريق IT فقط." });
         const request = await createControlRequest({ title: input.title, command: input.description, requesterType: "it", category: "security", priority: input.severity, assignee: "CEO" });
         if (request) await createControlAuditLog({ actorOpenId: ctx.user.openId, action: "security.incident_reported", targetType: "control_request", targetId: String(request.id), details: JSON.stringify({ severity: input.severity }) });
