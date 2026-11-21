@@ -53,7 +53,7 @@ pnpm owner:audit
 It requires the existing server-side `DATABASE_URL`, `ALASSAUL_OWNER_EMAIL` (or `OWNER_EMAIL`), and optionally `OWNER_OPEN_ID`. It prints only account row IDs, roles, match booleans, and whether the verified email identity is linked. It never prints the configured email, `openId`, connection string, or secrets, and performs only SELECT queries.
 
 Interpretation:
-- `safeToPlanMigration: true` means exactly one row matches the configured owner email and exactly one row matches the legacy owner identifier, and both matches are the same row. It is a prerequisite for planning—not permission to migrate automatically.
+- `safeToPlanMigration: true` means the identity table exists, exactly one row matches the configured owner email, exactly one row matches the legacy owner identifier, both matches are the same row, and that row has a verified `email_otp` identity for the configured email. It is a prerequisite for planning—not permission to migrate automatically.
 - Any zero or multiple match, missing identity table, or mismatch requires manual investigation and a database backup. Do not change owner roles or identifiers.
 - The script has not been run against the live Preview database from this environment; no live account mapping is claimed.
 
