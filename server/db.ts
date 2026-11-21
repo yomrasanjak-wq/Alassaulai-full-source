@@ -18,6 +18,7 @@ import {
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { normalizeSaudiPhone } from "./_core/phoneNumber";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _controlRoomSchemaReady: Promise<void> | null = null;
@@ -480,7 +481,7 @@ export async function linkVerifiedEmailIdentity(email: string): Promise<User> {
     providerSubject,
     providerEmail: normalized,
     emailVerified: true,
-    linkedByOpenId: ENV.ownerOpenId || null,
+    linkedByOpenId: user.openId === ENV.ownerOpenId ? ENV.ownerOpenId : null,
   }).onConflictDoNothing();
 
   const linked = await database.select().from(authIdentities)
@@ -494,7 +495,8 @@ export async function linkVerifiedEmailIdentity(email: string): Promise<User> {
 
 /** Phone OTP may enter the owner account only through its configured canonical openId. */
 export async function linkVerifiedPhoneIdentity(phone: string): Promise<User> {
-  const normalizedPhone = phone.trim();
+  const normalizedPhone = normalizeSaudiPhone(phone);
+  if (!normalizedPhone) throw new Error("رقم الجوال السعودي غير صالح.");
   const database = await getDb();
   if (!database) throw new Error("قاعدة البيانات غير متاحة حالياً.");
 
@@ -509,7 +511,7 @@ export async function linkVerifiedPhoneIdentity(phone: string): Promise<User> {
     return rows[0];
   }
 
-  const ownerPhone = ENV.ownerPhone.replace(/\\s/g, "");
+  const ownerPhone = normalizeSaudiPhone(ENV.ownerPhone);
   if (!ownerPhone || normalizedPhone !== ownerPhone || !ENV.ownerOpenId) {
     throw new Error("رقم الجوال غير مرتبط بحساب معتمد. يلزم ربطه من المالك أولاً.");
   }
