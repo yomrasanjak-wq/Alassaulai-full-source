@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS public.email_login_codes (
-  id bigserial PRIMARY KEY,
+  id serial PRIMARY KEY,
   email varchar(320) NOT NULL,
   "codeHash" varchar(64) NOT NULL,
   "ipHash" varchar(64) NOT NULL,
