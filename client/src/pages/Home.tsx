@@ -51,6 +51,7 @@ import {
   Landmark,
   LifeBuoy,
   LockKeyhole,
+  LogOut,
   Mail,
   MapPin,
   Menu,
@@ -838,6 +839,7 @@ export default function Home() {
   const [controlAssignee, setControlAssignee] = useState<string>("CEO");
   const [controlTaskAssignees, setControlTaskAssignees] = useState<Record<number, string>>({});
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const notificationIdRef = useRef(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const t = copy[language];
@@ -1024,6 +1026,20 @@ export default function Home() {
     notificationIdRef.current = id;
     setNotifications((current) => [...current.slice(-2), { id, title, message, tone }]);
   }, []);
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await auth.logout();
+      setModal(null);
+      setMobileMenu(false);
+      notify("تم تسجيل الخروج", "يمكنك الآن تسجيل الدخول بحساب آخر.", "success");
+    } catch {
+      notify("تعذر تسجيل الخروج", "تحقق من اتصال الإنترنت ثم حاول مرة أخرى.", "error");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
   const quickPrompts = language === "AR"
     ? activeSection === "live"
       ? [`شغّل بث ${selectedCity.name} إن وجد`, "ما القنوات المباشرة المتاحة الآن؟", "ما الفرق بين مكة والمدينة والحدث؟"]
@@ -1842,7 +1858,7 @@ export default function Home() {
           {mobileMenu && <button type="button" className="mobile-menu-scrim" aria-label="إغلاق القائمة" onClick={() => setMobileMenu(false)} />}
           <div className="header-actions">
             <button className="language-button" onClick={cycleLanguage} title={t.language}><Languages size={16} /><span>{language}</span><ChevronDown size={13} /></button>
-            <button className="login-button" onClick={() => setModal("login")}><CircleUserRound size={17} /> <span>{t.login}</span></button>
+            {auth.user ? <button type="button" className="login-button" onClick={() => void handleLogout()} disabled={isLoggingOut || auth.loading} title={auth.user.email || auth.user.name || "الحساب الحالي"} aria-label="تسجيل الخروج"><LogOut size={17} /> {isLoggingOut ? "جارٍ الخروج…" : "خروج"}</button> : <button type="button" className="login-button" onClick={() => setModal("login")}><CircleUserRound size={17} /> <span>{t.login}</span></button>}
           </div>
         </div>
       </header>
