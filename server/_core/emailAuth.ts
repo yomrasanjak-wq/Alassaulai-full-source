@@ -111,7 +111,12 @@ async function unifonicVerify(phone: string, code?: string): Promise<boolean> {
     console.error("[PhoneAuth] Unifonic rejected request", response.status);
     throw new Error("SMS verification provider failed");
   }
-  if (!code) return true;
+  if (!code) {
+    if (!result.id || result.response_status !== "correct") {
+      throw new Error("SMS provider did not confirm the verification request");
+    }
+    return true;
+  }
   if ([107, 108, 109, 110].includes(Number(result.error_code)) ||
       result.response_status === "incorrect" || result.response_status === "expired") return false;
   return result.error_code === 101 || result.response_status === "correct";
