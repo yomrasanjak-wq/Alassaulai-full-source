@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import {
@@ -142,12 +142,39 @@ export async function listControlTeamMembers() {
     .from(users).orderBy(desc(users.lastSignedIn)).limit(100);
 }
 
+/**
+ * Assign a staff role only when the supplied email identifies exactly one
+ * existing account. Never let the team-management path alter the canonical
+ * owner account, even if its email is submitted accidentally.
+ */
 export async function updateUserRoleByEmail(email: string, role: User["role"]) {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalized)) {
+    throw new Error("البريد الإلكتروني غير صالح.");
+  }
+  const ownerEmail = ENV.ownerEmail.trim().toLowerCase();
+  if (ownerEmail && normalized === ownerEmail) {
+    throw new Error("لا يمكن تغيير دور مالك المنصة من إدارة الفريق.");
+  }
+
   const db = await getDb();
   if (!db) return undefined;
-  const existing = await db.select({ id: users.id }).from(users).where(ilike(users.email, email)).limit(1);
-  if (!existing[0]) return undefined;
-  const rows = await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, existing[0].id)).returning({ id: users.id, name: users.name, email: users.email, role: users.role });
+  const matches = await db.select({ id: users.id, openId: users.openId })
+    .from(users)
+    .where(sql`lower(btrim(${users.email})) = ${normalized}`)
+    .limit(2);
+  if (matches.length > 1) {
+    throw new Error("يوجد أكثر من حساب بهذا البريد؛ أوقفنا التغيير للحماية.");
+  }
+  if (!matches[0]) return undefined;
+  if (ENV.ownerOpenId && matches[0].openId === ENV.ownerOpenId) {
+    throw new Error("لا يمكن تغيير دور مالك المنصة من إدارة الفريق.");
+  }
+
+  const rows = await db.update(users)
+    .set({ role, updatedAt: new Date() })
+    .where(eq(users.id, matches[0].id))
+    .returning({ id: users.id, name: users.name, email: users.email, role: users.role });
   return rows[0];
 }
 
