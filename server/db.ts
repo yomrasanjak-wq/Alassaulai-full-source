@@ -149,7 +149,7 @@ export async function listControlTeamMembers() {
  */
 export async function updateUserRoleByEmail(email: string, role: User["role"]) {
   const normalized = email.trim().toLowerCase();
-  if (!normalized || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalized)) {
+  if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
     throw new Error("البريد الإلكتروني غير صالح.");
   }
   const ownerEmail = ENV.ownerEmail.trim().toLowerCase();
