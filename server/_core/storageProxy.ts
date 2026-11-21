@@ -1,8 +1,8 @@
-import type { Application } from "express-serve-static-core";
+import type { Application, Request, Response } from "express";
 import { ENV } from "./env";
 
 export function registerStorageProxy(app: Application) {
-  app.get(["/manus-storage/*", "/api/manus-storage/*"], async (req, res) => {
+  app.get(["/manus-storage/*", "/api/manus-storage/*"], async (req: Request, res: Response) => {
     const key = (req.params as Record<string, string>)[0];
     if (!key) {
       res.status(400).send("Missing storage key");
