@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 import { COOKIE_NAME } from "@shared/const";
 import type { Express, Request, Response } from "express";
@@ -20,10 +20,6 @@ function normalizeEmail(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const email = value.trim().toLowerCase();
   return email.length <= 320 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
-}
-
-function digest(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
 }
 
 function hmac(value: string): string {
@@ -286,9 +282,9 @@ export function registerEmailAuthRoutes(app: Express) {
       const isOwner = Boolean(ownerPhone && phone === ownerPhone);
       if (!isOwner) {
         const linked = await sql.query(
-          'SELECT 1 FROM public."authIdentities" WHERE "provider" = \'phone_sms\' AND "providerSubject" = $1 LIMIT 1',
+          'SELECT 1 AS found FROM public."authIdentities" WHERE "provider" = \'phone_sms\' AND "providerSubject" = $1 LIMIT 1',
           [phone],
-        ) as Array<{ "?column?": number }>;
+        ) as Array<{ found: number }>;
         if (!linked.length) {
           res.status(403).json({ error: "رقم الجوال غير مرتبط بحساب معتمد. اطلب اعتماده أولاً." });
           return;
