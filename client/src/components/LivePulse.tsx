@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRightLeft, CalendarDays, ChevronLeft, ChevronRight, CloudSun, Clock3, Languages, Mic, Navigation, RefreshCw, Ticket, Volume2, VolumeX, WalletCards, X } from "lucide-react";
 
 type Language = "AR" | "TR" | "EN";
-type LivePulseProps = { language: Language; onPlanRoute: () => void };
+type LivePulseProps = { language: Language; onPlanRoute: () => void; onWeatherChange?: (weather: { temperature: number; weatherCode: number } | null) => void };
 type WeatherState = { temperature: number; weatherCode: number; updatedAt: Date };
 type RateState = { tryPerSar: number; updatedAt: Date };
 type CurrencyCode = "SAR" | "TRY" | "USD" | "EUR";
@@ -41,7 +41,7 @@ function formatDate(date: Date, language: Language) {
   };
 }
 
-export function LivePulse({ language, onPlanRoute }: LivePulseProps) {
+export function LivePulse({ language, onPlanRoute, onWeatherChange }: LivePulseProps) {
   const [now, setNow] = useState(() => new Date());
   const [weather, setWeather] = useState<WeatherState | null>(null);
   const [rate, setRate] = useState<RateState | null>(null);
@@ -97,6 +97,10 @@ export function LivePulse({ language, onPlanRoute }: LivePulseProps) {
     const refresh = window.setInterval(loadWeather, 10 * 60 * 1000);
     return () => { cancelled = true; window.clearInterval(refresh); };
   }, []);
+  useEffect(() => {
+    onWeatherChange?.(weather ? { temperature: weather.temperature, weatherCode: weather.weatherCode } : null);
+  }, [weather, onWeatherChange]);
+
   useEffect(() => {
     let cancelled = false;
     const loadRate = async () => {

@@ -41,6 +41,15 @@ describe("LivePulse", () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it("shares verified live weather with the page atmosphere", async () => {
+    const onWeatherChange = vi.fn();
+    render(<LivePulse language="AR" onPlanRoute={vi.fn()} onWeatherChange={onWeatherChange} />);
+
+    await waitFor(() => {
+      expect(onWeatherChange).toHaveBeenCalledWith({ temperature: 18, weatherCode: 2 });
+    });
+  });
+
   it("renders a month calendar with previous and next month controls", () => {
     render(<LivePulse language="AR" onPlanRoute={vi.fn()} />);
 
