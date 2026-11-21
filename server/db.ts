@@ -502,38 +502,46 @@ export async function linkVerifiedPhoneIdentity(phone: string): Promise<User> {
 
   const provider = "phone_sms";
   const providerSubject = normalizedPhone;
+  const ownerPhone = normalizeSaudiPhone(ENV.ownerPhone);
+  const isConfiguredOwnerPhone = Boolean(ownerPhone && normalizedPhone === ownerPhone);
   const current = await database.select().from(authIdentities)
     .where(and(eq(authIdentities.provider, provider), eq(authIdentities.providerSubject, providerSubject)))
     .limit(1);
+
+  if (isConfiguredOwnerPhone) {
+    if (!ENV.ownerOpenId) throw new Error("تعذر التحقق من الحساب الأساسي للمالك.");
+    const owners = await database.select().from(users)
+      .where(eq(users.openId, ENV.ownerOpenId)).limit(1);
+    if (owners.length !== 1) throw new Error("الحساب الأساسي للمالك غير موجود.");
+    const owner = owners[0];
+    if (current[0]) {
+      if (current[0].userId !== owner.id) {
+        throw new Error("رقم جوال المالك مرتبط بحساب آخر؛ تم إيقاف الدخول للحماية.");
+      }
+      return owner;
+    }
+    await database.insert(authIdentities).values({
+      userId: owner.id,
+      provider,
+      providerSubject,
+      providerEmail: owner.email,
+      emailVerified: false,
+      linkedByOpenId: ENV.ownerOpenId,
+    }).onConflictDoNothing();
+    const linkedOwner = await database.select().from(authIdentities)
+      .where(and(eq(authIdentities.provider, provider), eq(authIdentities.providerSubject, providerSubject)))
+      .limit(1);
+    if (!linkedOwner[0] || linkedOwner[0].userId !== owner.id) {
+      throw new Error("تعذر ربط رقم الجوال بالحساب الأساسي بأمان.");
+    }
+    return owner;
+  }
+
   if (current[0]) {
     const rows = await database.select().from(users).where(eq(users.id, current[0].userId)).limit(1);
     if (!rows[0]) throw new Error("الحساب المرتبط برقم الجوال غير موجود.");
     return rows[0];
   }
 
-  const ownerPhone = normalizeSaudiPhone(ENV.ownerPhone);
-  if (!ownerPhone || normalizedPhone !== ownerPhone || !ENV.ownerOpenId) {
-    throw new Error("رقم الجوال غير مرتبط بحساب معتمد. يلزم ربطه من المالك أولاً.");
-  }
-  const candidates = await database.select().from(users)
-    .where(eq(users.openId, ENV.ownerOpenId)).limit(1);
-  if (candidates.length !== 1) throw new Error("الحساب الأساسي للمالك غير موجود.");
-
-  const user = candidates[0];
-  await database.insert(authIdentities).values({
-    userId: user.id,
-    provider,
-    providerSubject,
-    providerEmail: user.email,
-    emailVerified: false,
-    linkedByOpenId: ENV.ownerOpenId,
-  }).onConflictDoNothing();
-
-  const linked = await database.select().from(authIdentities)
-    .where(and(eq(authIdentities.provider, provider), eq(authIdentities.providerSubject, providerSubject)))
-    .limit(1);
-  if (!linked[0] || linked[0].userId !== user.id) {
-    throw new Error("تعذر ربط رقم الجوال بالحساب الأساسي بأمان.");
-  }
-  return user;
+  throw new Error("رقم الجوال غير مرتبط بحساب معتمد. يلزم ربطه من المالك أولاً.");
 }
