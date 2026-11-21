@@ -73,7 +73,7 @@ export const emailLoginCodes = pgTable("email_login_codes", {
 });
 
 export const phoneLoginRequests = pgTable("phone_login_requests", {
-  id: serial("id", { mode: "number" }).primaryKey(),
+  id: serial("id").primaryKey(),
   phoneHash: varchar("phoneHash", { length: 64 }).notNull(),
   deliveryStatus: varchar("deliveryStatus", { length: 16 }).notNull().default("sent"),
   createdAt: createdAt(),
