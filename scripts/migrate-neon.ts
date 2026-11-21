@@ -8,11 +8,16 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is required to apply the Neon PostgreSQL schema.");
 }
 
+// Append-only order. Existing 0001-0004 remain unchanged; auth and OTP migrations
+// are additive and must be applied only to a disposable Preview database first.
 const migrationFiles = [
   "drizzle/neon/0001_application_schema.sql",
   "drizzle/neon/0002_control_room_roles.sql",
   "drizzle/neon/0003_control_room_audit.sql",
   "drizzle/neon/0004_assistant_memories.sql",
+  "drizzle/neon/0005_auth_identities.sql",
+  "drizzle/neon/0006_email_login_codes.sql",
+  "drizzle/neon/0007_phone_login_requests.sql",
 ];
 
 const sql = neon(connectionString);
