@@ -4030,3 +4030,47 @@ img { display: block; max-width: 100%; }
 .partner-ad-admin input,.partner-ad-admin textarea,.partner-ad-admin select { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #d4d9ce; border-radius: 10px; background: #fffefa; color: #203d35; font: inherit; font-size: 13px; }
 .partner-ad-admin textarea { min-height: 74px; resize: vertical; }
 @media (max-width: 560px) { .partner-ad-popup { inset-inline: 10px; bottom: 76px; width: auto; grid-template-columns: 88px minmax(0,1fr); gap: 10px; padding: 10px; } .partner-ad-popup > img { width: 88px; height: 96px; } .partner-ad-copy strong { font-size: 13px; } .partner-ad-copy p { font-size: 10px; } }
+
+
+/* ALASSAUL first-party owner sign-in — calm forest-green mobile-first surface. */
+.auth-modal {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(200,169,107,.42) !important;
+  border-radius: 20px !important;
+  background: linear-gradient(155deg, #f8f6ed 0%, #edf3eb 54%, #e2eee7 100%) !important;
+  box-shadow: 0 28px 80px rgba(8,38,32,.28), inset 0 1px 0 rgba(255,255,255,.8) !important;
+  color: #173d36 !important;
+}
+.auth-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: linear-gradient(90deg, #c8a96b, #0e5b4c 48%, #6ba99a);
+}
+.auth-modal .modal-icon {
+  background: #0e3b35 !important;
+  color: #e7d5a9 !important;
+  border: 1px solid rgba(200,169,107,.58);
+  box-shadow: 0 8px 20px rgba(14,59,53,.18);
+}
+.auth-modal h2 { color: #0e3b35 !important; }
+.auth-modal p { color: #58766b; }
+.auth-modal input:focus {
+  outline: 2px solid rgba(30,111,91,.28);
+  border-color: #2e7966 !important;
+  box-shadow: 0 0 0 4px rgba(46,121,102,.09);
+}
+.auth-modal .button-primary {
+  background: linear-gradient(135deg, #155548, #0e3b35) !important;
+  color: #f7f3e8 !important;
+  border: 1px solid rgba(200,169,107,.55);
+  box-shadow: 0 9px 22px rgba(14,59,53,.18);
+}
+.auth-modal .button-primary:hover { background: #1d6657 !important; }
+.auth-modal .modal-text-button { color: #2c705f !important; }
+@media (max-width: 640px) {
+  .auth-modal { width: min(100% - 24px, 460px) !important; padding: 25px 19px !important; border-radius: 18px !important; }
+  .auth-modal input, .auth-modal .button { min-height: 50px; font-size: 15px; }
+}
