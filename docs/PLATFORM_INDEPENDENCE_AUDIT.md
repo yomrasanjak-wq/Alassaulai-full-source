@@ -41,3 +41,19 @@ Never place secret values in this document, logs, client code, or issue comments
 ## Current release gate
 
 **Do not merge or deploy production yet.** Owner authorization still depends on `OWNER_OPEN_ID`, and the deployment environment, email provider, database account mapping, and legacy asset inventory have not been independently verified from this audit.
+
+## Read-only owner account audit
+
+A read-only inventory script is available before any ownership migration:
+
+```bash
+pnpm owner:audit
+```
+
+It requires the existing server-side `DATABASE_URL`, `ALASSAUL_OWNER_EMAIL` (or `OWNER_EMAIL`), and optionally `OWNER_OPEN_ID`. It prints only account row IDs, roles, match booleans, and whether the verified email identity is linked. It never prints the configured email, `openId`, connection string, or secrets, and performs only SELECT queries.
+
+Interpretation:
+- `safeToPlanMigration: true` means exactly one row matches the configured owner email and exactly one row matches the legacy owner identifier, and both matches are the same row. It is a prerequisite for planning—not permission to migrate automatically.
+- Any zero or multiple match, missing identity table, or mismatch requires manual investigation and a database backup. Do not change owner roles or identifiers.
+- The script has not been run against the live Preview database from this environment; no live account mapping is claimed.
+
