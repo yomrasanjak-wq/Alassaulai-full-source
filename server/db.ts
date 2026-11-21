@@ -9,6 +9,7 @@ import {
   User,
   MediaItem,
   assistantMemories,
+  authIdentities,
   controlRequests,
   controlAuditLogs,
   guestMemories,
@@ -17,6 +18,7 @@ import {
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { normalizeSaudiPhone } from "./_core/phoneNumber";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _controlRoomSchemaReady: Promise<void> | null = null;
@@ -421,4 +423,125 @@ export async function disableAssistantMemory(ownerOpenId: string): Promise<boole
     .set({ enabled: false, updatedAt: new Date() })
     .where(eq(assistantMemories.ownerOpenId, ownerOpenId));
   return true;
+}
+
+
+/**
+ * Link a verified external credential to an existing canonical account.
+ * This intentionally does not create users or change roles/openIds: an owner
+ * account must already exist and retain its original identity key.
+ */
+export async function linkVerifiedEmailIdentity(email: string): Promise<User> {
+  const normalized = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+    throw new Error("البريد الإلكتروني غير صالح.");
+  }
+  const database = await getDb();
+  if (!database) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+
+  const ownerEmail = ENV.ownerEmail.trim().toLowerCase();
+  const isConfiguredOwnerEmail = Boolean(ownerEmail && normalized === ownerEmail);
+  let candidates: User[] = [];
+
+  if (isConfiguredOwnerEmail) {
+    if (!ENV.ownerOpenId) throw new Error("تعذر التحقق من الحساب الأساسي للمالك.");
+    candidates = await database.select().from(users)
+      .where(eq(users.openId, ENV.ownerOpenId)).limit(1);
+    if (candidates.length !== 1) throw new Error("الحساب الأساسي للمالك غير موجود.");
+    const storedEmail = candidates[0].email?.trim().toLowerCase();
+    if (storedEmail && storedEmail !== normalized) {
+      throw new Error("بيانات هوية المالك لا تتطابق؛ تم إيقاف الربط للحماية.");
+    }
+  } else {
+    candidates = await database.select().from(users)
+      .where(sql`lower(btrim(${users.email})) = ${normalized}`).limit(2);
+    if (candidates.length !== 1) {
+      throw new Error(candidates.length > 1
+        ? "يوجد أكثر من حساب بهذا البريد؛ يلزم فحص يدوي قبل الربط."
+        : "لا يوجد حساب سابق بهذا البريد لربطه بأمان. اطلب اعتماد الحساب أولاً.");
+    }
+  }
+
+  const user = candidates[0];
+  const provider = "email_otp";
+  const providerSubject = normalized;
+  const current = await database.select().from(authIdentities)
+    .where(and(eq(authIdentities.provider, provider), eq(authIdentities.providerSubject, providerSubject)))
+    .limit(1);
+  if (current[0]) {
+    if (current[0].userId !== user.id) {
+      throw new Error("وسيلة الدخول مرتبطة بحساب آخر؛ تم إيقاف الدخول للحماية.");
+    }
+    return user;
+  }
+
+  await database.insert(authIdentities).values({
+    userId: user.id,
+    provider,
+    providerSubject,
+    providerEmail: normalized,
+    emailVerified: true,
+    linkedByOpenId: user.openId === ENV.ownerOpenId ? ENV.ownerOpenId : null,
+  }).onConflictDoNothing();
+
+  const linked = await database.select().from(authIdentities)
+    .where(and(eq(authIdentities.provider, provider), eq(authIdentities.providerSubject, providerSubject)))
+    .limit(1);
+  if (!linked[0] || linked[0].userId !== user.id) {
+    throw new Error("تعذر ربط البريد بالحساب الأساسي بأمان.");
+  }
+  return user;
+}
+
+/** Phone OTP may enter the owner account only through its configured canonical openId. */
+export async function linkVerifiedPhoneIdentity(phone: string): Promise<User> {
+  const normalizedPhone = normalizeSaudiPhone(phone);
+  if (!normalizedPhone) throw new Error("رقم الجوال السعودي غير صالح.");
+  const database = await getDb();
+  if (!database) throw new Error("قاعدة البيانات غير متاحة حالياً.");
+
+  const provider = "phone_sms";
+  const providerSubject = normalizedPhone;
+  const ownerPhone = normalizeSaudiPhone(ENV.ownerPhone);
+  const isConfiguredOwnerPhone = Boolean(ownerPhone && normalizedPhone === ownerPhone);
+  const current = await database.select().from(authIdentities)
+    .where(and(eq(authIdentities.provider, provider), eq(authIdentities.providerSubject, providerSubject)))
+    .limit(1);
+
+  if (isConfiguredOwnerPhone) {
+    if (!ENV.ownerOpenId) throw new Error("تعذر التحقق من الحساب الأساسي للمالك.");
+    const owners = await database.select().from(users)
+      .where(eq(users.openId, ENV.ownerOpenId)).limit(1);
+    if (owners.length !== 1) throw new Error("الحساب الأساسي للمالك غير موجود.");
+    const owner = owners[0];
+    if (current[0]) {
+      if (current[0].userId !== owner.id) {
+        throw new Error("رقم جوال المالك مرتبط بحساب آخر؛ تم إيقاف الدخول للحماية.");
+      }
+      return owner;
+    }
+    await database.insert(authIdentities).values({
+      userId: owner.id,
+      provider,
+      providerSubject,
+      providerEmail: owner.email,
+      emailVerified: false,
+      linkedByOpenId: ENV.ownerOpenId,
+    }).onConflictDoNothing();
+    const linkedOwner = await database.select().from(authIdentities)
+      .where(and(eq(authIdentities.provider, provider), eq(authIdentities.providerSubject, providerSubject)))
+      .limit(1);
+    if (!linkedOwner[0] || linkedOwner[0].userId !== owner.id) {
+      throw new Error("تعذر ربط رقم الجوال بالحساب الأساسي بأمان.");
+    }
+    return owner;
+  }
+
+  if (current[0]) {
+    const rows = await database.select().from(users).where(eq(users.id, current[0].userId)).limit(1);
+    if (!rows[0]) throw new Error("الحساب المرتبط برقم الجوال غير موجود.");
+    return rows[0];
+  }
+
+  throw new Error("رقم الجوال غير مرتبط بحساب معتمد. يلزم ربطه من المالك أولاً.");
 }
