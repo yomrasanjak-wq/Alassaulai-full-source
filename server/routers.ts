@@ -1,6 +1,6 @@
 import { ENV } from "./_core/env";
 import { COOKIE_NAME } from "@shared/const";
-import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateAssignedControlRequest, updateControlRequest, updateControlRequestIfUnchanged, updateMediaItem, updateUserRoleByEmail } from "./db";
+import { countRegisteredVisitors, createControlAuditLog, createControlRequest, createGuestMemory, createMediaItem, deleteAssistantMemory, disableAssistantMemory, deleteGuestMemory, deleteMediaItem, enableAssistantMemory, ensureControlRoomSchema, getAssistantMemory, getSystemHealth, auditOwnerAccountIdentity, recordAssistantMemoryInteraction, listControlAuditLogs, listControlRequests, listControlRequestsForAssignee, listControlRequestsForRequester, listControlTeamMembers, listGuestMemories, listMediaItems, updateAssistantMemory, updateAssignedControlRequest, updateControlRequest, updateControlRequestIfUnchanged, updateMediaItem, updateUserRoleByEmail } from "./db";
 import { storagePut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { invokeLLM } from "./_core/llm";
@@ -1263,6 +1263,8 @@ export const appRouter = router({
       const staffRoles = ["secretary", "assistant", "it", "executor"];
       return { isOwner, canAccess: isOwner || staffRoles.includes(ctx.user.role) };
     }),
+    // Read-only owner identity audit. Restricted to the canonical owner session.
+    ownerIdentityAudit: ownerProcedure.query(() => auditOwnerAccountIdentity()),
     visitorCount: publicProcedure.query(() => countRegisteredVisitors()),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
