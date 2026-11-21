@@ -61,7 +61,7 @@ export type AuthIdentity = typeof authIdentities.$inferSelect;
 export type InsertAuthIdentity = typeof authIdentities.$inferInsert;
 
 export const emailLoginCodes = pgTable("email_login_codes", {
-  id: serial("id", { mode: "number" }).primaryKey(),
+  id: serial("id").primaryKey(),
   email: varchar("email", { length: 320 }).notNull(),
   codeHash: varchar("codeHash", { length: 64 }).notNull(),
   ipHash: varchar("ipHash", { length: 64 }).notNull(),
