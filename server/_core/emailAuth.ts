@@ -2,7 +2,7 @@ import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 import { COOKIE_NAME } from "@shared/const";
 import express from "express";
-import type { Request, Response } from "express-serve-static-core";
+import type { Request, Response } from "express";
 type Application = ReturnType<typeof express>;
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
