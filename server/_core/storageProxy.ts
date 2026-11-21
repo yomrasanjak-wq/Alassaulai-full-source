@@ -1,6 +1,21 @@
 import express from "express";
-type Request = Express.Request;
-type Response = Express.Response;
+type Request = {
+  body: any;
+  ip?: string;
+  query: Record<string, unknown>;
+  headers: import("node:http").IncomingHttpHeaders;
+  params: Record<string, string>;
+  get(name: string): string | undefined;
+};
+type Response = {
+  setHeader(name: string, value: string): this;
+  cookie(name: string, value: any, options?: any): this;
+  clearCookie(name: string, options?: any): this;
+  status(code: number): this;
+  json(body?: any): this;
+  redirect(url: string): this;
+  set(name: string, value: string): this;
+};
 type Application = ReturnType<typeof express>;
 import { ENV } from "./env";
 
