@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS public.phone_login_requests (
-  id bigserial PRIMARY KEY,
+  id serial PRIMARY KEY,
   "phoneHash" varchar(64) NOT NULL,
   "deliveryStatus" varchar(16) NOT NULL DEFAULT 'sent',
   "createdAt" timestamptz NOT NULL DEFAULT now()
