@@ -1,4 +1,3 @@
-import express from "express";
 type Request = {
   body: any;
   ip?: string;
@@ -8,15 +7,16 @@ type Request = {
   get(name: string): string | undefined;
 };
 type Response = {
-  setHeader(name: string, value: string): Response;
-  cookie(name: string, value: any, options?: any): Response;
-  clearCookie(name: string, options?: any): Response;
-  status(code: number): Response;
-  json(body?: any): Response;
-  redirect(statusOrUrl: number | string, url?: string): Response;
-  set(name: string, value: string): Response;
+  setHeader(name: string, value: string): any;
+  cookie(name: string, value: any, options?: any): any;
+  clearCookie(name: string, options?: any): any;
+  status(code: number): any;
+  json(body?: any): any;
+  send(body?: any): any;
+  redirect(statusOrUrl: number | string, url?: string): any;
+  set(name: string, value: string): any;
 };
-type Application = ReturnType<typeof express>;
+type Application = { get: any; post: any };
 import { ENV } from "./env";
 
 export function registerStorageProxy(app: Application) {
