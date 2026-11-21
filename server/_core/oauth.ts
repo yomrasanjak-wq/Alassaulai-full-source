@@ -1,6 +1,9 @@
 import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState } from "@shared/const";
 import { parse as parseCookieHeader } from "cookie";
-import type { Application, Request, Response } from "express";
+import express from "express";
+type Application = express.Application;
+type Request = express.Request;
+type Response = express.Response;
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
