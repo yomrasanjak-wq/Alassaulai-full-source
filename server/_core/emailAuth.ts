@@ -104,6 +104,7 @@ async function unifonicVerify(phone: string, code?: string): Promise<boolean> {
     body,
   });
   const result = await response.json().catch(() => ({})) as {
+    id?: string;
     response_status?: string;
     error_code?: number;
   };
